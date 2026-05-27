@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Menu, X, ShoppingCart, Search, User, Heart, ChevronDown, Phone, Mail } from 'lucide-react'
+import { Menu, X, ShoppingCart, Search, User, Heart, ChevronDown, Phone, Mail, Package } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
@@ -200,25 +200,34 @@ export function Header() {
 
           {/* Mobile menu button */}
           <div className="flex lg:hidden items-center gap-2">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="text-muted-foreground transition-transform duration-200 hover:scale-105"
-            >
-              <Search className="h-5 w-5" />
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="relative text-muted-foreground transition-transform duration-200 hover:scale-105"
-            >
-              <ShoppingCart className="h-5 w-5" />
-              {cartCount > 0 && (
-                <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center font-medium">
-                  {cartCount}
-                </span>
-              )}
-            </Button>
+            <Link href="/wishlist" className="relative">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="relative text-muted-foreground transition-transform duration-200 hover:scale-105"
+              >
+                <Heart className="h-5 w-5" />
+                {wishlistCount > 0 && (
+                  <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-primary-foreground text-[10px] flex items-center justify-center font-medium">
+                    {wishlistCount}
+                  </span>
+                )}
+              </Button>
+            </Link>
+            <Link href="/cart" className="relative">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="relative text-muted-foreground transition-transform duration-200 hover:scale-105"
+              >
+                <ShoppingCart className="h-5 w-5" />
+                {cartCount > 0 && (
+                  <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-primary-foreground text-[10px] flex items-center justify-center font-medium">
+                    {cartCount}
+                  </span>
+                )}
+              </Button>
+            </Link>
             <Button
               variant="ghost"
               size="icon"
@@ -243,30 +252,84 @@ export function Header() {
         {/* Mobile menu */}
         <div
           className={cn(
-            'lg:hidden absolute top-full left-0 right-0 bg-background border-b border-border transition-all duration-300 ease-out overflow-hidden',
-            mobileMenuOpen ? 'max-h-[80vh] opacity-100' : 'max-h-0 opacity-0'
+            'lg:hidden absolute top-full left-0 right-0 bg-background border-b border-border/50 shadow-lg transition-all duration-300 ease-out overflow-auto',
+            mobileMenuOpen ? 'max-h-[85vh] opacity-100' : 'max-h-0 opacity-0'
           )}
         >
-          <div className="px-4 py-6 space-y-1">
+          <div className="px-4 py-6 space-y-2">
+            {/* Search */}
+            <div className="relative mb-4">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Search products..."
+                className="w-full h-12 pl-11 pr-4 rounded-xl bg-secondary border border-transparent text-sm placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-all duration-200"
+              />
+            </div>
+
+            {/* Nav Links */}
             {navigation.map((item) => (
               <Link
                 key={item.name}
                 href={item.href}
-                className="block px-4 py-3 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-secondary rounded-lg transition-all duration-200"
+                className="flex items-center justify-between px-4 py-3 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-secondary rounded-xl transition-all duration-200"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 {item.name}
               </Link>
             ))}
-            <div className="pt-4 mt-4 border-t border-border flex items-center gap-2">
-              <Button variant="outline" size="sm" className="flex-1 transition-transform duration-200 hover:scale-[1.02]">
-                <Heart className="h-4 w-4 mr-2" />
+
+            <div className="pt-2 mt-2 border-t border-border/50 space-y-1">
+              <p className="px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">My Account</p>
+              <Link
+                href="/account"
+                className="flex items-center gap-3 px-4 py-3 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-secondary rounded-xl transition-all duration-200"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <User className="h-5 w-5" />
+                My Dashboard
+              </Link>
+              <Link
+                href="/account/orders"
+                className="flex items-center gap-3 px-4 py-3 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-secondary rounded-xl transition-all duration-200"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <Package className="h-5 w-5" />
+                Order History
+              </Link>
+              <Link
+                href="/wishlist"
+                className="flex items-center gap-3 px-4 py-3 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-secondary rounded-xl transition-all duration-200"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <Heart className="h-5 w-5" />
                 Wishlist ({wishlistCount})
-              </Button>
-              <Button variant="outline" size="sm" className="flex-1 transition-transform duration-200 hover:scale-[1.02]">
-                <User className="h-4 w-4 mr-2" />
-                Account
-              </Button>
+              </Link>
+              <Link
+                href="/cart"
+                className="flex items-center gap-3 px-4 py-3 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-secondary rounded-xl transition-all duration-200"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <ShoppingCart className="h-5 w-5" />
+                Cart ({cartCount})
+              </Link>
+            </div>
+
+            <div className="pt-2 mt-2 border-t border-border/50">
+              <Link
+                href="/auth/login"
+                className="block w-full text-center px-4 py-3 bg-primary text-primary-foreground rounded-xl font-medium transition-all duration-200 hover:bg-primary/90"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Sign In
+              </Link>
+              <Link
+                href="/auth/register"
+                className="block w-full text-center px-4 py-3 mt-2 border border-border/50 text-foreground rounded-xl font-medium transition-all duration-200 hover:bg-secondary"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Create Account
+              </Link>
             </div>
           </div>
         </div>
