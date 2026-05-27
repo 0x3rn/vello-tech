@@ -1,0 +1,276 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
+import { Menu, X, ShoppingCart, Search, User, Heart, ChevronDown, Phone, Mail } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
+
+const navigation = [
+  { 
+    name: 'Shop', 
+    href: '#products',
+    submenu: [
+      { name: 'All Products', href: '#products' },
+      { name: 'New Arrivals', href: '#new' },
+      { name: 'Best Sellers', href: '#bestsellers' },
+      { name: 'On Sale', href: '#sale' },
+    ]
+  },
+  { 
+    name: 'Categories', 
+    href: '#categories',
+    submenu: [
+      { name: 'Smartphones', href: '#smartphones' },
+      { name: 'Laptops', href: '#laptops' },
+      { name: 'Audio', href: '#audio' },
+      { name: 'Wearables', href: '#wearables' },
+      { name: 'Gaming', href: '#gaming' },
+      { name: 'Accessories', href: '#accessories' },
+    ]
+  },
+  { name: 'Deals', href: '#deals' },
+  { name: 'New Arrivals', href: '#new' },
+  { name: 'Support', href: '#support' },
+]
+
+export function Header() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [cartCount] = useState(3)
+  const [wishlistCount] = useState(2)
+  const [isScrolled, setIsScrolled] = useState(false)
+  const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 50)
+    }
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  return (
+    <>
+      {/* Top Bar */}
+      <div className="bg-foreground text-background text-sm hidden lg:block">
+        <div className="mx-auto max-w-7xl px-4 lg:px-8 py-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-6">
+              <a href="tel:+1234567890" className="flex items-center gap-2 transition-opacity duration-200 hover:opacity-80">
+                <Phone className="h-3.5 w-3.5" />
+                <span>+1 (234) 567-890</span>
+              </a>
+              <a href="mailto:support@vellotech.com" className="flex items-center gap-2 transition-opacity duration-200 hover:opacity-80">
+                <Mail className="h-3.5 w-3.5" />
+                <span>support@vellotech.com</span>
+              </a>
+            </div>
+            <div className="flex items-center gap-6">
+              <span>Free shipping on orders over $99</span>
+              <span className="w-px h-4 bg-background/30" />
+              <a href="#track" className="transition-opacity duration-200 hover:opacity-80">Track Order</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Header */}
+      <header 
+        className={cn(
+          'fixed left-0 right-0 z-50 transition-all duration-300',
+          isScrolled 
+            ? 'top-0 bg-background/95 backdrop-blur-md shadow-sm' 
+            : 'top-0 lg:top-10 bg-background/80 backdrop-blur-md',
+        )}
+      >
+        <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 lg:px-8">
+          {/* Logo */}
+          <Link href="/" className="flex items-center gap-3 group">
+            <div className="flex items-center justify-center w-10 h-10 bg-primary rounded-xl transition-transform duration-300 group-hover:scale-105">
+              <span className="text-primary-foreground font-bold text-xl">V</span>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-xl font-bold tracking-tight text-foreground leading-none">
+                Vello<span className="text-primary">Tech</span>
+              </span>
+              <span className="text-xs text-muted-foreground leading-none hidden sm:block">Premium Gadgets</span>
+            </div>
+          </Link>
+
+          {/* Desktop Navigation */}
+          <div className="hidden lg:flex lg:items-center lg:gap-1">
+            {navigation.map((item) => (
+              <div 
+                key={item.name}
+                className="relative"
+                onMouseEnter={() => item.submenu && setActiveDropdown(item.name)}
+                onMouseLeave={() => setActiveDropdown(null)}
+              >
+                <Link
+                  href={item.href}
+                  className={cn(
+                    'flex items-center gap-1 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200',
+                    'text-muted-foreground hover:text-foreground hover:bg-secondary'
+                  )}
+                >
+                  {item.name}
+                  {item.submenu && <ChevronDown className="h-4 w-4 transition-transform duration-200" />}
+                </Link>
+                
+                {/* Dropdown */}
+                {item.submenu && (
+                  <div 
+                    className={cn(
+                      'absolute top-full left-0 mt-1 w-48 bg-card border border-border rounded-xl shadow-lg py-2 transition-all duration-200',
+                      activeDropdown === item.name 
+                        ? 'opacity-100 visible translate-y-0' 
+                        : 'opacity-0 invisible -translate-y-2'
+                    )}
+                  >
+                    {item.submenu.map((subitem) => (
+                      <Link
+                        key={subitem.name}
+                        href={subitem.href}
+                        className="block px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors duration-200"
+                      >
+                        {subitem.name}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Search Bar - Desktop */}
+          <div className="hidden lg:flex items-center flex-1 max-w-md mx-8">
+            <div className="relative w-full group">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground transition-colors duration-200 group-focus-within:text-primary" />
+              <input
+                type="text"
+                placeholder="Search products..."
+                className="w-full h-10 pl-11 pr-4 rounded-full bg-secondary border border-transparent text-sm placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+              />
+            </div>
+          </div>
+
+          {/* Desktop Actions */}
+          <div className="hidden lg:flex lg:items-center lg:gap-1">
+            <Link href="/wishlist" className="relative">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="relative text-muted-foreground hover:text-foreground transition-all duration-200 hover:scale-105"
+              >
+                <Heart className="h-5 w-5" />
+                {wishlistCount > 0 && (
+                  <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center font-medium">
+                    {wishlistCount}
+                  </span>
+                )}
+                <span className="sr-only">Wishlist</span>
+              </Button>
+            </Link>
+            <Link href="/account">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="text-muted-foreground hover:text-foreground transition-all duration-200 hover:scale-105"
+              >
+                <User className="h-5 w-5" />
+                <span className="sr-only">Account</span>
+              </Button>
+            </Link>
+            <Link href="/cart" className="relative">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="relative text-muted-foreground hover:text-foreground transition-all duration-200 hover:scale-105"
+              >
+                <ShoppingCart className="h-5 w-5" />
+                {cartCount > 0 && (
+                  <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center font-medium">
+                    {cartCount}
+                  </span>
+                )}
+                <span className="sr-only">Cart</span>
+              </Button>
+            </Link>
+          </div>
+
+          {/* Mobile menu button */}
+          <div className="flex lg:hidden items-center gap-2">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="text-muted-foreground transition-transform duration-200 hover:scale-105"
+            >
+              <Search className="h-5 w-5" />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="relative text-muted-foreground transition-transform duration-200 hover:scale-105"
+            >
+              <ShoppingCart className="h-5 w-5" />
+              {cartCount > 0 && (
+                <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center font-medium">
+                  {cartCount}
+                </span>
+              )}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="transition-transform duration-200 hover:scale-105"
+            >
+              <span className={cn(
+                'transition-transform duration-300',
+                mobileMenuOpen ? 'rotate-90' : 'rotate-0'
+              )}>
+                {mobileMenuOpen ? (
+                  <X className="h-6 w-6" />
+                ) : (
+                  <Menu className="h-6 w-6" />
+                )}
+              </span>
+              <span className="sr-only">Toggle menu</span>
+            </Button>
+          </div>
+        </nav>
+
+        {/* Mobile menu */}
+        <div
+          className={cn(
+            'lg:hidden absolute top-full left-0 right-0 bg-background border-b border-border transition-all duration-300 ease-out overflow-hidden',
+            mobileMenuOpen ? 'max-h-[80vh] opacity-100' : 'max-h-0 opacity-0'
+          )}
+        >
+          <div className="px-4 py-6 space-y-1">
+            {navigation.map((item) => (
+              <Link
+                key={item.name}
+                href={item.href}
+                className="block px-4 py-3 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-secondary rounded-lg transition-all duration-200"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                {item.name}
+              </Link>
+            ))}
+            <div className="pt-4 mt-4 border-t border-border flex items-center gap-2">
+              <Button variant="outline" size="sm" className="flex-1 transition-transform duration-200 hover:scale-[1.02]">
+                <Heart className="h-4 w-4 mr-2" />
+                Wishlist ({wishlistCount})
+              </Button>
+              <Button variant="outline" size="sm" className="flex-1 transition-transform duration-200 hover:scale-[1.02]">
+                <User className="h-4 w-4 mr-2" />
+                Account
+              </Button>
+            </div>
+          </div>
+        </div>
+      </header>
+    </>
+  )
+}

@@ -1,36 +1,192 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Vello Tech
+
+Premium e-commerce store for tech gadgets and electronics — built with modern web technologies. A performant, accessible, and beautiful shopping experience with full auth, checkout, and dashboard.
+
+![Vello Tech](public/next.svg)
+
+## Tech Stack
+
+| Category | Technology |
+|----------|------------|
+| **Framework** | [Next.js 16](https://nextjs.org/) (App Router) |
+| **Runtime** | [React 19](https://react.dev/) |
+| **Language** | [TypeScript](https://www.typescriptlang.org/) |
+| **Styling** | [Tailwind CSS v4](https://tailwindcss.com/) |
+| **UI Components** | [shadcn/ui](https://ui.shadcn.com/) (60+ components) |
+| **Icons** | [Lucide React](https://lucide.dev/) |
+| **Auth** | [Supabase Auth](https://supabase.com/auth) (email/password + OAuth) |
+| **Database** | [Supabase](https://supabase.com/) (PostgreSQL) |
+| **Analytics** | [Vercel Analytics](https://vercel.com/analytics) |
+| **Charts** | [Recharts](https://recharts.org/) |
+| **Forms** | [React Hook Form](https://react-hook-form.com/) |
+| **Package Manager** | npm |
+
+## Features
+
+### Storefront
+- **Hero slider** — full-screen carousel with animated transitions, stats bar
+- **Featured products** — filterable grid (All, New, Sale, Best Seller, Popular)
+- **Category navigation** — 6 product categories with icon grid
+- **Promo section** — countdown timer, sale highlights
+- **Customer testimonials** — star ratings, review cards
+- **Newsletter signup** — email subscription form
+- **Features bar** — free shipping, secure payments, support, returns
+
+### Shopping Experience
+- **Shopping cart** — quantity controls, promo codes, order summary
+- **Checkout** — 3-step flow (Shipping → Payment → Review)
+- **Guest or login checkout** — toggle between quick guest checkout or sign in
+- **Payment success page** — order confirmation, receipt, tracking info
+
+### User Account
+- **Dashboard** — profile header, stats cards, quick links, recent orders
+- **Order history** — searchable, filterable by status (Delivered, Shipped, Processing, Cancelled)
+- **Wishlist** — save favorite products, add to cart, out-of-stock badges
+- **Auth pages** — login, register with password requirements, email verification
+
+### API Routes
+- `POST /api/checkout` — checkout endpoint (Stripe-ready)
+- `POST /api/email` — newsletter subscription endpoint
+
+### Design System
+- Full shadcn/ui component library (60+ components)
+- CSS custom properties for light/dark theme
+- Tailwind v4 with `tw-animate-css` animations
+- Responsive design (mobile, tablet, desktop)
+- Subtle, soft borders for premium aesthetic
+
+## Project Structure
+
+```
+vello-tech/
+├── app/                    # Next.js App Router
+│   ├── page.tsx            # Homepage
+│   ├── layout.tsx          # Root layout (fonts, metadata, analytics)
+│   ├── globals.css         # Global styles & theme variables
+│   ├── cart/               # Shopping cart page
+│   ├── checkout/           # Checkout flow + success page
+│   ├── account/            # User dashboard + order history
+│   ├── wishlist/           # Wishlist page
+│   ├── auth/               # Auth pages (login, register, verify, callback)
+│   └── api/                # API routes (checkout, email)
+├── components/
+│   ├── ui/                 # shadcn/ui components (60+)
+│   ├── header.tsx          # Site header with navigation
+│   ├── hero.tsx            # Hero slider
+│   ├── featured-products.tsx
+│   ├── categories.tsx
+│   ├── features.tsx
+│   ├── testimonials.tsx
+│   ├── newsletter.tsx
+│   ├── promo-section.tsx
+│   └── footer.tsx
+├── lib/
+│   ├── utils.ts            # Utility functions (cn)
+│   └── supabase/
+│       ├── client.ts       # Browser Supabase client
+│       └── server.ts       # Server Supabase client
+├── public/                 # Static assets
+├── package.json
+├── tsconfig.json
+├── next.config.ts
+├── tailwind.config.ts
+└── .env.local              # Environment variables (gitignored)
+```
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+- Node.js 18+
+- npm 9+
+
+### Installation
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# Clone the repository
+git clone https://github.com/your-username/vello-tech.git
+cd vello-tech
+
+# Install dependencies
+npm install
+
+# Copy environment variables
+cp .env.example .env.local
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Environment Variables
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Create a `.env.local` file with the following:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```env
+# Supabase (required for auth)
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 
-## Learn More
+# Optional: Dev redirect for Supabase email auth
+NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL=http://localhost:3000/auth/callback
+```
 
-To learn more about Next.js, take a look at the following resources:
+### Supabase Setup
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. Create a project at [supabase.com](https://supabase.com)
+2. Go to **Authentication → Settings**:
+   - Set **Site URL** to `http://localhost:3000`
+   - Add `http://localhost:3000/auth/callback` to **Redirect URLs**
+3. Copy your project URL and anon key from **Settings → API** into `.env.local`
+4. (Optional) Run this SQL in the SQL Editor to auto-create user profiles:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```sql
+CREATE TABLE public.profiles (
+  id UUID REFERENCES auth.users NOT NULL PRIMARY KEY,
+  full_name TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
 
-## Deploy on Vercel
+CREATE FUNCTION public.handle_new_user()
+RETURNS trigger AS $$
+BEGIN
+  INSERT INTO public.profiles (id, full_name)
+  VALUES (NEW.id, NEW.raw_user_meta_data->>'full_name');
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Development
+
+```bash
+# Start dev server
+npm run dev
+
+# Build for production
+npm run build
+
+# Start production server
+npm run start
+
+# Run linter
+npm run lint
+```
+
+Open [http://localhost:3000](http://localhost:3000) to view the app.
+
+## Deployment
+
+The easiest way to deploy is on [Vercel](https://vercel.com/):
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new)
+
+Or deploy manually:
+
+```bash
+npm run build
+npm run start
+```
+
+## License
+
+MIT © Vello Tech
