@@ -20,7 +20,7 @@ export function Newsletter() {
   }
 
   return (
-    <section className="py-24 lg:py-32 relative overflow-hidden bg-background">
+    <section className="py-16 lg:py-20 relative overflow-hidden bg-background">
       <div className="absolute inset-0 bg-primary/5" />
       <div className="mx-auto max-w-7xl px-4 lg:px-8 relative z-10">
         <motion.div 

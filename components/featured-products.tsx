@@ -250,7 +250,7 @@ export function FeaturedProducts() {
     : products.filter(p => p.badge === activeFilter || (activeFilter === 'Sale' && p.originalPrice))
 
   return (
-    <section id="products" className="py-24 lg:py-32 bg-background relative">
+    <section id="products" className="py-16 lg:py-20 bg-background relative">
       <div className="mx-auto max-w-7xl px-4 lg:px-8 relative z-10">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}

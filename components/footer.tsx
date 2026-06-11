@@ -41,7 +41,7 @@ export function Footer() {
   return (
     <footer id="support" className="bg-background border-t border-border relative overflow-hidden">
       <div className="absolute inset-0 bg-primary/5" />
-      <div className="mx-auto max-w-7xl px-4 lg:px-8 pt-16 lg:pt-24 pb-8 relative z-10">
+      <div className="mx-auto max-w-7xl px-4 lg:px-8 pt-12 lg:pt-16 pb-8 relative z-10">
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-8 lg:gap-12">
           {/* Brand */}
           <div className="col-span-2">

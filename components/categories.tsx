@@ -50,7 +50,7 @@ const categories = [
 
 export function Categories() {
   return (
-    <section id="categories" className="py-24 lg:py-32 bg-secondary/30 relative overflow-hidden">
+    <section id="categories" className="py-16 lg:py-20 bg-secondary/30 relative overflow-hidden">
       {/* Background decoration */}
       <div className="absolute top-0 inset-x-0 h-px bg-primary/20" />
       

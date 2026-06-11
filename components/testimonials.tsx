@@ -49,7 +49,7 @@ const itemVariants = {
 
 export function Testimonials() {
   return (
-    <section className="py-24 lg:py-32 bg-secondary/30 relative overflow-hidden">
+    <section className="py-16 lg:py-20 bg-secondary/30 relative overflow-hidden">
       <div className="absolute inset-0 bg-primary/5" />
       <div className="mx-auto max-w-7xl px-4 lg:px-8 relative z-10">
         <motion.div 
