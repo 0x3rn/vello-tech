@@ -1,6 +1,6 @@
 'use client'
 
-import { Smartphone, Laptop, Headphones, Watch, Camera, Gamepad2 } from 'lucide-react'
+import { Smartphone, Laptop, Headphones, Watch, Camera, Gamepad2, ArrowRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const categories = [
@@ -9,36 +9,42 @@ const categories = [
     icon: Smartphone, 
     count: 124,
     color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
+    hoverColor: 'hover:bg-blue-500/20 hover:border-blue-500/30 hover:shadow-blue-500/10',
   },
   { 
     name: 'Laptops', 
     icon: Laptop, 
     count: 86,
     color: 'bg-purple-500/10 text-purple-600 dark:text-purple-400',
+    hoverColor: 'hover:bg-purple-500/20 hover:border-purple-500/30 hover:shadow-purple-500/10',
   },
   { 
     name: 'Audio', 
     icon: Headphones, 
     count: 215,
     color: 'bg-orange-500/10 text-orange-600 dark:text-orange-400',
+    hoverColor: 'hover:bg-orange-500/20 hover:border-orange-500/30 hover:shadow-orange-500/10',
   },
   { 
     name: 'Wearables', 
     icon: Watch, 
     count: 98,
     color: 'bg-teal-500/10 text-teal-600 dark:text-teal-400',
+    hoverColor: 'hover:bg-teal-500/20 hover:border-teal-500/30 hover:shadow-teal-500/10',
   },
   { 
     name: 'Cameras', 
     icon: Camera, 
     count: 67,
     color: 'bg-red-500/10 text-red-600 dark:text-red-400',
+    hoverColor: 'hover:bg-red-500/20 hover:border-red-500/30 hover:shadow-red-500/10',
   },
   { 
     name: 'Gaming', 
     icon: Gamepad2, 
     count: 143,
     color: 'bg-green-500/10 text-green-600 dark:text-green-400',
+    hoverColor: 'hover:bg-green-500/20 hover:border-green-500/30 hover:shadow-green-500/10',
   },
 ]
 
@@ -66,20 +72,25 @@ export function Categories() {
                 key={category.name}
                 href={`#${category.name.toLowerCase()}`}
                 className={cn(
-                  'block bg-card/80 backdrop-blur-sm rounded-3xl sm:rounded-[2rem] p-4 sm:p-6 border border-white/10 dark:border-white/5',
-                  'hover:shadow-lg transition-shadow duration-200'
+                  'group relative block bg-card/80 backdrop-blur-sm rounded-3xl sm:rounded-[2rem] p-4 sm:p-6 border border-white/10 dark:border-white/5 transition-all duration-300',
+                  'hover:shadow-lg',
+                  category.hoverColor
                 )}
               >
                 <div className={cn(
-                  'w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl flex items-center justify-center mb-4 sm:mb-6 shadow-inner',
+                  'w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl flex items-center justify-center mb-4 sm:mb-6 transition-colors duration-300 shadow-inner',
                   category.color
                 )}>
                   <Icon className="h-6 w-6 sm:h-8 sm:w-8" />
                 </div>
-                <h3 className="font-bold text-foreground mb-1 sm:mb-1.5 text-base sm:text-lg">
+                <h3 className="font-bold text-foreground mb-1 sm:mb-1.5 transition-colors duration-200 group-hover:text-primary text-base sm:text-lg">
                   {category.name}
                 </h3>
                 <p className="text-sm font-medium text-muted-foreground">{category.count} Products</p>
+                
+                <div className="absolute bottom-6 right-6 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center opacity-0 -translate-x-4 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0">
+                  <ArrowRight className="h-4 w-4 text-primary" />
+                </div>
               </a>
             )
           })}
