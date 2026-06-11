@@ -2,7 +2,6 @@
 
 import { Smartphone, Laptop, Headphones, Watch, Camera, Gamepad2, ArrowRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { motion } from 'framer-motion'
 
 const categories = [
   { 
@@ -49,74 +48,42 @@ const categories = [
   },
 ]
 
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1
-    }
-  }
-}
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.5, ease: 'easeOut' }
-  }
-}
-
 export function Categories() {
   return (
-    <section id="categories" className="py-24 lg:py-32 bg-secondary/30 relative overflow-hidden">
+    <section id="categories" className="py-16 lg:py-20 bg-secondary/30 relative overflow-hidden">
       {/* Background decoration */}
       <div className="absolute top-0 inset-x-0 h-px bg-primary/20" />
       
       <div className="mx-auto max-w-7xl px-4 lg:px-8 relative z-10">
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-16"
-        >
+        <div className="text-center mb-16">
           <h2 className="text-3xl lg:text-5xl font-extrabold text-foreground tracking-tight">
             Shop by <span className="text-primary">Category</span>
           </h2>
           <p className="mt-6 text-muted-foreground max-w-2xl mx-auto text-lg">
             Browse our extensive collection organized by category for easy navigation and discovering exactly what you need.
           </p>
-        </motion.div>
+        </div>
 
-        <motion.div 
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-100px" }}
-          className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6"
-        >
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
           {categories.map((category) => {
             const Icon = category.icon
             return (
-              <motion.a
-                variants={itemVariants}
+              <a
                 key={category.name}
                 href={`#${category.name.toLowerCase()}`}
                 className={cn(
-                  'group relative bg-card/80 backdrop-blur-sm rounded-[2rem] p-6 border border-white/10 dark:border-white/5 transition-all duration-300',
+                  'group relative block bg-card/80 backdrop-blur-sm rounded-3xl sm:rounded-[2rem] p-4 sm:p-6 border border-white/10 dark:border-white/5 transition-all duration-300',
                   'hover:shadow-lg',
                   category.hoverColor
                 )}
               >
                 <div className={cn(
-                  'w-16 h-16 rounded-2xl flex items-center justify-center mb-6 transition-colors duration-300 shadow-inner',
+                  'w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl flex items-center justify-center mb-4 sm:mb-6 transition-colors duration-300 shadow-inner',
                   category.color
                 )}>
-                  <Icon className="h-8 w-8" />
+                  <Icon className="h-6 w-6 sm:h-8 sm:w-8" />
                 </div>
-                <h3 className="font-bold text-foreground mb-1.5 transition-colors duration-200 group-hover:text-primary text-lg">
+                <h3 className="font-bold text-foreground mb-1 sm:mb-1.5 transition-colors duration-200 group-hover:text-primary text-base sm:text-lg">
                   {category.name}
                 </h3>
                 <p className="text-sm font-medium text-muted-foreground">{category.count} Products</p>
@@ -124,10 +91,10 @@ export function Categories() {
                 <div className="absolute bottom-6 right-6 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center opacity-0 -translate-x-4 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0">
                   <ArrowRight className="h-4 w-4 text-primary" />
                 </div>
-              </motion.a>
+              </a>
             )
           })}
-        </motion.div>
+        </div>
       </div>
     </section>
   )

@@ -61,7 +61,7 @@ export function PromoSection() {
           </div>
 
           {/* Countdown Block */}
-          <div className="flex-shrink-0 bg-background border border-border p-8 text-center min-w-[320px]">
+          <div className="flex-shrink-0 w-full lg:w-auto lg:min-w-[320px] bg-background border border-border p-6 sm:p-8 text-center rounded-2xl lg:rounded-none">
             <div className="flex items-center justify-center gap-2 text-muted-foreground mb-6">
               <Clock className="h-4 w-4" />
               <span className="text-sm font-medium uppercase tracking-wider">Offer Ends In</span>
@@ -75,7 +75,7 @@ export function PromoSection() {
                 { value: String(timeLeft.seconds).padStart(2, '0'), label: 'Sec' },
               ].map((item, index) => (
                 <div key={index} className="flex flex-col items-center">
-                  <span className="text-3xl md:text-4xl font-light text-foreground tabular-nums tracking-tight">
+                  <span className="text-2xl sm:text-3xl md:text-4xl font-light text-foreground tabular-nums tracking-tight">
                     {item.value}
                   </span>
                   <span className="text-xs text-muted-foreground uppercase tracking-widest mt-2">

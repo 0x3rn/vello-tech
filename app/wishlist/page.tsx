@@ -74,7 +74,7 @@ export default function WishlistPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="pt-24 pb-20">
+      <div className="pt-16 pb-20">
         <div className="mx-auto max-w-7xl px-4 lg:px-8">
           {/* Header */}
           <Link
@@ -114,14 +114,14 @@ export default function WishlistPage() {
               </Button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
               {items.map((item) => (
                 <div
                   key={item.id}
-                  className="group bg-card rounded-2xl border border-border overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
+                  className="group bg-card rounded-xl border border-border overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
                 >
                   {/* Image */}
-                  <div className="relative aspect-square bg-secondary p-6 overflow-hidden">
+                  <div className="relative aspect-square bg-secondary p-4 sm:p-6 overflow-hidden">
                     <Link href={`/products/${item.id}`}>
                       <div
                         className={cn(
@@ -129,7 +129,7 @@ export default function WishlistPage() {
                           item.color
                         )}
                       >
-                        <div className="w-24 h-24 bg-foreground/5 rounded-2xl transition-transform duration-300 group-hover:rotate-3" />
+                        <div className="w-20 h-20 sm:w-24 sm:h-24 bg-foreground/5 rounded-2xl transition-transform duration-300 group-hover:rotate-3" />
                       </div>
                     </Link>
 

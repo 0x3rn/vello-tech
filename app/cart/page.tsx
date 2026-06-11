@@ -78,7 +78,7 @@ export default function CartPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="pt-24 pb-20">
+      <div className="pt-16 pb-20">
         <div className="mx-auto max-w-7xl px-4 lg:px-8">
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
@@ -123,12 +123,12 @@ export default function CartPage() {
                 {cart.map((item) => (
                   <div
                     key={item.id}
-                    className="bg-card border border-border rounded-2xl p-4 lg:p-6 flex gap-4 transition-all duration-200 hover:shadow-md"
+                    className="bg-card border border-border rounded-xl p-4 sm:p-5 flex gap-4 transition-all duration-200 hover:shadow-md"
                   >
                     {/* Product Image */}
                     <div
                       className={cn(
-                        "w-24 h-24 lg:w-32 lg:h-32 rounded-xl flex-shrink-0 flex items-center justify-center",
+                        "w-20 h-20 sm:w-24 sm:h-24 lg:w-32 lg:h-32 rounded-lg flex-shrink-0 flex items-center justify-center",
                         item.color
                       )}
                     >
@@ -187,7 +187,7 @@ export default function CartPage() {
 
               {/* Order Summary */}
               <div className="lg:col-span-1">
-                <div className="bg-card border border-border rounded-2xl p-6 sticky top-24">
+                <div className="bg-card border border-border rounded-xl p-5 sticky top-24">
                   <h2 className="text-xl font-bold text-foreground mb-6">
                     Order Summary
                   </h2>
