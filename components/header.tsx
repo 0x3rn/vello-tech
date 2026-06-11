@@ -52,7 +52,7 @@ export function Header() {
   return (
     <>
       {/* Top Bar */}
-      <div className="bg-foreground text-background text-sm hidden lg:block">
+      <div className="relative z-50 bg-foreground text-background text-sm hidden lg:block">
         <div className="mx-auto max-w-7xl px-4 lg:px-8 py-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-6">
@@ -77,13 +77,13 @@ export function Header() {
       {/* Main Header */}
       <header 
         className={cn(
-          'fixed left-0 right-0 z-50 transition-all duration-300',
+          'sticky top-0 z-40 w-full transition-all duration-300',
           isScrolled 
-            ? 'top-0 bg-background/95 backdrop-blur-md shadow-sm' 
-            : 'top-0 lg:top-10 bg-background/80 backdrop-blur-md',
+            ? 'bg-background/95 backdrop-blur-md shadow-sm py-2' 
+            : 'bg-background/80 backdrop-blur-md py-4',
         )}
       >
-        <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 lg:px-8">
+        <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 lg:px-8">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3 group">
             <div className="flex items-center justify-center w-10 h-10 bg-primary rounded-xl transition-transform duration-300 group-hover:scale-105">

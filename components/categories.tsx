@@ -2,94 +2,132 @@
 
 import { Smartphone, Laptop, Headphones, Watch, Camera, Gamepad2, ArrowRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { motion } from 'framer-motion'
 
 const categories = [
   { 
     name: 'Smartphones', 
     icon: Smartphone, 
     count: 124,
-    color: 'bg-blue-500/10 text-blue-600',
-    hoverColor: 'hover:bg-blue-500/20',
+    color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
+    hoverColor: 'hover:bg-blue-500/20 hover:border-blue-500/30 hover:shadow-blue-500/10',
   },
   { 
     name: 'Laptops', 
     icon: Laptop, 
     count: 86,
-    color: 'bg-purple-500/10 text-purple-600',
-    hoverColor: 'hover:bg-purple-500/20',
+    color: 'bg-purple-500/10 text-purple-600 dark:text-purple-400',
+    hoverColor: 'hover:bg-purple-500/20 hover:border-purple-500/30 hover:shadow-purple-500/10',
   },
   { 
     name: 'Audio', 
     icon: Headphones, 
     count: 215,
-    color: 'bg-orange-500/10 text-orange-600',
-    hoverColor: 'hover:bg-orange-500/20',
+    color: 'bg-orange-500/10 text-orange-600 dark:text-orange-400',
+    hoverColor: 'hover:bg-orange-500/20 hover:border-orange-500/30 hover:shadow-orange-500/10',
   },
   { 
     name: 'Wearables', 
     icon: Watch, 
     count: 98,
-    color: 'bg-teal-500/10 text-teal-600',
-    hoverColor: 'hover:bg-teal-500/20',
+    color: 'bg-teal-500/10 text-teal-600 dark:text-teal-400',
+    hoverColor: 'hover:bg-teal-500/20 hover:border-teal-500/30 hover:shadow-teal-500/10',
   },
   { 
     name: 'Cameras', 
     icon: Camera, 
     count: 67,
-    color: 'bg-red-500/10 text-red-600',
-    hoverColor: 'hover:bg-red-500/20',
+    color: 'bg-red-500/10 text-red-600 dark:text-red-400',
+    hoverColor: 'hover:bg-red-500/20 hover:border-red-500/30 hover:shadow-red-500/10',
   },
   { 
     name: 'Gaming', 
     icon: Gamepad2, 
     count: 143,
-    color: 'bg-green-500/10 text-green-600',
-    hoverColor: 'hover:bg-green-500/20',
+    color: 'bg-green-500/10 text-green-600 dark:text-green-400',
+    hoverColor: 'hover:bg-green-500/20 hover:border-green-500/30 hover:shadow-green-500/10',
   },
 ]
 
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1
+    }
+  }
+}
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.5, ease: 'easeOut' }
+  }
+}
+
 export function Categories() {
   return (
-    <section id="categories" className="py-20 lg:py-28 bg-secondary/50">
-      <div className="mx-auto max-w-7xl px-4 lg:px-8">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl lg:text-4xl font-bold text-foreground tracking-tight">
-            Shop by Category
+    <section id="categories" className="py-24 lg:py-32 bg-secondary/30 relative overflow-hidden">
+      {/* Background decoration */}
+      <div className="absolute top-0 inset-x-0 h-px bg-primary/20" />
+      
+      <div className="mx-auto max-w-7xl px-4 lg:px-8 relative z-10">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-16"
+        >
+          <h2 className="text-3xl lg:text-5xl font-extrabold text-foreground tracking-tight">
+            Shop by <span className="text-primary">Category</span>
           </h2>
-          <p className="mt-4 text-muted-foreground max-w-2xl mx-auto">
-            Browse our extensive collection organized by category for easy navigation.
+          <p className="mt-6 text-muted-foreground max-w-2xl mx-auto text-lg">
+            Browse our extensive collection organized by category for easy navigation and discovering exactly what you need.
           </p>
-        </div>
+        </motion.div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <motion.div 
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-100px" }}
+          className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6"
+        >
           {categories.map((category) => {
             const Icon = category.icon
             return (
-              <a
+              <motion.a
+                variants={itemVariants}
                 key={category.name}
                 href={`#${category.name.toLowerCase()}`}
                 className={cn(
-                  'group relative bg-card rounded-2xl p-6 border border-border transition-all duration-300',
-                  'hover:shadow-lg hover:-translate-y-1',
+                  'group relative bg-card/80 backdrop-blur-sm rounded-[2rem] p-6 border border-white/10 dark:border-white/5 transition-all duration-300',
+                  'hover:shadow-lg',
                   category.hoverColor
                 )}
               >
                 <div className={cn(
-                  'w-14 h-14 rounded-xl flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-110',
+                  'w-16 h-16 rounded-2xl flex items-center justify-center mb-6 transition-colors duration-300 shadow-inner',
                   category.color
                 )}>
-                  <Icon className="h-7 w-7" />
+                  <Icon className="h-8 w-8" />
                 </div>
-                <h3 className="font-semibold text-foreground mb-1 transition-colors duration-200 group-hover:text-primary">
+                <h3 className="font-bold text-foreground mb-1.5 transition-colors duration-200 group-hover:text-primary text-lg">
                   {category.name}
                 </h3>
-                <p className="text-sm text-muted-foreground">{category.count} Products</p>
+                <p className="text-sm font-medium text-muted-foreground">{category.count} Products</p>
                 
-                <ArrowRight className="absolute bottom-6 right-6 h-5 w-5 text-muted-foreground opacity-0 -translate-x-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0 group-hover:text-primary" />
-              </a>
+                <div className="absolute bottom-6 right-6 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center opacity-0 -translate-x-4 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0">
+                  <ArrowRight className="h-4 w-4 text-primary" />
+                </div>
+              </motion.a>
             )
           })}
-        </div>
+        </motion.div>
       </div>
     </section>
   )

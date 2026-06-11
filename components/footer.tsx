@@ -39,8 +39,9 @@ const socialLinks = [
 
 export function Footer() {
   return (
-    <footer id="support" className="bg-card border-t border-border">
-      <div className="mx-auto max-w-7xl px-4 lg:px-8 py-12 lg:py-16">
+    <footer id="support" className="bg-background border-t border-border relative overflow-hidden">
+      <div className="absolute inset-0 bg-primary/5" />
+      <div className="mx-auto max-w-7xl px-4 lg:px-8 pt-16 lg:pt-24 pb-8 relative z-10">
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-8 lg:gap-12">
           {/* Brand */}
           <div className="col-span-2">
@@ -131,7 +132,7 @@ export function Footer() {
         </div>
 
         {/* Bottom */}
-        <div className="mt-12 pt-8 border-t border-border flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="mt-16 pt-8 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-6">
           <p className="text-sm text-muted-foreground">
             &copy; {new Date().getFullYear()} Vello Tech. All rights reserved.
           </p>
@@ -142,7 +143,7 @@ export function Footer() {
               <a
                 key={social.name}
                 href={social.href}
-                className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-primary transition-all duration-300 hover:scale-110 hover:text-primary-foreground"
+                className="w-12 h-12 rounded-full bg-secondary/50 backdrop-blur-sm border border-white/5 flex items-center justify-center text-muted-foreground hover:text-white hover:bg-primary hover:border-primary transition-all duration-300 hover:scale-110 hover:shadow-lg hover:shadow-primary/20"
                 aria-label={social.name}
               >
                 <social.icon className="h-5 w-5" />

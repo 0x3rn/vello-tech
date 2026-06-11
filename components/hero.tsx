@@ -4,15 +4,15 @@ import { useState, useEffect, useCallback } from 'react'
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { motion, AnimatePresence } from 'framer-motion'
 
 const slides = [
   {
     id: 1,
     title: 'ProMax Smartphone X1',
     subtitle: 'Experience the Future',
-    description: 'Revolutionary camera system with AI-powered features. The most advanced smartphone we have ever created.',
+    description: 'Revolutionary camera system with advanced features. The most capable smartphone we have ever created.',
     price: '$1,299',
-    image: '/images/hero-smartphone.jpg',
     badge: 'New Arrival',
   },
   {
@@ -21,7 +21,6 @@ const slides = [
     subtitle: 'Power Meets Portability',
     description: 'Unmatched performance in an incredibly thin design. Built for creators and professionals.',
     price: '$2,499',
-    image: '/images/hero-laptop.jpg',
     badge: 'Best Seller',
   },
   {
@@ -30,141 +29,130 @@ const slides = [
     subtitle: 'Immersive Audio',
     description: 'Premium active noise cancellation with spatial audio. 40-hour battery life.',
     price: '$349',
-    image: '/images/hero-headphones.jpg',
     badge: 'Featured',
   },
 ]
 
 export function Hero() {
   const [currentSlide, setCurrentSlide] = useState(0)
-  const [isAnimating, setIsAnimating] = useState(false)
-
-  const goToSlide = useCallback((index: number) => {
-    if (isAnimating) return
-    setIsAnimating(true)
-    setCurrentSlide(index)
-    setTimeout(() => setIsAnimating(false), 600)
-  }, [isAnimating])
 
   const nextSlide = useCallback(() => {
-    goToSlide((currentSlide + 1) % slides.length)
-  }, [currentSlide, goToSlide])
+    setCurrentSlide((prev) => (prev + 1) % slides.length)
+  }, [])
 
   const prevSlide = useCallback(() => {
-    goToSlide((currentSlide - 1 + slides.length) % slides.length)
-  }, [currentSlide, goToSlide])
+    setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length)
+  }, [])
 
   useEffect(() => {
-    const timer = setInterval(nextSlide, 6000)
+    const timer = setInterval(nextSlide, 8000)
     return () => clearInterval(timer)
   }, [nextSlide])
 
-  const slide = slides[currentSlide]
-
   return (
-    <section className="relative h-screen min-h-[700px] max-h-[900px] w-full overflow-hidden bg-secondary">
-      {/* Background Gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-foreground via-foreground/90 to-primary/40" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary/20 via-transparent to-transparent" />
+    <section className="relative min-h-[700px] h-[85vh] max-h-[900px] w-full overflow-hidden bg-background border-b border-border">
+      <div className="relative h-full mx-auto max-w-7xl px-16 md:px-24 lg:px-32 flex items-center pt-16 pb-32">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center w-full z-20">
+          {/* Text Content */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentSlide}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.5 }}
+              className="flex flex-col items-center lg:items-start text-center lg:text-left"
+            >
+              {/* Badge */}
+              <div className="inline-block px-4 py-2 bg-secondary text-secondary-foreground border border-border text-sm font-semibold rounded-full mb-8">
+                {slides[currentSlide].badge}
+              </div>
 
-      {/* Content */}
-      <div className="relative h-full mx-auto max-w-7xl px-4 lg:px-8 flex items-center">
-        <div className="max-w-2xl">
-          {/* Badge */}
-          <div
-            className={cn(
-              'inline-block px-4 py-2 bg-primary text-primary-foreground text-sm font-medium rounded-full mb-6 transition-all duration-500 ease-out',
-              isAnimating ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'
-            )}
-          >
-            {slide.badge}
-          </div>
+              {/* Subtitle */}
+              <p className="text-muted-foreground text-lg md:text-xl font-medium mb-4 uppercase tracking-widest">
+                {slides[currentSlide].subtitle}
+              </p>
 
-          {/* Subtitle */}
-          <p
-            className={cn(
-              'text-primary-foreground/80 text-lg md:text-xl font-medium mb-2 transition-all duration-500 ease-out delay-75',
-              isAnimating ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'
-            )}
-          >
-            {slide.subtitle}
-          </p>
+              {/* Title */}
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-foreground tracking-tight leading-tight mb-6">
+                {slides[currentSlide].title}
+              </h1>
 
-          {/* Title */}
-          <h1
-            className={cn(
-              'text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-primary-foreground tracking-tight leading-tight mb-6 transition-all duration-500 ease-out delay-100',
-              isAnimating ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'
-            )}
-          >
-            {slide.title}
-          </h1>
+              {/* Description */}
+              <p className="text-lg text-muted-foreground max-w-lg mb-8 leading-relaxed">
+                {slides[currentSlide].description}
+              </p>
 
-          {/* Description */}
-          <p
-            className={cn(
-              'text-lg text-primary-foreground/80 max-w-lg mb-8 leading-relaxed transition-all duration-500 ease-out delay-150',
-              isAnimating ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'
-            )}
-          >
-            {slide.description}
-          </p>
+              {/* Price and CTA */}
+              <div className="flex flex-col sm:flex-row items-center lg:items-start gap-6">
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1 uppercase tracking-wider">Starting from</p>
+                  <p className="text-3xl font-bold text-foreground">{slides[currentSlide].price}</p>
+                </div>
+                <div className="flex gap-4 sm:ml-4">
+                  <Button size="lg" className="rounded-none transition-all duration-300 hover:opacity-90">
+                    Shop Now
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                  <Button size="lg" variant="outline" className="rounded-none transition-all duration-300">
+                    Learn More
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          </AnimatePresence>
 
-          {/* Price and CTA */}
-          <div
-            className={cn(
-              'flex flex-col sm:flex-row items-start sm:items-center gap-6 transition-all duration-500 ease-out delay-200',
-              isAnimating ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'
-            )}
-          >
-            <div>
-              <p className="text-sm text-primary-foreground/60 mb-1">Starting from</p>
-              <p className="text-3xl font-bold text-primary-foreground">{slide.price}</p>
-            </div>
-            <div className="flex gap-4">
-              <Button size="lg" className="group transition-transform duration-300 hover:scale-105">
-                Shop Now
-                <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
-              </Button>
-              <Button size="lg" variant="outline" className="bg-primary-foreground/10 border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/20 transition-all duration-300">
-                Learn More
-              </Button>
-            </div>
+          {/* Placeholder Image Block */}
+          <div className="hidden lg:block w-full z-20">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentSlide}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 1.05 }}
+                transition={{ duration: 0.5 }}
+                className="relative w-full aspect-square max-h-[500px] bg-secondary border border-border rounded-3xl flex items-center justify-center shadow-lg"
+              >
+                <div className="text-muted-foreground/50 flex flex-col items-center">
+                  <span className="text-lg font-medium tracking-widest uppercase">Product Image</span>
+                </div>
+              </motion.div>
+            </AnimatePresence>
           </div>
         </div>
       </div>
 
       {/* Navigation Arrows */}
-      <div className="absolute left-4 lg:left-8 top-1/2 -translate-y-1/2 z-10">
+      <div className="absolute left-4 md:left-8 lg:left-12 top-1/2 -translate-y-1/2 z-30">
         <button
           onClick={prevSlide}
-          className="w-12 h-12 rounded-full bg-primary-foreground/10 backdrop-blur-sm border border-primary-foreground/20 flex items-center justify-center text-primary-foreground transition-all duration-300 hover:bg-primary-foreground/20 hover:scale-110"
+          className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
           aria-label="Previous slide"
         >
-          <ChevronLeft className="h-6 w-6" />
+          <ChevronLeft className="h-6 w-6 md:h-8 md:w-8" />
         </button>
       </div>
-      <div className="absolute right-4 lg:right-8 top-1/2 -translate-y-1/2 z-10">
+      <div className="absolute right-4 md:right-8 lg:right-12 top-1/2 -translate-y-1/2 z-30">
         <button
           onClick={nextSlide}
-          className="w-12 h-12 rounded-full bg-primary-foreground/10 backdrop-blur-sm border border-primary-foreground/20 flex items-center justify-center text-primary-foreground transition-all duration-300 hover:bg-primary-foreground/20 hover:scale-110"
+          className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
           aria-label="Next slide"
         >
-          <ChevronRight className="h-6 w-6" />
+          <ChevronRight className="h-6 w-6 md:h-8 md:w-8" />
         </button>
       </div>
 
       {/* Slide Indicators */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-3 z-10">
+      <div className="absolute bottom-24 left-1/2 -translate-x-1/2 flex items-center gap-3 z-30">
         {slides.map((_, index) => (
           <button
             key={index}
-            onClick={() => goToSlide(index)}
+            onClick={() => setCurrentSlide(index)}
             className={cn(
-              'h-2 rounded-full transition-all duration-500',
+              'h-1.5 rounded-full transition-all duration-500',
               index === currentSlide 
-                ? 'w-8 bg-primary-foreground' 
-                : 'w-2 bg-primary-foreground/40 hover:bg-primary-foreground/60'
+                ? 'w-10 bg-foreground' 
+                : 'w-3 bg-muted hover:bg-muted-foreground'
             )}
             aria-label={`Go to slide ${index + 1}`}
           />
@@ -172,22 +160,20 @@ export function Hero() {
       </div>
 
       {/* Stats Bar */}
-      <div className="absolute bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t border-border">
+      <div className="absolute bottom-0 left-0 right-0 bg-background border-t border-border z-30">
         <div className="mx-auto max-w-7xl px-4 lg:px-8 py-4">
-          <div className="flex items-center justify-center md:justify-between gap-8 flex-wrap">
-            <div className="flex items-center gap-8 md:gap-12">
-              {[
-                { value: '50K+', label: 'Happy Customers' },
-                { value: '4.9/5', label: 'Average Rating' },
-                { value: '24/7', label: 'Support' },
-                { value: '2 Year', label: 'Warranty' },
-              ].map((stat, index) => (
-                <div key={index} className="text-center">
-                  <div className="text-xl font-bold text-foreground">{stat.value}</div>
-                  <div className="text-xs text-muted-foreground">{stat.label}</div>
-                </div>
-              ))}
-            </div>
+          <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-4">
+            {[
+              { value: '50K+', label: 'Happy Customers' },
+              { value: '4.9/5', label: 'Average Rating' },
+              { value: '24/7', label: 'Support' },
+              { value: '2 Year', label: 'Warranty' },
+            ].map((stat, index) => (
+              <div key={index} className="text-center">
+                <div className="text-base font-bold text-foreground">{stat.value}</div>
+                <div className="text-[10px] font-medium text-muted-foreground tracking-widest uppercase mt-0.5">{stat.label}</div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
