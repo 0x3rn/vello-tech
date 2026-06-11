@@ -71,7 +71,7 @@ export default function AccountPage() {
           </Link>
 
           {/* Profile Header */}
-          <div className="bg-card border border-border rounded-2xl p-6 lg:p-8 mb-6">
+          <div className="bg-card border border-border rounded-xl p-5 sm:p-6 mb-6">
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
               <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
                 <span className="text-primary-foreground font-bold text-2xl">JD</span>
@@ -101,7 +101,7 @@ export default function AccountPage() {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             {stats.map((stat) => (
               <Card key={stat.label} className="bg-card border-border transition-all duration-200 hover:shadow-md">
-                <CardContent className="p-6">
+                <CardContent className="p-4 sm:p-5">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
                       <stat.icon className="h-5 w-5 text-primary" />
@@ -127,7 +127,7 @@ export default function AccountPage() {
                   <Link
                     key={link.label}
                     href={link.href}
-                    className="group bg-card border border-border rounded-2xl p-6 transition-all duration-200 hover:shadow-md hover:-translate-y-1"
+                    className="group bg-card border border-border rounded-xl p-4 sm:p-5 transition-all duration-200 hover:shadow-md hover:-translate-y-1"
                   >
                     <div className="flex items-center gap-4">
                       <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${link.color}`}>
@@ -166,7 +166,7 @@ export default function AccountPage() {
                   <Link
                     key={order.id}
                     href={`/account/orders/${order.id}`}
-                    className="block bg-card border border-border rounded-xl p-4 transition-all duration-200 hover:shadow-md hover:-translate-y-1"
+                    className="block bg-card border border-border rounded-lg p-3 sm:p-4 transition-all duration-200 hover:shadow-md hover:-translate-y-1"
                   >
                     <div className="flex items-center justify-between mb-2">
                       <span className="font-medium text-foreground text-sm">

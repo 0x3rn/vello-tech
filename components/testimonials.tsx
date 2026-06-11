@@ -43,7 +43,7 @@ const itemVariants = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.6, ease: "easeOut" }
+    transition: { duration: 0.6, ease: 'easeOut' as const }
   }
 }
 
@@ -77,7 +77,7 @@ export function Testimonials() {
           {testimonials.map((testimonial, index) => (
             <motion.div variants={itemVariants} key={index}>
               <Card 
-                className="bg-card/80 backdrop-blur-sm border-white/5 transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 group rounded-3xl"
+                className="bg-card/80 backdrop-blur-sm border-white/5 transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 group rounded-2xl md:rounded-3xl"
               >
                 <CardContent className="p-8 relative h-full flex flex-col">
                   {/* Quote icon */}
