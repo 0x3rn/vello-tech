@@ -120,7 +120,7 @@ export function Categories() {
                 </h3>
                 <p className="text-sm font-medium text-muted-foreground">{category.count} Products</p>
                 
-                <div className="absolute bottom-6 right-6 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center opacity-0 -translate-x-4 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0">
+                <div className="absolute bottom-6 right-6 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center opacity-0 transition-opacity duration-300 group-hover:opacity-100">
                   <ArrowRight className="h-4 w-4 text-primary" />
                 </div>
               </motion.a>

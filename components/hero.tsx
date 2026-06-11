@@ -50,8 +50,8 @@ export function Hero() {
   }, [nextSlide])
 
   return (
-    <section className="relative min-h-[700px] h-[85vh] max-h-[900px] w-full overflow-hidden bg-background border-b border-border">
-      <div className="relative h-full mx-auto max-w-7xl px-6 sm:px-12 md:px-16 lg:px-24 flex items-center pt-20 lg:pt-32 pb-24 lg:pb-32">
+    <section className="relative w-full overflow-hidden bg-background border-b border-border">
+      <div className="relative h-full mx-auto max-w-7xl px-6 sm:px-12 md:px-16 lg:px-24 flex items-center pt-16 lg:pt-24 pb-20 lg:pb-28">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center w-full z-20 mt-4 lg:mt-0">
           {/* Text Content */}
           <AnimatePresence mode="wait">

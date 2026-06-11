@@ -1,6 +1,9 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { Truck, Shield, Headphones, RefreshCw } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+
 const features = [
   {
     icon: Truck,
@@ -25,24 +28,68 @@ const features = [
 ]
 
 export function Features() {
+  const [page, setPage] = useState(0)
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (window.innerWidth < 640) {
+        setPage((p) => (p === 0 ? 1 : 0))
+      }
+    }, 4000)
+
+    const handleResize = () => {
+      if (window.innerWidth >= 640) setPage(0)
+    }
+
+    window.addEventListener('resize', handleResize)
+    return () => {
+      clearInterval(timer)
+      window.removeEventListener('resize', handleResize)
+    }
+  }, [])
+
   return (
-    <section className="py-12 border-y border-border bg-background">
-      <div className="mx-auto max-w-7xl">
-        <div className="flex sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8 overflow-x-auto snap-x snap-mandatory scrollbar-hide px-4 lg:px-8 pb-4 sm:pb-0">
+    <section className="py-8 md:py-12 border-y border-border bg-background overflow-hidden">
+      <div className="mx-auto max-w-7xl px-4 lg:px-8">
+        {/* Desktop View */}
+        <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
           {features.map((feature) => (
-            <div 
-              key={feature.title} 
-              className="flex items-center gap-4 flex-shrink-0 w-[75vw] sm:w-auto snap-start bg-secondary/10 sm:bg-transparent p-4 rounded-xl sm:p-0 sm:rounded-none"
-            >
-              <div className="w-10 h-10 flex items-center justify-center flex-shrink-0 text-primary bg-background rounded-full sm:bg-transparent">
-                <feature.icon className="h-5 w-5 sm:h-6 sm:w-6" />
+            <div key={feature.title} className="flex items-center gap-4">
+              <div className="w-10 h-10 flex items-center justify-center flex-shrink-0 text-primary">
+                <feature.icon className="h-6 w-6" />
               </div>
               <div>
-                <h3 className="font-semibold text-foreground text-sm sm:text-base">{feature.title}</h3>
-                <p className="text-xs sm:text-sm text-muted-foreground">{feature.description}</p>
+                <h3 className="font-semibold text-foreground text-base">{feature.title}</h3>
+                <p className="text-sm text-muted-foreground">{feature.description}</p>
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Mobile View with Transition */}
+        <div className="sm:hidden relative h-16 w-full flex justify-center">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={page}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+              className="absolute inset-0 flex items-center justify-between gap-2"
+            >
+              {features.slice(page * 2, page * 2 + 2).map((feature) => (
+                <div key={feature.title} className="flex items-center gap-3 w-1/2">
+                  <div className="w-8 h-8 flex items-center justify-center flex-shrink-0 text-primary bg-primary/5 rounded-full">
+                    <feature.icon className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="font-semibold text-foreground text-sm truncate">{feature.title}</h3>
+                    <p className="text-xs text-muted-foreground truncate">{feature.description}</p>
+                  </div>
+                </div>
+              ))}
+            </motion.div>
+          </AnimatePresence>
         </div>
       </div>
     </section>

@@ -74,7 +74,7 @@ export default function WishlistPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="pt-24 pb-20">
+      <div className="pt-16 pb-20">
         <div className="mx-auto max-w-7xl px-4 lg:px-8">
           {/* Header */}
           <Link
@@ -114,7 +114,7 @@ export default function WishlistPage() {
               </Button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
               {items.map((item) => (
                 <div
                   key={item.id}

@@ -28,7 +28,7 @@ export function Newsletter() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.7 }}
-          className="bg-card/40 backdrop-blur-xl border border-border shadow-md rounded-[3rem] p-8 lg:p-20 text-center relative overflow-hidden"
+          className="bg-card/40 backdrop-blur-xl border border-border shadow-md rounded-2xl p-8 lg:p-16 text-center relative overflow-hidden"
         >
           {/* Decorative elements */}
 
