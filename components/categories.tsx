@@ -105,18 +105,18 @@ export function Categories() {
                 key={category.name}
                 href={`#${category.name.toLowerCase()}`}
                 className={cn(
-                  'group relative bg-card/80 backdrop-blur-sm rounded-[2rem] p-6 border border-white/10 dark:border-white/5 transition-all duration-300',
+                  'group relative bg-card/80 backdrop-blur-sm rounded-3xl sm:rounded-[2rem] p-4 sm:p-6 border border-white/10 dark:border-white/5 transition-all duration-300',
                   'hover:shadow-lg',
                   category.hoverColor
                 )}
               >
                 <div className={cn(
-                  'w-16 h-16 rounded-2xl flex items-center justify-center mb-6 transition-colors duration-300 shadow-inner',
+                  'w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl flex items-center justify-center mb-4 sm:mb-6 transition-colors duration-300 shadow-inner',
                   category.color
                 )}>
-                  <Icon className="h-8 w-8" />
+                  <Icon className="h-6 w-6 sm:h-8 sm:w-8" />
                 </div>
-                <h3 className="font-bold text-foreground mb-1.5 transition-colors duration-200 group-hover:text-primary text-lg">
+                <h3 className="font-bold text-foreground mb-1 sm:mb-1.5 transition-colors duration-200 group-hover:text-primary text-base sm:text-lg">
                   {category.name}
                 </h3>
                 <p className="text-sm font-medium text-muted-foreground">{category.count} Products</p>

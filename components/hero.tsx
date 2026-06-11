@@ -51,8 +51,8 @@ export function Hero() {
 
   return (
     <section className="relative min-h-[700px] h-[85vh] max-h-[900px] w-full overflow-hidden bg-background border-b border-border">
-      <div className="relative h-full mx-auto max-w-7xl px-16 md:px-24 lg:px-32 flex items-center pt-16 pb-32">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center w-full z-20">
+      <div className="relative h-full mx-auto max-w-7xl px-6 sm:px-12 md:px-16 lg:px-24 flex items-center pt-20 lg:pt-32 pb-24 lg:pb-32">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center w-full z-20 mt-4 lg:mt-0">
           {/* Text Content */}
           <AnimatePresence mode="wait">
             <motion.div
@@ -74,12 +74,12 @@ export function Hero() {
               </p>
 
               {/* Title */}
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-foreground tracking-tight leading-tight mb-6">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-foreground tracking-tight leading-tight mb-4 lg:mb-6">
                 {slides[currentSlide].title}
               </h1>
 
               {/* Description */}
-              <p className="text-lg text-muted-foreground max-w-lg mb-8 leading-relaxed">
+              <p className="text-base md:text-lg text-muted-foreground max-w-lg mb-8 leading-relaxed">
                 {slides[currentSlide].description}
               </p>
 
@@ -123,19 +123,19 @@ export function Hero() {
       </div>
 
       {/* Navigation Arrows */}
-      <div className="absolute left-4 md:left-8 lg:left-12 top-1/2 -translate-y-1/2 z-30">
+      <div className="hidden md:flex absolute left-4 md:left-8 lg:left-12 top-1/2 -translate-y-1/2 z-30">
         <button
           onClick={prevSlide}
-          className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+          className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors bg-background/50 backdrop-blur-sm rounded-full"
           aria-label="Previous slide"
         >
           <ChevronLeft className="h-6 w-6 md:h-8 md:w-8" />
         </button>
       </div>
-      <div className="absolute right-4 md:right-8 lg:right-12 top-1/2 -translate-y-1/2 z-30">
+      <div className="hidden md:flex absolute right-4 md:right-8 lg:right-12 top-1/2 -translate-y-1/2 z-30">
         <button
           onClick={nextSlide}
-          className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+          className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors bg-background/50 backdrop-blur-sm rounded-full"
           aria-label="Next slide"
         >
           <ChevronRight className="h-6 w-6 md:h-8 md:w-8" />
@@ -157,25 +157,6 @@ export function Hero() {
             aria-label={`Go to slide ${index + 1}`}
           />
         ))}
-      </div>
-
-      {/* Stats Bar */}
-      <div className="absolute bottom-0 left-0 right-0 bg-background border-t border-border z-30">
-        <div className="mx-auto max-w-7xl px-4 lg:px-8 py-4">
-          <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-4">
-            {[
-              { value: '50K+', label: 'Happy Customers' },
-              { value: '4.9/5', label: 'Average Rating' },
-              { value: '24/7', label: 'Support' },
-              { value: '2 Year', label: 'Warranty' },
-            ].map((stat, index) => (
-              <div key={index} className="text-center">
-                <div className="text-base font-bold text-foreground">{stat.value}</div>
-                <div className="text-[10px] font-medium text-muted-foreground tracking-widest uppercase mt-0.5">{stat.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
     </section>
   )

@@ -277,15 +277,14 @@ export function FeaturedProducts() {
           initial={{ opacity: 0, y: 10 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="flex items-center justify-center gap-3 mb-10 overflow-x-auto pb-4 scrollbar-hide"
+          className="flex items-center justify-start md:justify-center gap-2 sm:gap-3 mb-8 sm:mb-10 overflow-x-auto pb-4 scrollbar-hide px-4 md:px-0 -mx-4 md:mx-0"
         >
           {filters.map((filter) => (
             <button
               key={filter}
               onClick={() => setActiveFilter(filter)}
               className={cn(
-                'px-4 py-2 rounded-md text-sm font-medium whitespace-nowrap transition-colors border',
+                'px-3 py-1.5 sm:px-4 sm:py-2 rounded-md text-xs sm:text-sm font-medium whitespace-nowrap transition-colors border',
                 activeFilter === filter
                   ? 'bg-primary text-primary-foreground border-primary'
                   : 'bg-background text-muted-foreground border-border hover:bg-secondary hover:text-foreground'
