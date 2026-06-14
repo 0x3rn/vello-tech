@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge"
 import { useCartStore } from "@/lib/store/cart"
 import { toast } from "sonner"
 import { AuthGuard } from "@/components/auth-guard"
+import { cn } from "@/lib/utils"
 
 const wishlistItems = [
   {
