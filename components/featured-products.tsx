@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Star, Heart, ShoppingCart, Eye } from 'lucide-react'
+import { Star, Heart, ShoppingCart, Eye, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
@@ -53,10 +53,16 @@ const itemVariants = {
 function ProductCard({ product }: { product: ProductData }) {
   const [isLiked, setIsLiked] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
+  const [isAdding, setIsAdding] = useState(false)
   const addItem = useCartStore((state) => state.addItem)
 
-  const handleAddToCart = (e: React.MouseEvent) => {
+  const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault()
+    setIsAdding(true)
+    
+    // Simulate short network delay for satisfying visual feedback
+    await new Promise(resolve => setTimeout(resolve, 600))
+    
     addItem({
       id: product.id,
       name: product.name,
@@ -66,7 +72,11 @@ function ProductCard({ product }: { product: ProductData }) {
       slug: product.slug,
       categoryId: product.categoryId,
     })
-    toast.success(`${product.name} added to cart`)
+    
+    toast.success(`${product.name} added to cart`, {
+      description: "You can view your cart or continue shopping.",
+    })
+    setIsAdding(false)
   }
 
   return (
@@ -125,12 +135,16 @@ function ProductCard({ product }: { product: ProductData }) {
           )}>
             <Button 
               onClick={handleAddToCart}
-              disabled={product.stockQuantity === 0}
+              disabled={product.stockQuantity === 0 || isAdding}
               className="w-full rounded-xl shadow-lg transition-transform duration-300 hover:scale-[1.02]" 
               size="default"
             >
-              <ShoppingCart className="h-4 w-4 mr-2" />
-              Add to Cart
+              {isAdding ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <ShoppingCart className="h-4 w-4 mr-2" />
+              )}
+              {isAdding ? 'Adding...' : 'Add to Cart'}
             </Button>
           </div>
         </div>

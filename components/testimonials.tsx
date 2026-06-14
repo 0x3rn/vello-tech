@@ -6,11 +6,11 @@ import { motion } from 'framer-motion'
 
 const testimonials = [
   {
-    name: 'Sarah Johnson',
+    name: 'Mike Adenuga',
     role: 'Tech Enthusiast',
     content: "Vello Tech has become my go-to store for all gadgets. The quality and customer service are exceptional!",
     rating: 5,
-    avatar: 'SJ',
+    avatar: 'MA',
   },
   {
     name: 'Michael Chen',
@@ -20,11 +20,11 @@ const testimonials = [
     avatar: 'MC',
   },
   {
-    name: 'Emily Rodriguez',
+    name: 'Chris Onwuka',
     role: 'Content Creator',
     content: "The product selection is amazing. Found exactly what I needed for my setup at a competitive price.",
     rating: 5,
-    avatar: 'ER',
+    avatar: 'CO',
   },
 ]
 

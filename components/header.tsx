@@ -6,6 +6,7 @@ import { Menu, X, ShoppingCart, Search, User, Heart, ChevronDown, Phone, Mail, P
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { useCartStore } from '@/lib/store/cart'
+import { useAuth } from '@/lib/contexts/auth-context'
 
 const navigation = [
   { 
@@ -43,6 +44,7 @@ export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const cartCount = useCartStore((state) => state.totalItems())
   const [wishlistCount] = useState(2)
+  const { user } = useAuth()
   const [isScrolled, setIsScrolled] = useState(false)
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
@@ -71,15 +73,15 @@ export function Header() {
             <div className="flex items-center gap-6">
               <a href="tel:+1234567890" className="flex items-center gap-2 transition-opacity duration-200 hover:opacity-80">
                 <Phone className="h-3.5 w-3.5" />
-                <span>+1 (234) 567-890</span>
+                <span>0800-VELLO-TECH</span>
               </a>
               <a href="mailto:support@vellotech.com" className="flex items-center gap-2 transition-opacity duration-200 hover:opacity-80">
                 <Mail className="h-3.5 w-3.5" />
-                <span>support@vellotech.com</span>
+                <span>support@vellotech.store</span>
               </a>
             </div>
             <div className="flex items-center gap-6">
-              <span>Free shipping on orders over $99</span>
+              <span>Free shipping on orders over ₦150,000</span>
               <span className="w-px h-4 bg-background/30" />
               <a href="#track" className="transition-opacity duration-200 hover:opacity-80">Track Order</a>
             </div>
@@ -171,22 +173,24 @@ export function Header() {
 
           {/* Desktop Actions */}
           <div className="hidden lg:flex lg:items-center lg:gap-1">
-            <Link href="/wishlist" className="relative">
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="relative text-muted-foreground hover:text-foreground transition-all duration-200 hover:scale-105"
-              >
-                <Heart className="h-5 w-5" />
-                {wishlistCount > 0 && (
-                  <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center font-medium">
-                    {wishlistCount}
-                  </span>
-                )}
-                <span className="sr-only">Wishlist</span>
-              </Button>
-            </Link>
-            <Link href="/account">
+            {user && (
+              <Link href="/wishlist" className="relative">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="relative text-muted-foreground hover:text-foreground transition-all duration-200 hover:scale-105"
+                >
+                  <Heart className="h-5 w-5" />
+                  {wishlistCount > 0 && (
+                    <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center font-medium">
+                      {wishlistCount}
+                    </span>
+                  )}
+                  <span className="sr-only">Wishlist</span>
+                </Button>
+              </Link>
+            )}
+            <Link href={user ? "/account" : "/auth/login"}>
               <Button 
                 variant="ghost" 
                 size="icon" 
@@ -215,20 +219,22 @@ export function Header() {
 
           {/* Mobile menu button */}
           <div className="flex lg:hidden items-center gap-2">
-            <Link href="/wishlist" className="relative">
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="relative text-muted-foreground transition-transform duration-200 hover:scale-105"
-              >
-                <Heart className="h-5 w-5" />
-                {wishlistCount > 0 && (
-                  <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-primary-foreground text-[10px] flex items-center justify-center font-medium">
-                    {wishlistCount}
-                  </span>
-                )}
-              </Button>
-            </Link>
+            {user && (
+              <Link href="/wishlist" className="relative">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="relative text-muted-foreground transition-transform duration-200 hover:scale-105"
+                >
+                  <Heart className="h-5 w-5" />
+                  {wishlistCount > 0 && (
+                    <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-primary-foreground text-[10px] flex items-center justify-center font-medium">
+                      {wishlistCount}
+                    </span>
+                  )}
+                </Button>
+              </Link>
+            )}
             <Link href="/cart" className="relative">
               <Button 
                 variant="ghost" 
@@ -297,31 +303,35 @@ export function Header() {
             ))}
 
             <div className="pt-2 mt-2 border-t border-border/50 space-y-1">
-              <p className="px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">My Account</p>
-              <Link
-                href="/account"
-                className="flex items-center gap-3 px-4 py-3 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-secondary rounded-xl transition-all duration-200"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <User className="h-5 w-5" />
-                My Dashboard
-              </Link>
-              <Link
-                href="/account/orders"
-                className="flex items-center gap-3 px-4 py-3 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-secondary rounded-xl transition-all duration-200"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <Package className="h-5 w-5" />
-                Order History
-              </Link>
-              <Link
-                href="/wishlist"
-                className="flex items-center gap-3 px-4 py-3 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-secondary rounded-xl transition-all duration-200"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <Heart className="h-5 w-5" />
-                Wishlist ({wishlistCount})
-              </Link>
+              {user && (
+                <>
+                  <p className="px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">My Account</p>
+                  <Link
+                    href="/account"
+                    className="flex items-center gap-3 px-4 py-3 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-secondary rounded-xl transition-all duration-200"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <User className="h-5 w-5" />
+                    My Dashboard
+                  </Link>
+                  <Link
+                    href="/account/orders"
+                    className="flex items-center gap-3 px-4 py-3 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-secondary rounded-xl transition-all duration-200"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Package className="h-5 w-5" />
+                    Order History
+                  </Link>
+                  <Link
+                    href="/wishlist"
+                    className="flex items-center gap-3 px-4 py-3 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-secondary rounded-xl transition-all duration-200"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Heart className="h-5 w-5" />
+                    Wishlist ({wishlistCount})
+                  </Link>
+                </>
+              )}
               <Link
                 href="/cart"
                 className="flex items-center gap-3 px-4 py-3 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-secondary rounded-xl transition-all duration-200"
@@ -332,22 +342,24 @@ export function Header() {
               </Link>
             </div>
 
-            <div className="pt-2 mt-2 border-t border-border/50">
-              <Link
-                href="/auth/login"
-                className="block w-full text-center px-4 py-3 bg-primary text-primary-foreground rounded-xl font-medium transition-all duration-200 hover:bg-primary/90"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Sign In
-              </Link>
-              <Link
-                href="/auth/register"
-                className="block w-full text-center px-4 py-3 mt-2 border border-border/50 text-foreground rounded-xl font-medium transition-all duration-200 hover:bg-secondary"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Create Account
-              </Link>
-            </div>
+            {!user && (
+              <div className="pt-2 mt-2 border-t border-border/50">
+                <Link
+                  href="/auth/login"
+                  className="block w-full text-center px-4 py-3 bg-primary text-primary-foreground rounded-xl font-medium transition-all duration-200 hover:bg-primary/90"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href="/auth/register"
+                  className="block w-full text-center px-4 py-3 mt-2 border border-border/50 text-foreground rounded-xl font-medium transition-all duration-200 hover:bg-secondary"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Create Account
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       </header>

@@ -67,7 +67,7 @@ export function Features() {
         </div>
 
         {/* Mobile View with Transition */}
-        <div className="sm:hidden relative h-16 w-full flex justify-center">
+        <div className="sm:hidden relative h-20 w-full flex justify-center">
           <AnimatePresence mode="wait">
             <motion.div
               key={page}
@@ -82,9 +82,9 @@ export function Features() {
                   <div className="w-8 h-8 flex items-center justify-center flex-shrink-0 text-primary bg-primary/5 rounded-full">
                     <feature.icon className="h-4 w-4" />
                   </div>
-                  <div className="min-w-0">
-                    <h3 className="font-semibold text-foreground text-sm truncate">{feature.title}</h3>
-                    <p className="text-xs text-muted-foreground truncate">{feature.description}</p>
+                  <div className="min-w-0 flex-1 pr-1">
+                    <h3 className="font-semibold text-foreground text-sm leading-tight mb-0.5">{feature.title}</h3>
+                    <p className="text-[11px] text-muted-foreground leading-tight">{feature.description}</p>
                   </div>
                 </div>
               ))}

@@ -42,7 +42,11 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true)
   const [quantity, setQuantity] = useState(1)
   const [activeImage, setActiveImage] = useState(0)
-  const addItem = useCartStore((state) => state.addItem)
+  const [isAdding, setIsAdding] = useState(false)
+  const { items, addItem, updateQuantity, removeItem } = useCartStore()
+
+  const cartItem = product ? items.find((item) => item.id === product.id) : null
+  const displayQuantity = cartItem ? cartItem.quantity : quantity
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -95,7 +99,12 @@ export default function ProductDetailPage() {
     )
   }
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
+    setIsAdding(true)
+    
+    // Simulate short network delay for satisfying visual feedback
+    await new Promise(resolve => setTimeout(resolve, 600))
+    
     addItem({
       id: product.id,
       name: product.name,
@@ -105,7 +114,31 @@ export default function ProductDetailPage() {
       slug: product.slug,
       categoryId: product.categoryId,
     })
-    toast.success(`${quantity} ${product.name} added to cart`)
+    
+    toast.success(`${quantity} ${product.name} added to cart`, {
+      description: "You can view your cart or continue shopping.",
+    })
+    setIsAdding(false)
+  }
+
+  const handleMinus = () => {
+    if (cartItem) {
+      if (cartItem.quantity > 1) {
+        updateQuantity(product.id, cartItem.quantity - 1)
+      } else {
+        removeItem(product.id)
+      }
+    } else {
+      setQuantity(Math.max(1, quantity - 1))
+    }
+  }
+
+  const handlePlus = () => {
+    if (cartItem) {
+      updateQuantity(product.id, Math.min(product.stockQuantity, cartItem.quantity + 1))
+    } else {
+      setQuantity(Math.min(product.stockQuantity, quantity + 1))
+    }
   }
 
   return (
@@ -182,15 +215,16 @@ export default function ProductDetailPage() {
               <div className="flex items-center gap-6 mb-6">
                 <div className="flex items-center justify-between border border-border rounded-lg bg-background p-1 w-32">
                   <button 
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    onClick={handleMinus}
                     className="p-2 hover:bg-secondary rounded-md transition-colors text-muted-foreground hover:text-foreground"
                   >
                     <Minus className="h-4 w-4" />
                   </button>
-                  <span className="font-medium">{quantity}</span>
+                  <span className="font-medium">{displayQuantity}</span>
                   <button 
-                    onClick={() => setQuantity(Math.min(product.stockQuantity, quantity + 1))}
+                    onClick={handlePlus}
                     className="p-2 hover:bg-secondary rounded-md transition-colors text-muted-foreground hover:text-foreground"
+                    disabled={displayQuantity >= product.stockQuantity}
                   >
                     <Plus className="h-4 w-4" />
                   </button>
@@ -203,14 +237,30 @@ export default function ProductDetailPage() {
                   )}
                 </div>
               </div>
-              <Button 
-                onClick={handleAddToCart}
-                disabled={product.stockQuantity === 0}
-                className="w-full h-14 text-lg font-medium"
-              >
-                <ShoppingCart className="mr-2 h-5 w-5" />
-                Add to Cart
-              </Button>
+              {cartItem ? (
+                <Link href="/cart" className="w-full">
+                  <Button 
+                    variant="outline"
+                    className="w-full h-14 text-lg font-medium border-primary/20 hover:bg-primary/5 text-primary"
+                  >
+                    <ShoppingCart className="mr-2 h-5 w-5" />
+                    View in Cart
+                  </Button>
+                </Link>
+              ) : (
+                <Button 
+                  onClick={handleAddToCart}
+                  disabled={product.stockQuantity === 0 || isAdding}
+                  className="w-full h-14 text-lg font-medium"
+                >
+                  {isAdding ? (
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  ) : (
+                    <ShoppingCart className="mr-2 h-5 w-5" />
+                  )}
+                  {isAdding ? 'Adding...' : 'Add to Cart'}
+                </Button>
+              )}
             </div>
 
             {/* Specifications Table */}
