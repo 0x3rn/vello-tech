@@ -9,10 +9,13 @@ import {
   Trash2,
   Star,
   Eye,
+  Loader2,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
+import { useCartStore } from "@/lib/store/cart"
+import { toast } from "sonner"
 
 const wishlistItems = [
   {
@@ -67,9 +70,33 @@ const wishlistItems = [
 
 export default function WishlistPage() {
   const [items, setItems] = useState(wishlistItems)
+  const [addingProduct, setAddingProduct] = useState<number | null>(null)
+  const addItem = useCartStore((state) => state.addItem)
 
   const removeItem = (id: number) => {
     setItems((prev) => prev.filter((item) => item.id !== id))
+  }
+
+  const handleAddToCart = async (item: typeof wishlistItems[0]) => {
+    setAddingProduct(item.id)
+    
+    // Simulate short network delay for satisfying visual feedback
+    await new Promise(resolve => setTimeout(resolve, 600))
+    
+    addItem({
+      id: item.id.toString(),
+      slug: item.name.toLowerCase().replace(/\s+/g, '-'),
+      name: item.name,
+      price: item.price,
+      image: 'https://via.placeholder.com/500x500.png',
+      quantity: 1,
+      categoryId: item.category,
+    })
+    
+    toast.success(`${item.name} added to cart`, {
+      description: "You can view your cart or continue shopping.",
+    })
+    setAddingProduct(null)
   }
 
   return (
@@ -213,12 +240,17 @@ export default function WishlistPage() {
 
                     {/* Add to Cart */}
                     <Button
+                      onClick={() => handleAddToCart(item)}
                       className="w-full mt-4 transition-all duration-200 hover:scale-[1.02]"
                       size="sm"
-                      disabled={!item.inStock}
+                      disabled={!item.inStock || addingProduct === item.id}
                     >
-                      <ShoppingCart className="h-4 w-4 mr-2" />
-                      {item.inStock ? "Add to Cart" : "Out of Stock"}
+                      {addingProduct === item.id ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <ShoppingCart className="h-4 w-4 mr-2" />
+                      )}
+                      {addingProduct === item.id ? 'Adding...' : item.inStock ? "Add to Cart" : "Out of Stock"}
                     </Button>
                   </div>
                 </div>

@@ -1,10 +1,10 @@
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
-import { useParams } from 'next/navigation'
+import { useEffect, useState, useMemo, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
-import { collection, getDocs, query, where } from 'firebase/firestore'
+import { collection, getDocs } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { useCartStore } from '@/lib/store/cart'
 import { Button } from '@/components/ui/button'
@@ -28,17 +28,10 @@ interface ProductData {
   slug: string
 }
 
-interface CategoryData {
-  id: string
-  name: string
-  slug: string
-  parentCategoryId: string | null
-}
-
-export default function CategoryPage() {
-  const { slug } = useParams()
+function SearchResults() {
+  const searchParams = useSearchParams()
+  const query = searchParams.get('q') || ''
   
-  const [categoryName, setCategoryName] = useState<string>('')
   const [products, setProducts] = useState<ProductData[]>([])
   const [loading, setLoading] = useState(true)
   
@@ -47,60 +40,46 @@ export default function CategoryPage() {
   const [hideOutOfStock, setHideOutOfStock] = useState(false)
   const [sortBy, setSortBy] = useState<'featured' | 'price-asc' | 'price-desc'>('featured')
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false)
+  const [addingProduct, setAddingProduct] = useState<string | null>(null)
 
   const addItem = useCartStore((state) => state.addItem)
 
   useEffect(() => {
-    const fetchCategoryProducts = async () => {
+    const fetchSearchResults = async () => {
+      if (!query) {
+        setProducts([])
+        setLoading(false)
+        return
+      }
+
       setLoading(true)
       try {
-        // 1. Find the category by slug
-        const catQuery = query(collection(db, 'categories'), where('slug', '==', slug))
-        const catSnap = await getDocs(catQuery)
-        
-        if (catSnap.empty) {
-          setProducts([])
-          setLoading(false)
-          return
-        }
-
-        const categoryDoc = catSnap.docs[0]
-        setCategoryName(categoryDoc.data().name)
-        const targetCategoryIds = [categoryDoc.id]
-
-        // 2. Fetch subcategories
-        const subCatQuery = query(collection(db, 'categories'), where('parentCategoryId', '==', categoryDoc.id))
-        const subCatSnap = await getDocs(subCatQuery)
-        subCatSnap.forEach(doc => {
-          targetCategoryIds.push(doc.id)
-        })
-
-        // 3. Fetch products
+        const querySnapshot = await getDocs(collection(db, 'products'))
         const fetchedProducts: ProductData[] = []
         
-        if (targetCategoryIds.length > 0) {
-          for (let i = 0; i < targetCategoryIds.length; i += 30) {
-            const chunk = targetCategoryIds.slice(i, i + 30)
-            const prodQuery = query(collection(db, 'products'), where('categoryId', 'in', chunk))
-            const prodSnap = await getDocs(prodQuery)
-            prodSnap.forEach(doc => {
-              fetchedProducts.push({ id: doc.id, ...doc.data() } as ProductData)
-            })
+        const lowercaseQuery = query.toLowerCase()
+
+        querySnapshot.forEach((doc) => {
+          const data = doc.data() as ProductData
+          if (
+            data.name?.toLowerCase().includes(lowercaseQuery) || 
+            data.description?.toLowerCase().includes(lowercaseQuery) ||
+            data.brand?.toLowerCase().includes(lowercaseQuery)
+          ) {
+            fetchedProducts.push({ id: doc.id, ...doc.data() } as ProductData)
           }
-        }
+        })
         
         setProducts(fetchedProducts)
       } catch (error) {
-        console.error("Error fetching products:", error)
+        console.error("Error fetching search results:", error)
       } finally {
         setLoading(false)
       }
     }
 
-    if (slug) {
-      fetchCategoryProducts()
-    }
-  }, [slug])
+    fetchSearchResults()
+  }, [query])
 
   // Derived state for filters
   const availableBrands = useMemo(() => {
@@ -137,7 +116,6 @@ export default function CategoryPage() {
         break
       case 'featured':
       default:
-        // By default we could sort by featured or rating, here we just prioritize featured
         result.sort((a, b) => (b.isFeatured ? 1 : 0) - (a.isFeatured ? 1 : 0))
         break
     }
@@ -145,9 +123,14 @@ export default function CategoryPage() {
     return result
   }, [products, selectedBrands, hideOutOfStock, sortBy])
 
-  const handleAddToCart = (e: React.MouseEvent, product: ProductData) => {
+  const handleAddToCart = async (e: React.MouseEvent, product: ProductData) => {
     e.preventDefault()
     e.stopPropagation()
+    setAddingProduct(product.id)
+    
+    // Simulate short network delay for satisfying visual feedback
+    await new Promise(resolve => setTimeout(resolve, 600))
+    
     addItem({
       id: product.id,
       slug: product.slug,
@@ -157,7 +140,11 @@ export default function CategoryPage() {
       quantity: 1,
       categoryId: product.categoryId,
     })
-    toast.success(`${product.name} added to cart`)
+    
+    toast.success(`${product.name} added to cart`, {
+      description: "You can view your cart or continue shopping.",
+    })
+    setAddingProduct(null)
   }
 
   return (
@@ -167,10 +154,10 @@ export default function CategoryPage() {
         {/* Header */}
         <div className="mb-8 border-b border-border pb-8">
           <h1 className="text-3xl lg:text-4xl font-bold tracking-tight text-foreground mb-4">
-            {categoryName || 'Loading...'}
+            Search Results
           </h1>
           <p className="text-muted-foreground text-lg">
-            Explore our curated selection of top-tier {categoryName ? categoryName.toLowerCase() : 'products'}.
+            {query ? `Showing results for "${query}"` : 'Enter a search term to find products.'}
           </p>
         </div>
 
@@ -261,6 +248,14 @@ export default function CategoryPage() {
               <div className="flex justify-center items-center py-20">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
+            ) : products.length === 0 && query ? (
+              <div className="text-center py-20 bg-secondary/20 rounded-2xl border border-border">
+                <h2 className="text-2xl font-semibold mb-2">No Matches Found</h2>
+                <p className="text-muted-foreground">We couldn&apos;t find anything matching &quot;{query}&quot;.</p>
+                <Link href="/" className="mt-6 inline-block">
+                  <Button>Browse Products</Button>
+                </Link>
+              </div>
             ) : filteredAndSortedProducts.length === 0 ? (
               <div className="text-center py-20 bg-secondary/20 rounded-2xl border border-border">
                 <h2 className="text-2xl font-semibold mb-2">No Products Found</h2>
@@ -322,10 +317,14 @@ export default function CategoryPage() {
                           <Button 
                             size="sm" 
                             onClick={(e) => handleAddToCart(e, product)}
-                            disabled={product.stockQuantity === 0}
+                            disabled={product.stockQuantity === 0 || addingProduct === product.id}
                             className="rounded-full w-10 h-10 p-0 shadow-md"
                           >
-                            <ShoppingCart className="h-4 w-4" />
+                            {addingProduct === product.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <ShoppingCart className="h-4 w-4" />
+                            )}
                             <span className="sr-only">Add to cart</span>
                           </Button>
                         </div>
@@ -339,5 +338,13 @@ export default function CategoryPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex justify-center pt-32"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+      <SearchResults />
+    </Suspense>
   )
 }

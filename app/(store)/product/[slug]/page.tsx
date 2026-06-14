@@ -42,6 +42,7 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true)
   const [quantity, setQuantity] = useState(1)
   const [activeImage, setActiveImage] = useState(0)
+  const [isAdding, setIsAdding] = useState(false)
   const addItem = useCartStore((state) => state.addItem)
 
   useEffect(() => {
@@ -95,7 +96,12 @@ export default function ProductDetailPage() {
     )
   }
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
+    setIsAdding(true)
+    
+    // Simulate short network delay for satisfying visual feedback
+    await new Promise(resolve => setTimeout(resolve, 600))
+    
     addItem({
       id: product.id,
       name: product.name,
@@ -105,7 +111,11 @@ export default function ProductDetailPage() {
       slug: product.slug,
       categoryId: product.categoryId,
     })
-    toast.success(`${quantity} ${product.name} added to cart`)
+    
+    toast.success(`${quantity} ${product.name} added to cart`, {
+      description: "You can view your cart or continue shopping.",
+    })
+    setIsAdding(false)
   }
 
   return (
@@ -205,11 +215,15 @@ export default function ProductDetailPage() {
               </div>
               <Button 
                 onClick={handleAddToCart}
-                disabled={product.stockQuantity === 0}
+                disabled={product.stockQuantity === 0 || isAdding}
                 className="w-full h-14 text-lg font-medium"
               >
-                <ShoppingCart className="mr-2 h-5 w-5" />
-                Add to Cart
+                {isAdding ? (
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                ) : (
+                  <ShoppingCart className="mr-2 h-5 w-5" />
+                )}
+                {isAdding ? 'Adding...' : 'Add to Cart'}
               </Button>
             </div>
 
