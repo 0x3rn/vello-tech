@@ -16,7 +16,7 @@ export default function Template({ children }: { children: React.ReactNode }) {
     // Simulate a network/processing delay to make the app feel substantial
     const timer = setTimeout(() => {
       setIsLoading(false)
-    }, 600)
+    }, 1000)
     
     return () => clearTimeout(timer)
   }, [pathname])
@@ -32,14 +32,6 @@ export default function Template({ children }: { children: React.ReactNode }) {
             transition={{ duration: 0.4, ease: 'easeInOut' }}
             className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background"
           >
-            <motion.div 
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.4 }}
-              className="flex items-center justify-center w-16 h-16 bg-primary rounded-2xl mb-8 shadow-2xl shadow-primary/20"
-            >
-              <span className="text-primary-foreground font-bold text-3xl">V</span>
-            </motion.div>
             <motion.div 
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
