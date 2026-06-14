@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Menu, X, ShoppingCart, Search, User, Heart, ChevronDown, Phone, Mail, Package } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { useCartStore } from '@/lib/store/cart'
 
 const navigation = [
   { 
@@ -21,12 +22,16 @@ const navigation = [
     name: 'Categories', 
     href: '#categories',
     submenu: [
-      { name: 'Smartphones', href: '#smartphones' },
-      { name: 'Laptops', href: '#laptops' },
-      { name: 'Audio', href: '#audio' },
-      { name: 'Wearables', href: '#wearables' },
-      { name: 'Gaming', href: '#gaming' },
-      { name: 'Accessories', href: '#accessories' },
+      { name: 'Smartphones', href: '/category/smartphones' },
+      { name: 'Laptops', href: '/category/laptops' },
+      { name: 'Audio', href: '/category/audio' },
+      { name: 'Wearables', href: '/category/wearables' },
+      { name: 'Cameras', href: '/category/cameras' },
+      { name: 'Gaming', href: '/category/gaming' },
+      { name: 'Storage & Memory', href: '/category/storage-and-memory' },
+      { name: 'PC Components', href: '/category/pc-components' },
+      { name: 'Networking', href: '/category/networking' },
+      { name: 'Accessories', href: '/category/accessories' },
     ]
   },
   { name: 'Deals', href: '#deals' },
@@ -36,10 +41,18 @@ const navigation = [
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [cartCount] = useState(3)
+  const cartCount = useCartStore((state) => state.totalItems())
   const [wishlistCount] = useState(2)
   const [isScrolled, setIsScrolled] = useState(false)
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (searchQuery.trim()) {
+      window.location.href = `/search?q=${encodeURIComponent(searchQuery)}`
+    }
+  }
 
   useEffect(() => {
     const handleScroll = () => {
@@ -144,14 +157,16 @@ export function Header() {
 
           {/* Search Bar - Desktop */}
           <div className="hidden lg:flex items-center flex-1 max-w-md mx-8">
-            <div className="relative w-full group">
+            <form onSubmit={handleSearch} className="relative w-full group">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground transition-colors duration-200 group-focus-within:text-primary" />
               <input
                 type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search products..."
                 className="w-full h-10 pl-11 pr-4 rounded-full bg-secondary border border-transparent text-sm placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
               />
-            </div>
+            </form>
           </div>
 
           {/* Desktop Actions */}
@@ -258,14 +273,16 @@ export function Header() {
         >
           <div className="px-4 py-6 space-y-2">
             {/* Search */}
-            <div className="relative mb-4">
+            <form onSubmit={handleSearch} className="relative mb-4">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <input
                 type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search products..."
                 className="w-full h-12 pl-11 pr-4 rounded-xl bg-secondary border border-transparent text-sm placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-all duration-200"
               />
-            </div>
+            </form>
 
             {/* Nav Links */}
             {navigation.map((item) => (

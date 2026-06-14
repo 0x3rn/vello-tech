@@ -1,110 +1,34 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Star, Heart, ShoppingCart, Eye } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import { motion, AnimatePresence } from 'framer-motion'
+import { collection, getDocs, limit, query, where } from 'firebase/firestore'
+import { db } from '@/lib/firebase'
+import Image from 'next/image'
+import Link from 'next/link'
+import { useCartStore } from '@/lib/store/cart'
+import { toast } from 'sonner'
 
-const products = [
-  {
-    id: 1,
-    name: 'ProMax Smartphone X1',
-    category: 'Smartphones',
-    price: 1299,
-    originalPrice: 1499,
-    rating: 4.9,
-    reviews: 234,
-    badge: 'New',
-    color: 'bg-blue-500/10',
-    hoverColor: 'group-hover:bg-blue-500/20',
-  },
-  {
-    id: 2,
-    name: 'UltraBook Pro 16"',
-    category: 'Laptops',
-    price: 2499,
-    originalPrice: null,
-    rating: 4.8,
-    reviews: 156,
-    badge: 'Best Seller',
-    color: 'bg-purple-500/10',
-    hoverColor: 'group-hover:bg-purple-500/20',
-  },
-  {
-    id: 3,
-    name: 'SoundWave Elite ANC',
-    category: 'Audio',
-    price: 349,
-    originalPrice: 449,
-    rating: 4.7,
-    reviews: 423,
-    badge: 'Sale',
-    color: 'bg-orange-500/10',
-    hoverColor: 'group-hover:bg-orange-500/20',
-  },
-  {
-    id: 4,
-    name: 'SmartWatch Series 8',
-    category: 'Wearables',
-    price: 499,
-    originalPrice: null,
-    rating: 4.9,
-    reviews: 312,
-    badge: null,
-    color: 'bg-teal-500/10',
-    hoverColor: 'group-hover:bg-teal-500/20',
-  },
-  {
-    id: 5,
-    name: 'ActionCam 4K Pro',
-    category: 'Cameras',
-    price: 599,
-    originalPrice: 699,
-    rating: 4.6,
-    reviews: 189,
-    badge: 'Sale',
-    color: 'bg-red-500/10',
-    hoverColor: 'group-hover:bg-red-500/20',
-  },
-  {
-    id: 6,
-    name: 'GamePad Elite X',
-    category: 'Gaming',
-    price: 179,
-    originalPrice: null,
-    rating: 4.8,
-    reviews: 567,
-    badge: 'Popular',
-    color: 'bg-green-500/10',
-    hoverColor: 'group-hover:bg-green-500/20',
-  },
-  {
-    id: 7,
-    name: 'WirelessBuds Pro',
-    category: 'Audio',
-    price: 249,
-    originalPrice: 299,
-    rating: 4.7,
-    reviews: 891,
-    badge: 'Sale',
-    color: 'bg-pink-500/10',
-    hoverColor: 'group-hover:bg-pink-500/20',
-  },
-  {
-    id: 8,
-    name: 'TabletPro 12.9"',
-    category: 'Tablets',
-    price: 1099,
-    originalPrice: null,
-    rating: 4.9,
-    reviews: 234,
-    badge: 'New',
-    color: 'bg-indigo-500/10',
-    hoverColor: 'group-hover:bg-indigo-500/20',
-  },
-]
+interface ProductData {
+  id: string
+  name: string
+  brand: string
+  price: number
+  discountPrice: number | null
+  stockQuantity: number
+  description: string
+  imageUrls: string[]
+  categoryId: string
+  isFeatured: boolean
+  rating: number
+  numReviews: number
+  slug: string
+  badge?: string
+}
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -126,9 +50,24 @@ const itemVariants = {
   }
 }
 
-function ProductCard({ product }: { product: typeof products[0] }) {
+function ProductCard({ product }: { product: ProductData }) {
   const [isLiked, setIsLiked] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
+  const addItem = useCartStore((state) => state.addItem)
+
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault()
+    addItem({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      image: product.imageUrls?.[0] || 'https://via.placeholder.com/500x500.png',
+      quantity: 1,
+      slug: product.slug,
+      categoryId: product.categoryId,
+    })
+    toast.success(`${product.name} added to cart`)
+  }
 
   return (
     <motion.div 
@@ -137,117 +76,140 @@ function ProductCard({ product }: { product: typeof products[0] }) {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Image */}
-      <div className={cn("relative aspect-square p-6 overflow-hidden transition-colors duration-500", product.color, product.hoverColor)}>
-        <div className={cn(
-          'w-full h-full rounded-2xl flex items-center justify-center transition-colors duration-300'
-        )}>
-          <div className="w-32 h-32 bg-foreground/5 rounded-xl shadow-inner transition-colors duration-300" />
-        </div>
-        
-        {/* Badges */}
-        {product.badge && (
-          <Badge 
-            className={cn(
-              'absolute top-4 left-4 border-none shadow-sm font-bold px-3 py-1 text-xs',
-              product.badge === 'Sale' && 'bg-destructive/90 text-destructive-foreground',
-              product.badge === 'New' && 'bg-primary/90 text-primary-foreground',
-              product.badge === 'Best Seller' && 'bg-foreground/90 text-background',
-              product.badge === 'Popular' && 'bg-accent/90 text-accent-foreground'
-            )}
-          >
-            {product.badge}
-          </Badge>
-        )}
-
-        {/* Action buttons */}
-        <div className={cn(
-          'absolute top-4 right-4 flex flex-col gap-3 transition-all duration-500 ease-out',
-          isHovered ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4'
-        )}>
-          <button
-            onClick={() => setIsLiked(!isLiked)}
-            className={cn(
-              'w-10 h-10 rounded-full bg-background flex items-center justify-center border border-border shadow-sm transition-colors duration-300 hover:bg-secondary',
-              isLiked && 'bg-destructive/10 border-destructive/20 text-destructive'
-            )}
-          >
-            <Heart className={cn(
-              'h-5 w-5 transition-colors duration-300',
-              isLiked ? 'fill-destructive text-destructive' : 'text-foreground'
-            )} />
-          </button>
-          <button className="w-10 h-10 rounded-full bg-background flex items-center justify-center border border-border shadow-sm transition-colors duration-300 hover:bg-secondary">
-            <Eye className="h-5 w-5 text-foreground" />
-          </button>
-        </div>
-
-        {/* Quick add button */}
-        <div className={cn(
-          'absolute bottom-4 left-4 right-4 transition-all duration-500 ease-out',
-          isHovered ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-        )}>
-          <Button className="w-full rounded-xl shadow-lg transition-transform duration-300 hover:scale-[1.02]" size="default">
-            <ShoppingCart className="h-4 w-4 mr-2" />
-            Add to Cart
-          </Button>
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="p-6">
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{product.category}</p>
-        <h3 className="font-bold text-foreground mt-2 text-lg transition-colors duration-300 group-hover:text-primary">
-          {product.name}
-        </h3>
-        
-        {/* Rating */}
-        <div className="flex items-center gap-1.5 mt-2">
-          <div className="flex items-center">
-            {[...Array(5)].map((_, i) => (
-              <Star 
-                key={i} 
-                className={cn(
-                  'h-4 w-4 transition-colors duration-300',
-                  i < Math.floor(product.rating) 
-                    ? 'fill-amber-400 text-amber-400' 
-                    : 'fill-muted text-muted'
-                )} 
-              />
-            ))}
-          </div>
-          <span className="text-sm font-bold text-foreground ml-1">{product.rating}</span>
-          <span className="text-sm text-muted-foreground">({product.reviews})</span>
-        </div>
-
-        {/* Price */}
-        <div className="flex items-center gap-3 mt-4">
-          <span className="text-xl font-extrabold text-foreground">
-            ${product.price.toLocaleString()}
-          </span>
-          {product.originalPrice && (
-            <span className="text-sm font-medium text-muted-foreground line-through decoration-muted-foreground/50">
-              ${product.originalPrice.toLocaleString()}
-            </span>
-          )}
-          {product.originalPrice && (
-            <Badge variant="secondary" className="ml-auto text-xs font-bold bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
-              Save ${(product.originalPrice - product.price).toLocaleString()}
+      <Link href={`/product/${product.slug}`} className="block">
+        {/* Image */}
+        <div className="relative aspect-square p-6 overflow-hidden bg-secondary/30 flex items-center justify-center">
+          <Image
+            src={product.imageUrls?.[0] || 'https://via.placeholder.com/500x500.png'}
+            alt={product.name}
+            fill
+            className="object-contain p-8 group-hover:scale-105 transition-transform duration-500"
+          />
+          
+          {/* Badges */}
+          {product.isFeatured && (
+            <Badge className="absolute top-4 left-4 border-none shadow-sm font-bold px-3 py-1 text-xs z-10 bg-primary/90 text-primary-foreground">
+              Featured
             </Badge>
           )}
+
+          {/* Action buttons */}
+          <div className={cn(
+            'absolute top-4 right-4 flex flex-col gap-3 transition-all duration-500 ease-out z-10',
+            isHovered ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4'
+          )}>
+            <button
+              onClick={(e) => { e.preventDefault(); setIsLiked(!isLiked); }}
+              className={cn(
+                'w-10 h-10 rounded-full bg-background flex items-center justify-center border border-border shadow-sm transition-colors duration-300 hover:bg-secondary',
+                isLiked && 'bg-destructive/10 border-destructive/20 text-destructive'
+              )}
+            >
+              <Heart className={cn(
+                'h-5 w-5 transition-colors duration-300',
+                isLiked ? 'fill-destructive text-destructive' : 'text-foreground'
+              )} />
+            </button>
+            <button 
+              onClick={(e) => e.preventDefault()}
+              className="w-10 h-10 rounded-full bg-background flex items-center justify-center border border-border shadow-sm transition-colors duration-300 hover:bg-secondary"
+            >
+              <Eye className="h-5 w-5 text-foreground" />
+            </button>
+          </div>
+
+          {/* Quick add button */}
+          <div className={cn(
+            'absolute bottom-4 left-4 right-4 transition-all duration-500 ease-out z-10',
+            isHovered ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+          )}>
+            <Button 
+              onClick={handleAddToCart}
+              disabled={product.stockQuantity === 0}
+              className="w-full rounded-xl shadow-lg transition-transform duration-300 hover:scale-[1.02]" 
+              size="default"
+            >
+              <ShoppingCart className="h-4 w-4 mr-2" />
+              Add to Cart
+            </Button>
+          </div>
         </div>
-      </div>
+
+        {/* Content */}
+        <div className="p-6 relative z-20 bg-card">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{product.brand}</p>
+          <h3 className="font-bold text-foreground mt-2 text-lg transition-colors duration-300 group-hover:text-primary line-clamp-1">
+            {product.name}
+          </h3>
+          
+          {/* Rating */}
+          <div className="flex items-center gap-1.5 mt-2">
+            <div className="flex items-center">
+              {[...Array(5)].map((_, i) => (
+                <Star 
+                  key={i} 
+                  className={cn(
+                    'h-4 w-4 transition-colors duration-300',
+                    i < Math.floor(product.rating || 0) 
+                      ? 'fill-amber-400 text-amber-400' 
+                      : 'fill-muted text-muted'
+                  )} 
+                />
+              ))}
+            </div>
+            <span className="text-sm font-bold text-foreground ml-1">{product.rating || 0}</span>
+            <span className="text-sm text-muted-foreground">({product.numReviews || 0})</span>
+          </div>
+
+          {/* Price */}
+          <div className="flex items-center gap-3 mt-4">
+            <span className="text-xl font-extrabold text-foreground">
+              ${product.price?.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+            </span>
+            {product.discountPrice && (
+              <span className="text-sm font-medium text-muted-foreground line-through decoration-muted-foreground/50">
+                ${product.discountPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              </span>
+            )}
+            {product.discountPrice && (
+              <Badge variant="secondary" className="ml-auto text-xs font-bold bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
+                Save ${(product.price - product.discountPrice).toLocaleString()}
+              </Badge>
+            )}
+          </div>
+        </div>
+      </Link>
     </motion.div>
   )
 }
 
 export function FeaturedProducts() {
   const [activeFilter, setActiveFilter] = useState('All')
-  const filters = ['All', 'New', 'Sale', 'Best Seller', 'Popular']
+  const [products, setProducts] = useState<ProductData[]>([])
+  const filters = ['All', 'Smartphones', 'Laptops', 'Audio']
 
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const q = query(collection(db, 'products'), where('isFeatured', '==', true), limit(8))
+        const snapshot = await getDocs(q)
+        const fetchedProducts: ProductData[] = []
+        snapshot.forEach((doc) => {
+          fetchedProducts.push({ id: doc.id, ...doc.data() } as ProductData)
+        })
+        setProducts(fetchedProducts)
+      } catch (error) {
+        console.error("Error fetching featured products:", error)
+      }
+    }
+    fetchProducts()
+  }, [])
+
+  // In a real app we'd filter by checking if categoryId matches the parent category ID
+  // For the sake of this mock UI filter on the homepage, we just do a rough substring match on categoryId
   const filteredProducts = activeFilter === 'All' 
     ? products 
-    : products.filter(p => p.badge === activeFilter || (activeFilter === 'Sale' && p.originalPrice))
+    : products.filter(p => p.categoryId.includes(activeFilter.toLowerCase()))
 
   return (
     <section id="products" className="py-16 lg:py-20 bg-background relative">
@@ -267,9 +229,11 @@ export function FeaturedProducts() {
               Handpicked selection of our best-selling and most-loved tech products.
             </p>
           </div>
-          <Button variant="outline" className="rounded-full px-8 transition-transform duration-300 hover:scale-105 border-primary/20 hover:bg-primary/5 hover:text-primary">
-            View All Products
-          </Button>
+          <Link href="/category/smartphones">
+            <Button variant="outline" className="rounded-full px-8 transition-transform duration-300 hover:scale-105 border-primary/20 hover:bg-primary/5 hover:text-primary">
+              View All Products
+            </Button>
+          </Link>
         </motion.div>
 
         {/* Filters */}

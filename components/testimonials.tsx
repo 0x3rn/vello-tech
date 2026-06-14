@@ -77,7 +77,7 @@ export function Testimonials() {
           {testimonials.map((testimonial, index) => (
             <motion.div variants={itemVariants} key={index}>
               <Card 
-                className="bg-card/80 backdrop-blur-sm border-white/5 transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 group rounded-2xl md:rounded-3xl"
+                className="bg-card/80 backdrop-blur-sm border-white/5 transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 group rounded-2xl md:rounded-3xl overflow-hidden"
               >
                 <CardContent className="p-8 relative h-full flex flex-col">
                   {/* Quote icon */}

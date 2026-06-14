@@ -1,0 +1,11 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // TEMPORARY: Open rules for development and seeding.
+    // TODO: Lock these down before production!
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}
