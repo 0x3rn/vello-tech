@@ -73,15 +73,15 @@ export function Header() {
             <div className="flex items-center gap-6">
               <a href="tel:+1234567890" className="flex items-center gap-2 transition-opacity duration-200 hover:opacity-80">
                 <Phone className="h-3.5 w-3.5" />
-                <span>+1 (234) 567-890</span>
+                <span>0800-VELLO-TECH</span>
               </a>
               <a href="mailto:support@vellotech.com" className="flex items-center gap-2 transition-opacity duration-200 hover:opacity-80">
                 <Mail className="h-3.5 w-3.5" />
-                <span>support@vellotech.com</span>
+                <span>support@vellotech.store</span>
               </a>
             </div>
             <div className="flex items-center gap-6">
-              <span>Free shipping on orders over $99</span>
+              <span>Free shipping on orders over ₦150,000</span>
               <span className="w-px h-4 bg-background/30" />
               <a href="#track" className="transition-opacity duration-200 hover:opacity-80">Track Order</a>
             </div>

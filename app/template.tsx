@@ -1,25 +1,67 @@
 'use client'
 
-import { useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { useEffect, useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { usePathname } from 'next/navigation'
+import { Loader2 } from 'lucide-react'
 
 export default function Template({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
+  const [isLoading, setIsLoading] = useState(true)
   
   useEffect(() => {
+    setIsLoading(true)
     window.scrollTo(0, 0)
+    
+    // Simulate a network/processing delay to make the app feel substantial
+    const timer = setTimeout(() => {
+      setIsLoading(false)
+    }, 600)
+    
+    return () => clearTimeout(timer)
   }, [pathname])
   
   return (
-    <motion.div
-      key={pathname}
-      initial={{ opacity: 0, y: 15 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -15 }}
-      transition={{ duration: 0.4, ease: 'easeOut' }}
-    >
-      {children}
-    </motion.div>
+    <>
+      <AnimatePresence mode="wait">
+        {isLoading && (
+          <motion.div
+            key="page-loader"
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.4, ease: 'easeInOut' }}
+            className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.4 }}
+              className="flex items-center justify-center w-16 h-16 bg-primary rounded-2xl mb-8 shadow-2xl shadow-primary/20"
+            >
+              <span className="text-primary-foreground font-bold text-3xl">V</span>
+            </motion.div>
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.1 }}
+              className="flex items-center gap-3 text-foreground font-medium"
+            >
+              <Loader2 className="h-5 w-5 animate-spin text-primary" />
+              Loading...
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <motion.div
+        key={pathname}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: isLoading ? 0 : 1 }}
+        transition={{ duration: 0.5, ease: 'easeOut', delay: isLoading ? 0 : 0.2 }}
+        className="w-full"
+      >
+        {children}
+      </motion.div>
+    </>
   )
 }
