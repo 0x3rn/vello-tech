@@ -257,9 +257,9 @@ export default function CheckoutPage() {
           <h1 className="text-3xl lg:text-4xl font-bold text-foreground tracking-tight mb-8">Checkout</h1>
 
           {/* Steps Progress */}
-          <div className="flex items-center gap-4 mb-8">
+          <div className="flex items-center gap-2 sm:gap-4 mb-8 overflow-x-auto pb-4 scrollbar-hide">
             {steps.map((s, i) => (
-              <div key={s.id} className="flex items-center gap-4">
+              <div key={s.id} className="flex items-center gap-2 sm:gap-4 shrink-0">
                 <button
                   onClick={() => {
                     if (steps.findIndex(x => x.id === s.id) <= steps.findIndex(x => x.id === step)) return
@@ -275,7 +275,7 @@ export default function CheckoutPage() {
                   )}
                 >
                   <span className={cn(
-                    "w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold",
+                    "w-6 h-6 shrink-0 rounded-full flex items-center justify-center text-xs font-bold",
                     step === s.id ? "bg-primary-foreground text-primary" : steps.findIndex(x => x.id === s.id) < steps.findIndex(x => x.id === step) ? "bg-accent text-accent-foreground" : "bg-muted text-muted-foreground"
                   )}>
                     {steps.findIndex(x => x.id === s.id) < steps.findIndex(x => x.id === step) ? <CheckCircle className="h-4 w-4" /> : i + 1}
@@ -292,9 +292,10 @@ export default function CheckoutPage() {
               <div className="bg-card rounded-2xl p-6 lg:p-8 border border-border/50 shadow-sm">
                 {currentStepContent()}
               </div>
-              <div className="flex items-center justify-between mt-6">
+              <div className="flex flex-col-reverse sm:flex-row items-center justify-between gap-4 mt-6">
                 <Button
                   variant="outline"
+                  className="w-full sm:w-auto"
                   onClick={() => {
                     if (step === "shipping") window.location.href = "/cart"
                     else if (step === "payment") setStep("shipping")
@@ -308,7 +309,7 @@ export default function CheckoutPage() {
                     size="lg"
                     onClick={handlePlaceOrder}
                     disabled={processing}
-                    className="transition-all duration-200 hover:scale-105"
+                    className="w-full sm:w-auto transition-all duration-200 hover:scale-105"
                   >
                     {processing ? (
                       <>Processing...</>
@@ -326,7 +327,7 @@ export default function CheckoutPage() {
                       if (step === "shipping") setStep("payment")
                       else setStep("review")
                     }}
-                    className="transition-all duration-200 hover:scale-105"
+                    className="w-full sm:w-auto transition-all duration-200 hover:scale-105"
                   >
                     Continue to {step === "shipping" ? "Payment" : "Review"}
                     <ChevronRight className="ml-2 h-4 w-4" />
