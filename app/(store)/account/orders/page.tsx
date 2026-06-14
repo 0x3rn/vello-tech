@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import { AuthGuard } from "@/components/auth-guard"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
 
@@ -93,17 +94,18 @@ export default function OrdersPage() {
   })
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="pt-16 pb-20">
-        <div className="mx-auto max-w-7xl px-4 lg:px-8">
-          {/* Header */}
-          <Link
-            href="/account"
-            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors duration-200 mb-6"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Account
-          </Link>
+    <AuthGuard>
+      <div className="min-h-screen bg-background">
+        <div className="pt-16 pb-20">
+          <div className="mx-auto max-w-7xl px-4 lg:px-8">
+            {/* Header */}
+            <Link
+              href="/account"
+              className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors duration-200 mb-6"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to Account
+            </Link>
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
             <div>
@@ -242,8 +244,9 @@ export default function OrdersPage() {
               })
             )}
           </div>
+          </div>
         </div>
       </div>
-    </div>
+    </AuthGuard>
   )
 }

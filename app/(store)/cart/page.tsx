@@ -3,6 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
+import { useRouter } from "next/navigation"
 import {
   Minus,
   Plus,
@@ -20,6 +21,7 @@ import { useCartStore } from "@/lib/store/cart"
 
 export default function CartPage() {
   const { items, updateQuantity, removeItem, totalPrice } = useCartStore()
+  const router = useRouter()
   const [promoCode, setPromoCode] = useState("")
 
   const subtotal = totalPrice()
@@ -34,13 +36,13 @@ export default function CartPage() {
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
             <div>
-              <Link
-                href="/"
+              <button
+                onClick={() => router.back()}
                 className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors duration-200 mb-4"
               >
                 <ArrowLeft className="h-4 w-4" />
                 Continue Shopping
-              </Link>
+              </button>
               <h1 className="text-3xl lg:text-4xl font-bold text-foreground tracking-tight">
                 Shopping Cart
               </h1>

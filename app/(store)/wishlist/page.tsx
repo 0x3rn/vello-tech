@@ -13,9 +13,9 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { cn } from "@/lib/utils"
 import { useCartStore } from "@/lib/store/cart"
 import { toast } from "sonner"
+import { AuthGuard } from "@/components/auth-guard"
 
 const wishlistItems = [
   {
@@ -100,7 +100,8 @@ export default function WishlistPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <AuthGuard>
+      <div className="min-h-screen bg-background">
       <div className="pt-10 lg:pt-16 pb-20">
         <div className="mx-auto max-w-7xl px-4 lg:px-8">
           {/* Header */}
@@ -251,14 +252,15 @@ export default function WishlistPage() {
                         <ShoppingCart className="h-4 w-4 mr-2" />
                       )}
                       {addingProduct === item.id ? 'Adding...' : item.inStock ? "Add to Cart" : "Out of Stock"}
-                    </Button>
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </AuthGuard>
   )
 }

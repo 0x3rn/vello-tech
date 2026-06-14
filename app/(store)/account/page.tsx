@@ -16,6 +16,7 @@ import {
 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { AuthGuard } from "@/components/auth-guard"
 
 const stats = [
   { label: "Orders", value: "12", icon: Package },
@@ -58,8 +59,9 @@ const accountLinks = [
 
 export default function AccountPage() {
   return (
-    <div className="min-h-screen bg-background">
-      <div className="pt-10 lg:pt-16 pb-20">
+    <AuthGuard>
+      <div className="min-h-screen bg-background">
+        <div className="pt-10 lg:pt-16 pb-20">
         <div className="mx-auto max-w-7xl px-4 lg:px-8">
           {/* Breadcrumb */}
           <Link
@@ -198,8 +200,9 @@ export default function AccountPage() {
               </div>
             </div>
           </div>
+          </div>
         </div>
       </div>
-    </div>
+    </AuthGuard>
   )
 }
