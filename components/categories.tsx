@@ -1,11 +1,13 @@
 'use client'
 
-import { Smartphone, Laptop, Headphones, Watch, Camera, Gamepad2, ArrowRight } from 'lucide-react'
+import Link from 'next/link'
+import { Smartphone, Laptop, Headphones, Watch, Camera, Gamepad2, ArrowRight, HardDrive, Cpu, Wifi, Cable } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const categories = [
   { 
     name: 'Smartphones', 
+    slug: 'smartphones',
     icon: Smartphone, 
     count: 124,
     color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
@@ -13,6 +15,7 @@ const categories = [
   },
   { 
     name: 'Laptops', 
+    slug: 'laptops',
     icon: Laptop, 
     count: 86,
     color: 'bg-purple-500/10 text-purple-600 dark:text-purple-400',
@@ -20,6 +23,7 @@ const categories = [
   },
   { 
     name: 'Audio', 
+    slug: 'audio',
     icon: Headphones, 
     count: 215,
     color: 'bg-orange-500/10 text-orange-600 dark:text-orange-400',
@@ -27,6 +31,7 @@ const categories = [
   },
   { 
     name: 'Wearables', 
+    slug: 'wearables',
     icon: Watch, 
     count: 98,
     color: 'bg-teal-500/10 text-teal-600 dark:text-teal-400',
@@ -34,6 +39,7 @@ const categories = [
   },
   { 
     name: 'Cameras', 
+    slug: 'cameras',
     icon: Camera, 
     count: 67,
     color: 'bg-red-500/10 text-red-600 dark:text-red-400',
@@ -41,10 +47,43 @@ const categories = [
   },
   { 
     name: 'Gaming', 
+    slug: 'gaming',
     icon: Gamepad2, 
     count: 143,
     color: 'bg-green-500/10 text-green-600 dark:text-green-400',
     hoverColor: 'hover:bg-green-500/20 hover:border-green-500/30 hover:shadow-green-500/10',
+  },
+  { 
+    name: 'Storage & Memory', 
+    slug: 'storage-and-memory',
+    icon: HardDrive, 
+    count: 89,
+    color: 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400',
+    hoverColor: 'hover:bg-yellow-500/20 hover:border-yellow-500/30 hover:shadow-yellow-500/10',
+  },
+  { 
+    name: 'PC Components', 
+    slug: 'pc-components',
+    icon: Cpu, 
+    count: 112,
+    color: 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400',
+    hoverColor: 'hover:bg-cyan-500/20 hover:border-cyan-500/30 hover:shadow-cyan-500/10',
+  },
+  { 
+    name: 'Networking', 
+    slug: 'networking',
+    icon: Wifi, 
+    count: 45,
+    color: 'bg-blue-600/10 text-blue-700 dark:text-blue-500',
+    hoverColor: 'hover:bg-blue-600/20 hover:border-blue-600/30 hover:shadow-blue-600/10',
+  },
+  { 
+    name: 'Accessories', 
+    slug: 'accessories',
+    icon: Cable, 
+    count: 320,
+    color: 'bg-pink-500/10 text-pink-600 dark:text-pink-400',
+    hoverColor: 'hover:bg-pink-500/20 hover:border-pink-500/30 hover:shadow-pink-500/10',
   },
 ]
 
@@ -64,15 +103,15 @@ export function Categories() {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-5 gap-6">
           {categories.map((category) => {
             const Icon = category.icon
             return (
-              <a
+              <Link
                 key={category.name}
-                href={`#${category.name.toLowerCase()}`}
+                href={`/category/${category.slug}`}
                 className={cn(
-                  'group relative block bg-card/80 backdrop-blur-sm rounded-3xl sm:rounded-[2rem] p-4 sm:p-6 border border-white/10 dark:border-white/5 transition-all duration-300',
+                  'group relative block bg-card/80 backdrop-blur-sm rounded-3xl sm:rounded-[2rem] p-4 sm:p-6 border border-white/10 dark:border-white/5 transition-colors transform duration-300',
                   'hover:shadow-lg',
                   category.hoverColor
                 )}
@@ -91,7 +130,7 @@ export function Categories() {
                 <div className="absolute bottom-6 right-6 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center opacity-0 -translate-x-4 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0">
                   <ArrowRight className="h-4 w-4 text-primary" />
                 </div>
-              </a>
+              </Link>
             )
           })}
         </div>
