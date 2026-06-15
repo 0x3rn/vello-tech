@@ -10,7 +10,7 @@ import { useCartStore } from '@/lib/store/cart'
 import { Button } from '@/components/ui/button'
 import { Loader2, ShoppingCart, Star, SlidersHorizontal, X } from 'lucide-react'
 import { toast } from 'sonner'
-import { cn } from '@/lib/utils'
+import { cn, resolveImageUrl } from '@/lib/utils'
 
 interface ProductData {
   id: string
@@ -159,7 +159,7 @@ export default function CategoryPage() {
       slug: product.slug,
       name: product.name,
       price: product.price,
-      image: product.imageUrls?.[0] || 'https://via.placeholder.com/500x500.png',
+      image: resolveImageUrl(product.imageUrls?.[0]),
       quantity: 1,
       categoryId: product.categoryId,
     })
@@ -296,7 +296,7 @@ export default function CategoryPage() {
                       {/* Product Image */}
                       <div className="relative aspect-square bg-secondary/30 p-6 overflow-hidden flex items-center justify-center">
                         <Image
-                          src={product.imageUrls?.[0] || 'https://via.placeholder.com/500x500.png?text=No+Image'}
+                          src={resolveImageUrl(product.imageUrls?.[0])}
                           alt={product.name}
                           fill
                           className="object-contain p-6 group-hover:scale-105 transition-transform duration-500"

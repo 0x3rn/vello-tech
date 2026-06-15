@@ -2,9 +2,10 @@
 
 import { createContext, useContext, useEffect, useState } from 'react'
 import { User, onAuthStateChanged } from 'firebase/auth'
-import { doc, updateDoc } from 'firebase/firestore'
+import { doc, updateDoc, getDoc } from 'firebase/firestore'
 import { auth, db } from '@/lib/firebase'
 import { useCartStore } from '@/lib/store/cart'
+import { useUserStore } from '@/lib/store/user'
 
 interface AuthContextType {
   user: User | null
@@ -21,8 +22,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user)
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      if (currentUser) {
+        try {
+          const userDoc = await getDoc(doc(db, 'users', currentUser.uid))
+          if (userDoc.exists()) {
+            useUserStore.getState().setUserData({
+              uid: currentUser.uid,
+              ...userDoc.data(),
+            } as any)
+          }
+        } catch (error) {
+          console.error("Failed to fetch user data:", error)
+        }
+      } else {
+        useUserStore.getState().clearUserData()
+      }
+      
+      setUser(currentUser)
       setLoading(false)
     })
 

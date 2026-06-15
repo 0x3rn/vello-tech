@@ -1,7 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
+import { doc, getDoc, updateDoc, arrayRemove } from "firebase/firestore"
+import { db } from "@/lib/firebase"
+import { useAuth } from "@/lib/contexts/auth-context"
+import { useUserStore } from "@/lib/store/user"
 import {
   ArrowLeft,
   Heart,
@@ -16,69 +20,90 @@ import { Badge } from "@/components/ui/badge"
 import { useCartStore } from "@/lib/store/cart"
 import { toast } from "sonner"
 import { AuthGuard } from "@/components/auth-guard"
-import { cn } from "@/lib/utils"
-
-const wishlistItems = [
-  {
-    id: 1,
-    name: "ProMax Smartphone X1",
-    category: "Smartphones",
-    price: 1299,
-    originalPrice: 1499,
-    rating: 4.9,
-    reviews: 234,
-    badge: "New",
-    color: "bg-blue-500/10",
-    inStock: true,
-  },
-  {
-    id: 3,
-    name: "SoundWave Elite ANC",
-    category: "Audio",
-    price: 349,
-    originalPrice: 449,
-    rating: 4.7,
-    reviews: 423,
-    badge: "Sale",
-    color: "bg-orange-500/10",
-    inStock: true,
-  },
-  {
-    id: 4,
-    name: "SmartWatch Series 8",
-    category: "Wearables",
-    price: 499,
-    originalPrice: null,
-    rating: 4.9,
-    reviews: 312,
-    badge: null,
-    color: "bg-teal-500/10",
-    inStock: true,
-  },
-  {
-    id: 8,
-    name: "TabletPro 12.9\"",
-    category: "Tablets",
-    price: 1099,
-    originalPrice: null,
-    rating: 4.9,
-    reviews: 234,
-    badge: "New",
-    color: "bg-indigo-500/10",
-    inStock: false,
-  },
-]
+import { cn, resolveImageUrl } from "@/lib/utils"
 
 export default function WishlistPage() {
-  const [items, setItems] = useState(wishlistItems)
-  const [addingProduct, setAddingProduct] = useState<number | null>(null)
+  const { user } = useAuth()
+  const { userData, setUserData } = useUserStore()
+  const [items, setItems] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [addingProduct, setAddingProduct] = useState<string | null>(null)
+  const [removingProduct, setRemovingProduct] = useState<string | null>(null)
   const addItem = useCartStore((state) => state.addItem)
 
-  const removeItem = (id: number) => {
-    setItems((prev) => prev.filter((item) => item.id !== id))
+  useEffect(() => {
+    const fetchWishlist = async () => {
+      if (!user || !userData) return
+      
+      const wishlistIds = userData.wishlist || []
+      
+      if (wishlistIds.length === 0) {
+        setItems([])
+        setLoading(false)
+        return
+      }
+
+      try {
+        const productPromises = wishlistIds.map(id => getDoc(doc(db, "products", id)))
+        const docs = await Promise.all(productPromises)
+        
+        const products = docs
+          .filter(d => d.exists())
+          .map(d => {
+            const data = d.data()
+            return {
+              id: d.id,
+              name: data.name || "Unknown Product",
+              category: data.category || "Uncategorized",
+              price: data.price || 0,
+              originalPrice: data.originalPrice || null,
+              rating: data.rating || 5.0,
+              reviews: data.reviews || 0,
+              badge: data.badge || null,
+              color: data.color || "bg-secondary",
+              inStock: data.inStock !== false, // default true
+              image: resolveImageUrl(data.images?.[0]),
+            }
+          })
+          
+        setItems(products)
+      } catch (error) {
+        console.error("Error fetching wishlist:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchWishlist()
+  }, [user, userData?.wishlist]) // Re-fetch if wishlist array changes
+
+  const removeItem = async (productId: string) => {
+    if (!user || !userData) return
+    
+    setRemovingProduct(productId)
+    try {
+      const userRef = doc(db, "users", user.uid)
+      await updateDoc(userRef, {
+        wishlist: arrayRemove(productId)
+      })
+      
+      const updatedWishlist = (userData.wishlist || []).filter(id => id !== productId)
+      setUserData({
+        ...(userData as any),
+        wishlist: updatedWishlist
+      })
+      
+      setItems(prev => prev.filter(item => item.id !== productId))
+      toast.success("Removed from wishlist")
+    } catch (error) {
+      console.error("Failed to remove item:", error)
+      toast.error("Failed to remove item from wishlist")
+    } finally {
+      setRemovingProduct(null)
+    }
   }
 
-  const handleAddToCart = async (item: typeof wishlistItems[0]) => {
+  const handleAddToCart = async (item: any) => {
     setAddingProduct(item.id)
     
     // Simulate short network delay for satisfying visual feedback
@@ -89,7 +114,7 @@ export default function WishlistPage() {
       slug: item.name.toLowerCase().replace(/\s+/g, '-'),
       name: item.name,
       price: item.price,
-      image: 'https://via.placeholder.com/500x500.png',
+      image: item.image,
       quantity: 1,
       categoryId: item.category,
     })
@@ -125,7 +150,11 @@ export default function WishlistPage() {
             </div>
           </div>
 
-          {items.length === 0 ? (
+          {loading ? (
+            <div className="flex justify-center py-20">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : items.length === 0 ? (
             /* Empty State */
             <div className="text-center py-20">
               <div className="w-24 h-24 bg-secondary rounded-full flex items-center justify-center mx-auto mb-6">
@@ -151,7 +180,7 @@ export default function WishlistPage() {
                 >
                   {/* Image */}
                   <div className="relative aspect-square bg-secondary p-4 sm:p-6 overflow-hidden">
-                    <Link href={`/products/${item.id}`}>
+                    <Link href={`/product/${item.name.toLowerCase().replace(/\s+/g, '-')}`}>
                       <div
                         className={cn(
                           "w-full h-full rounded-xl flex items-center justify-center transition-transform duration-500 group-hover:scale-110",
@@ -180,9 +209,14 @@ export default function WishlistPage() {
                     {/* Remove button */}
                     <button
                       onClick={() => removeItem(item.id)}
-                      className="absolute top-4 right-4 w-10 h-10 rounded-full bg-card/90 backdrop-blur-sm flex items-center justify-center border border-border text-muted-foreground hover:text-destructive hover:border-destructive/50 transition-all duration-200 hover:scale-110 opacity-0 group-hover:opacity-100"
+                      disabled={removingProduct === item.id}
+                      className="absolute top-4 right-4 w-10 h-10 rounded-full bg-card/90 backdrop-blur-sm flex items-center justify-center border border-border text-muted-foreground hover:text-destructive hover:border-destructive/50 transition-all duration-200 hover:scale-110 opacity-0 group-hover:opacity-100 disabled:opacity-50"
                     >
-                      <Trash2 className="h-5 w-5" />
+                      {removingProduct === item.id ? (
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-5 w-5" />
+                      )}
                     </button>
 
                     {!item.inStock && (
@@ -202,7 +236,7 @@ export default function WishlistPage() {
                     <p className="text-sm text-muted-foreground">
                       {item.category}
                     </p>
-                    <Link href={`/products/${item.id}`}>
+                    <Link href={`/product/${item.name.toLowerCase().replace(/\s+/g, '-')}`}>
                       <h3 className="font-semibold text-foreground mt-1 transition-colors duration-200 group-hover:text-primary">
                         {item.name}
                       </h3>

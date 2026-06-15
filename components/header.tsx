@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { useCartStore } from '@/lib/store/cart'
 import { useAuth } from '@/lib/contexts/auth-context'
+import { useUserStore } from '@/lib/store/user'
 
 const navigation = [
   { 
@@ -43,7 +44,7 @@ const navigation = [
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const cartCount = useCartStore((state) => state.totalItems())
-  const [wishlistCount] = useState(2)
+  const wishlistCount = useUserStore((state) => state.userData?.wishlist?.length || 0)
   const { user } = useAuth()
   const [isScrolled, setIsScrolled] = useState(false)
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)

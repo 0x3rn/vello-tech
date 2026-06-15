@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { Star, Heart, ShoppingCart, Eye, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { cn } from '@/lib/utils'
+import { cn, resolveImageUrl } from '@/lib/utils'
 import { motion, AnimatePresence } from 'framer-motion'
 import { collection, getDocs, limit, query, where } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
@@ -67,7 +67,7 @@ function ProductCard({ product }: { product: ProductData }) {
       id: product.id,
       name: product.name,
       price: product.price,
-      image: product.imageUrls?.[0] || 'https://via.placeholder.com/500x500.png',
+      image: resolveImageUrl(product.imageUrls?.[0]),
       quantity: 1,
       slug: product.slug,
       categoryId: product.categoryId,
@@ -90,7 +90,7 @@ function ProductCard({ product }: { product: ProductData }) {
         {/* Image */}
         <div className="relative aspect-square p-6 overflow-hidden bg-secondary/30 flex items-center justify-center">
           <Image
-            src={product.imageUrls?.[0] || 'https://via.placeholder.com/500x500.png'}
+            src={resolveImageUrl(product.imageUrls?.[0])}
             alt={product.name}
             fill
             className="object-contain p-8 group-hover:scale-105 transition-transform duration-500"
@@ -152,7 +152,7 @@ function ProductCard({ product }: { product: ProductData }) {
         {/* Content */}
         <div className="p-6 relative z-20 bg-card">
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{product.brand}</p>
-          <h3 className="font-bold text-foreground mt-2 text-lg transition-colors duration-300 group-hover:text-primary line-clamp-1">
+          <h3 className="font-bold text-foreground mt-2 text-base transition-colors duration-300 group-hover:text-primary line-clamp-2">
             {product.name}
           </h3>
           
@@ -178,11 +178,11 @@ function ProductCard({ product }: { product: ProductData }) {
           {/* Price */}
           <div className="flex items-center gap-3 mt-4">
             <span className="text-xl font-extrabold text-foreground">
-              ${product.price?.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              ${(product.discountPrice || product.price).toLocaleString(undefined, { minimumFractionDigits: 2 })}
             </span>
             {product.discountPrice && (
               <span className="text-sm font-medium text-muted-foreground line-through decoration-muted-foreground/50">
-                ${product.discountPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                ${product.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
               </span>
             )}
             {product.discountPrice && (

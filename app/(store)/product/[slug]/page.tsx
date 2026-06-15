@@ -10,6 +10,7 @@ import { useCartStore } from '@/lib/store/cart'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, Loader2, Minus, Plus, ShoppingCart, Star } from 'lucide-react'
 import { toast } from 'sonner'
+import { resolveImageUrl } from '@/lib/utils'
 
 interface ProductData {
   id: string
@@ -109,7 +110,7 @@ export default function ProductDetailPage() {
       id: product.id,
       name: product.name,
       price: product.price,
-      image: product.imageUrls[0],
+      image: resolveImageUrl(product.imageUrls?.[0]),
       quantity,
       slug: product.slug,
       categoryId: product.categoryId,
@@ -155,7 +156,7 @@ export default function ProductDetailPage() {
           <div className="flex flex-col gap-4">
             <div className="relative aspect-square w-full rounded-2xl bg-secondary/30 overflow-hidden border border-border">
               <Image
-                src={product.imageUrls[activeImage] || 'https://via.placeholder.com/500x500.png?text=No+Image'}
+                src={resolveImageUrl(product.imageUrls?.[activeImage])}
                 alt={product.name}
                 fill
                 className="object-contain p-8"
@@ -171,7 +172,7 @@ export default function ProductDetailPage() {
                       activeImage === idx ? 'border-primary' : 'border-transparent hover:border-border'
                     }`}
                   >
-                    <Image src={url} alt={`${product.name} ${idx + 1}`} fill className="object-contain p-2" />
+                    <Image src={resolveImageUrl(url)} alt={`${product.name} ${idx + 1}`} fill className="object-contain p-2" />
                   </button>
                 ))}
               </div>
@@ -197,11 +198,11 @@ export default function ProductDetailPage() {
             
             <div className="flex items-center gap-3 mb-6">
               <p className="text-2xl font-semibold text-foreground">
-                ${product.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                ${(product.discountPrice || product.price).toLocaleString(undefined, { minimumFractionDigits: 2 })}
               </p>
               {product.discountPrice && (
                 <p className="text-lg font-medium text-muted-foreground line-through">
-                  ${product.discountPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  ${product.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                 </p>
               )}
             </div>
