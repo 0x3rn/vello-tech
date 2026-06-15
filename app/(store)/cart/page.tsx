@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { useCartStore } from "@/lib/store/cart"
+import { resolveImageUrl } from "@/lib/utils"
 
 export default function CartPage() {
   const { items, updateQuantity, removeItem, totalPrice } = useCartStore()
@@ -81,7 +82,7 @@ export default function CartPage() {
                     {/* Product Image */}
                     <Link href={`/product/${item.slug}`} className="block relative w-20 h-20 sm:w-24 sm:h-24 lg:w-24 lg:h-24 rounded-lg flex-shrink-0 flex items-center justify-center bg-secondary/30 border border-border overflow-hidden group">
                       <Image
-                        src={item.image || 'https://via.placeholder.com/500x500.png'}
+                        src={resolveImageUrl(item.image)}
                         alt={item.name}
                         fill
                         className="object-contain p-2 group-hover:scale-105 transition-transform"
