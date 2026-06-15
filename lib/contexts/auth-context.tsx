@@ -2,7 +2,9 @@
 
 import { createContext, useContext, useEffect, useState } from 'react'
 import { User, onAuthStateChanged } from 'firebase/auth'
-import { auth } from '@/lib/firebase'
+import { doc, updateDoc } from 'firebase/firestore'
+import { auth, db } from '@/lib/firebase'
+import { useCartStore } from '@/lib/store/cart'
 
 interface AuthContextType {
   user: User | null
@@ -26,6 +28,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return () => unsubscribe()
   }, [])
+
+  // Sync ongoing cart changes to Firestore
+  useEffect(() => {
+    if (!user) return
+
+    const unsubscribe = useCartStore.subscribe((state, prevState) => {
+      // Basic check to see if items changed reference
+      if (state.items !== prevState?.items) {
+        const userRef = doc(db, 'users', user.uid)
+        updateDoc(userRef, { cart: state.items }).catch(console.error)
+      }
+    })
+
+    return () => unsubscribe()
+  }, [user])
 
   return (
     <AuthContext.Provider value={{ user, loading }}>
