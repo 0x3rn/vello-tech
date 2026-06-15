@@ -22,15 +22,14 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
+import { useAuth } from "@/lib/contexts/auth-context"
+import { useCartStore } from "@/lib/store/cart"
+import { toast } from "sonner"
 
 type CheckoutStep = "login" | "shipping" | "payment" | "review"
 
-const orderItems = [
-  { id: 1, name: "ProMax Smartphone X1", price: 1299, quantity: 1, color: "bg-blue-500/10" },
-  { id: 7, name: "WirelessBuds Pro", price: 249, quantity: 2, color: "bg-pink-500/10" },
-]
-
 export default function CheckoutPage() {
+  const { items: cartItems } = useCartStore()
   const [step, setStep] = useState<CheckoutStep>("shipping")
   const [checkoutType, setCheckoutType] = useState<"guest" | "login">("guest")
   const [email, setEmail] = useState("")
@@ -41,12 +40,10 @@ export default function CheckoutPage() {
   const [city, setCity] = useState("")
   const [zipCode, setZipCode] = useState("")
   const [phone, setPhone] = useState("")
-  const [cardNumber, setCardNumber] = useState("")
-  const [expiry, setExpiry] = useState("")
-  const [cvc, setCvc] = useState("")
+  const [paymentMethod, setPaymentMethod] = useState<"paystack" | "lemonsqueezy">("paystack")
   const [processing, setProcessing] = useState(false)
 
-  const subtotal = orderItems.reduce((s, i) => s + i.price * i.quantity, 0)
+  const subtotal = cartItems.reduce((s, i) => s + i.price * i.quantity, 0)
   const shipping = subtotal > 99 ? 0 : 9.99
   const tax = subtotal * 0.08
   const total = subtotal + shipping + tax
@@ -57,11 +54,43 @@ export default function CheckoutPage() {
     { id: "review" as const, label: "Review" },
   ]
 
+  const { user } = useAuth()
+
   const handlePlaceOrder = async () => {
+    if (!user) {
+      toast.error("Please log in to complete your order")
+      return
+    }
+    
     setProcessing(true)
-    // Simulate payment processing
-    await new Promise((r) => setTimeout(r, 2000))
-    window.location.href = "/checkout/success"
+    
+    try {
+      const endpoint = paymentMethod === "paystack" 
+        ? "/api/checkout/paystack" 
+        : "/api/checkout/lemonsqueezy"
+
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          uid: user.uid,
+          email: user.email || email,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to initialize checkout")
+      }
+
+      if (data.url) {
+        window.location.href = data.url
+      }
+    } catch (error: any) {
+      toast.error(error.message || "An error occurred during checkout")
+      setProcessing(false)
+    }
   }
 
   const renderLoginChoice = () => (
@@ -166,27 +195,53 @@ export default function CheckoutPage() {
 
   const renderPaymentForm = () => (
     <div className="space-y-4">
-      <div>
-        <label className="text-sm font-medium text-foreground mb-1 block">Card Number</label>
-        <div className="relative">
-          <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="1234 5678 9012 3456" value={cardNumber} onChange={(e) => setCardNumber(e.target.value)} className="pl-10" maxLength={19} />
-        </div>
+      <div className="grid gap-4">
+        <button
+          onClick={() => setPaymentMethod("paystack")}
+          className={cn(
+            "flex items-center gap-4 p-4 rounded-xl text-left border-2 transition-all",
+            paymentMethod === "paystack"
+              ? "border-primary bg-primary/5"
+              : "border-border/50 hover:border-primary/50"
+          )}
+        >
+          <div className={cn(
+            "w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0",
+            paymentMethod === "paystack" ? "border-primary" : "border-muted-foreground"
+          )}>
+            {paymentMethod === "paystack" && <div className="w-2.5 h-2.5 rounded-full bg-primary" />}
+          </div>
+          <div>
+            <h4 className="font-medium text-foreground">Credit Card / Local Bank</h4>
+            <p className="text-sm text-muted-foreground">Processed securely via Paystack</p>
+          </div>
+        </button>
+
+        <button
+          onClick={() => setPaymentMethod("lemonsqueezy")}
+          className={cn(
+            "flex items-center gap-4 p-4 rounded-xl text-left border-2 transition-all",
+            paymentMethod === "lemonsqueezy"
+              ? "border-primary bg-primary/5"
+              : "border-border/50 hover:border-primary/50"
+          )}
+        >
+          <div className={cn(
+            "w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0",
+            paymentMethod === "lemonsqueezy" ? "border-primary" : "border-muted-foreground"
+          )}>
+            {paymentMethod === "lemonsqueezy" && <div className="w-2.5 h-2.5 rounded-full bg-primary" />}
+          </div>
+          <div>
+            <h4 className="font-medium text-foreground">Global Payments</h4>
+            <p className="text-sm text-muted-foreground">Processed securely via Lemon Squeezy</p>
+          </div>
+        </button>
       </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="text-sm font-medium text-foreground mb-1 block">Expiry Date</label>
-          <Input placeholder="MM/YY" value={expiry} onChange={(e) => setExpiry(e.target.value)} maxLength={5} />
-        </div>
-        <div>
-          <label className="text-sm font-medium text-foreground mb-1 block">CVC</label>
-          <Input placeholder="123" value={cvc} onChange={(e) => setCvc(e.target.value)} maxLength={4} type="password" />
-        </div>
-      </div>
-      <div className="flex items-center gap-3 p-4 bg-secondary/50 rounded-xl">
+      <div className="flex items-center gap-3 p-4 bg-secondary/50 rounded-xl mt-6">
         <Shield className="h-5 w-5 text-accent flex-shrink-0" />
         <p className="text-sm text-muted-foreground">
-          Your payment information is encrypted and secure. We never store your full card details.
+          You will be redirected to the secure payment portal after clicking Place Order.
         </p>
       </div>
     </div>
@@ -211,14 +266,14 @@ export default function CheckoutPage() {
           Payment Method
         </div>
         <p className="text-sm text-muted-foreground pl-6">
-          Card ending in ····{cardNumber.slice(-4)}
+          {paymentMethod === "paystack" ? "Credit Card / Local Bank" : "Global Payments"}
         </p>
       </div>
       <div className="space-y-3">
         <h4 className="text-sm font-medium text-foreground">Order Items</h4>
-        {orderItems.map((item) => (
+        {cartItems.map((item) => (
           <div key={item.id} className="flex items-center gap-3 p-3 bg-secondary/50 rounded-xl">
-            <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0", item.color)}>
+            <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center flex-shrink-0">
               <Package className="h-5 w-5" />
             </div>
             <div className="flex-1 min-w-0">
@@ -257,9 +312,9 @@ export default function CheckoutPage() {
           <h1 className="text-3xl lg:text-4xl font-bold text-foreground tracking-tight mb-8">Checkout</h1>
 
           {/* Steps Progress */}
-          <div className="flex items-center gap-4 mb-8">
+          <div className="flex items-center gap-2 sm:gap-4 mb-8 overflow-x-auto pb-4 scrollbar-hide">
             {steps.map((s, i) => (
-              <div key={s.id} className="flex items-center gap-4">
+              <div key={s.id} className="flex items-center gap-2 sm:gap-4 shrink-0">
                 <button
                   onClick={() => {
                     if (steps.findIndex(x => x.id === s.id) <= steps.findIndex(x => x.id === step)) return
@@ -275,7 +330,7 @@ export default function CheckoutPage() {
                   )}
                 >
                   <span className={cn(
-                    "w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold",
+                    "w-6 h-6 shrink-0 rounded-full flex items-center justify-center text-xs font-bold",
                     step === s.id ? "bg-primary-foreground text-primary" : steps.findIndex(x => x.id === s.id) < steps.findIndex(x => x.id === step) ? "bg-accent text-accent-foreground" : "bg-muted text-muted-foreground"
                   )}>
                     {steps.findIndex(x => x.id === s.id) < steps.findIndex(x => x.id === step) ? <CheckCircle className="h-4 w-4" /> : i + 1}
@@ -292,9 +347,10 @@ export default function CheckoutPage() {
               <div className="bg-card rounded-2xl p-6 lg:p-8 border border-border/50 shadow-sm">
                 {currentStepContent()}
               </div>
-              <div className="flex items-center justify-between mt-6">
+              <div className="flex flex-col-reverse sm:flex-row items-center justify-between gap-4 mt-6">
                 <Button
                   variant="outline"
+                  className="w-full sm:w-auto"
                   onClick={() => {
                     if (step === "shipping") window.location.href = "/cart"
                     else if (step === "payment") setStep("shipping")
@@ -308,7 +364,7 @@ export default function CheckoutPage() {
                     size="lg"
                     onClick={handlePlaceOrder}
                     disabled={processing}
-                    className="transition-all duration-200 hover:scale-105"
+                    className="w-full sm:w-auto transition-all duration-200 hover:scale-105"
                   >
                     {processing ? (
                       <>Processing...</>
@@ -326,7 +382,7 @@ export default function CheckoutPage() {
                       if (step === "shipping") setStep("payment")
                       else setStep("review")
                     }}
-                    className="transition-all duration-200 hover:scale-105"
+                    className="w-full sm:w-auto transition-all duration-200 hover:scale-105"
                   >
                     Continue to {step === "shipping" ? "Payment" : "Review"}
                     <ChevronRight className="ml-2 h-4 w-4" />
@@ -340,9 +396,11 @@ export default function CheckoutPage() {
               <div className="bg-card rounded-2xl p-6 border border-border/50 shadow-sm sticky top-24">
                 <h2 className="text-lg font-bold text-foreground mb-4">Order Summary</h2>
                 <div className="space-y-3">
-                  {orderItems.map((item) => (
+                  {cartItems.map((item) => (
                     <div key={item.id} className="flex items-center gap-3">
-                      <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0", item.color)} />
+                      <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center flex-shrink-0">
+                        <Package className="h-5 w-5" />
+                      </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-foreground truncate">{item.name}</p>
                         <p className="text-xs text-muted-foreground">Qty: {item.quantity}</p>

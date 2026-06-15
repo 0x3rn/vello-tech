@@ -21,7 +21,7 @@ const navigation = [
   },
   { 
     name: 'Categories', 
-    href: '#categories',
+    href: '/categories',
     submenu: [
       { name: 'Smartphones', href: '/category/smartphones' },
       { name: 'Laptops', href: '/category/laptops' },
@@ -291,16 +291,33 @@ export function Header() {
             </form>
 
             {/* Nav Links */}
-            {navigation.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                className="flex items-center justify-between px-4 py-3 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-secondary rounded-xl transition-all duration-200"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                {item.name}
-              </Link>
-            ))}
+            <div className="space-y-1">
+              {navigation.map((item) => (
+                <div key={item.name} className="flex flex-col">
+                  <Link
+                    href={item.href}
+                    className="flex items-center justify-between px-4 py-3 text-base font-bold text-foreground hover:bg-secondary rounded-xl transition-all duration-200"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    {item.name}
+                  </Link>
+                  {item.submenu && (
+                    <div className="flex flex-col pl-4 mt-1 space-y-1 border-l-2 border-border/50 ml-6 mb-2">
+                      {item.submenu.map((subitem) => (
+                        <Link
+                          key={subitem.name}
+                          href={subitem.href}
+                          className="px-4 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary rounded-lg transition-all duration-200"
+                          onClick={() => setMobileMenuOpen(false)}
+                        >
+                          {subitem.name}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
 
             <div className="pt-2 mt-2 border-t border-border/50 space-y-1">
               {user && (
@@ -332,14 +349,6 @@ export function Header() {
                   </Link>
                 </>
               )}
-              <Link
-                href="/cart"
-                className="flex items-center gap-3 px-4 py-3 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-secondary rounded-xl transition-all duration-200"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <ShoppingCart className="h-5 w-5" />
-                Cart ({cartCount})
-              </Link>
             </div>
 
             {!user && (
