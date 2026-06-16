@@ -252,7 +252,7 @@ export function FeaturedProducts() {
               Handpicked selection of our best-selling and most-loved tech products.
             </p>
           </div>
-          <Link href="/category/smartphones">
+          <Link href="/shop">
             <Button variant="outline" className="rounded-full px-8 transition-transform duration-300 hover:scale-105 border-primary/20 hover:bg-primary/5 hover:text-primary">
               View All Products
             </Button>

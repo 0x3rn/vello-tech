@@ -252,7 +252,7 @@ export function UsedProducts() {
               Get the tech you love for less. Certified pre-owned and fully refurbished devices.
             </p>
           </div>
-          <Link href="/category/smartphones">
+          <Link href="/used">
             <Button variant="outline" className="rounded-full px-8 transition-transform duration-300 hover:scale-105 border-primary/20 hover:bg-primary/5 hover:text-primary">
               View All Products
             </Button>

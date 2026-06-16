@@ -1,15 +1,17 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Smartphone, Laptop, Headphones, Watch, Camera, Gamepad2, ArrowRight, HardDrive, Cpu, Wifi, Cable } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { collection, getDocs } from 'firebase/firestore'
+import { db } from '@/lib/firebase'
 
-const categories = [
+const staticCategories = [
   { 
     name: 'Smartphones', 
     slug: 'smartphones',
     icon: Smartphone, 
-    count: 124,
     color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
     hoverColor: 'hover:bg-blue-500/20 hover:border-blue-500/30 hover:shadow-blue-500/10',
   },
@@ -17,7 +19,6 @@ const categories = [
     name: 'Laptops', 
     slug: 'laptops',
     icon: Laptop, 
-    count: 86,
     color: 'bg-purple-500/10 text-purple-600 dark:text-purple-400',
     hoverColor: 'hover:bg-purple-500/20 hover:border-purple-500/30 hover:shadow-purple-500/10',
   },
@@ -25,7 +26,6 @@ const categories = [
     name: 'Audio', 
     slug: 'audio',
     icon: Headphones, 
-    count: 215,
     color: 'bg-orange-500/10 text-orange-600 dark:text-orange-400',
     hoverColor: 'hover:bg-orange-500/20 hover:border-orange-500/30 hover:shadow-orange-500/10',
   },
@@ -33,7 +33,6 @@ const categories = [
     name: 'Wearables', 
     slug: 'wearables',
     icon: Watch, 
-    count: 98,
     color: 'bg-teal-500/10 text-teal-600 dark:text-teal-400',
     hoverColor: 'hover:bg-teal-500/20 hover:border-teal-500/30 hover:shadow-teal-500/10',
   },
@@ -41,7 +40,6 @@ const categories = [
     name: 'Cameras', 
     slug: 'cameras',
     icon: Camera, 
-    count: 67,
     color: 'bg-red-500/10 text-red-600 dark:text-red-400',
     hoverColor: 'hover:bg-red-500/20 hover:border-red-500/30 hover:shadow-red-500/10',
   },
@@ -49,7 +47,6 @@ const categories = [
     name: 'Gaming', 
     slug: 'gaming',
     icon: Gamepad2, 
-    count: 143,
     color: 'bg-green-500/10 text-green-600 dark:text-green-400',
     hoverColor: 'hover:bg-green-500/20 hover:border-green-500/30 hover:shadow-green-500/10',
   },
@@ -57,7 +54,6 @@ const categories = [
     name: 'Storage & Memory', 
     slug: 'storage-and-memory',
     icon: HardDrive, 
-    count: 89,
     color: 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400',
     hoverColor: 'hover:bg-yellow-500/20 hover:border-yellow-500/30 hover:shadow-yellow-500/10',
   },
@@ -65,7 +61,6 @@ const categories = [
     name: 'PC Components', 
     slug: 'pc-components',
     icon: Cpu, 
-    count: 112,
     color: 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400',
     hoverColor: 'hover:bg-cyan-500/20 hover:border-cyan-500/30 hover:shadow-cyan-500/10',
   },
@@ -73,7 +68,6 @@ const categories = [
     name: 'Networking', 
     slug: 'networking',
     icon: Wifi, 
-    count: 45,
     color: 'bg-blue-600/10 text-blue-700 dark:text-blue-500',
     hoverColor: 'hover:bg-blue-600/20 hover:border-blue-600/30 hover:shadow-blue-600/10',
   },
@@ -81,13 +75,36 @@ const categories = [
     name: 'Accessories', 
     slug: 'accessories',
     icon: Cable, 
-    count: 320,
     color: 'bg-pink-500/10 text-pink-600 dark:text-pink-400',
     hoverColor: 'hover:bg-pink-500/20 hover:border-pink-500/30 hover:shadow-pink-500/10',
   },
 ]
 
 export function Categories() {
+  const [counts, setCounts] = useState<Record<string, number>>({})
+
+  useEffect(() => {
+    const fetchCounts = async () => {
+      try {
+        const prodSnap = await getDocs(collection(db, 'products'))
+        const newCounts: Record<string, number> = {}
+        
+        prodSnap.forEach(doc => {
+          const catId = doc.data().categoryId
+          if (catId) {
+            newCounts[catId] = (newCounts[catId] || 0) + 1
+          }
+        })
+        
+        setCounts(newCounts)
+      } catch (error) {
+        console.error("Error fetching category counts:", error)
+      }
+    }
+    
+    fetchCounts()
+  }, [])
+
   return (
     <section id="categories" className="py-16 lg:py-20 bg-secondary/30 relative overflow-hidden">
       {/* Background decoration */}
@@ -104,8 +121,9 @@ export function Categories() {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-5 gap-6">
-          {categories.map((category) => {
+          {staticCategories.map((category) => {
             const Icon = category.icon
+            const count = counts[category.slug] || 0
             return (
               <Link
                 key={category.name}
@@ -125,7 +143,7 @@ export function Categories() {
                 <h3 className="font-bold text-foreground mb-1 sm:mb-1.5 transition-colors duration-200 group-hover:text-primary text-base sm:text-lg">
                   {category.name}
                 </h3>
-                <p className="text-sm font-medium text-muted-foreground">{category.count} Products</p>
+                <p className="text-sm font-medium text-muted-foreground">{count} Products</p>
                 
                 <div className="absolute bottom-6 right-6 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center opacity-0 -translate-x-4 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0">
                   <ArrowRight className="h-4 w-4 text-primary" />
