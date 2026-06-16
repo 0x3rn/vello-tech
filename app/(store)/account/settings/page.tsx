@@ -37,6 +37,11 @@ export default function SettingsPage() {
     e.preventDefault()
     if (!user) return
 
+    if (user && !user.emailVerified) {
+      toast.error("Action restricted: Please verify your email address using the link we sent you before proceeding.")
+      return
+    }
+
     setSaving(true)
     try {
       const userRef = doc(db, "users", user.uid)

@@ -187,7 +187,7 @@ function SearchResults() {
 
           {/* Sidebar Filters */}
           <div className={cn(
-            "fixed inset-0 z-50 bg-background lg:bg-transparent lg:static lg:block lg:w-64 lg:shrink-0 transition-transform duration-300 ease-in-out lg:translate-x-0 overflow-y-auto lg:overflow-visible",
+            "fixed inset-0 z-50 lg:z-0 bg-background lg:bg-transparent lg:static lg:block lg:w-64 lg:shrink-0 transition-transform duration-300 ease-in-out lg:translate-x-0 overflow-y-auto lg:overflow-visible",
             isMobileFiltersOpen ? "translate-x-0" : "-translate-x-full"
           )}>
             <div className="p-6 lg:p-0">

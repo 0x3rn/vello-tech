@@ -18,10 +18,13 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { useCartStore } from "@/lib/store/cart"
+import { useAuth } from "@/lib/contexts/auth-context"
 import { resolveImageUrl } from "@/lib/utils"
+import { toast } from "sonner"
 
 export default function CartPage() {
   const { items, updateQuantity, removeItem, totalPrice } = useCartStore()
+  const { user } = useAuth()
   const router = useRouter()
   const [promoCode, setPromoCode] = useState("")
 
@@ -188,7 +191,15 @@ export default function CartPage() {
                     </span>
                   </div>
 
-                  <Link href="/checkout">
+                  <Link 
+                    href="/checkout"
+                    onClick={(e) => {
+                      if (user && !user.isAnonymous && !user.emailVerified) {
+                        e.preventDefault()
+                        toast.error("Action restricted: Please verify your email address using the link we sent you before proceeding to checkout.")
+                      }
+                    }}
+                  >
                     <Button className="w-full h-12 text-base transition-all duration-200 hover:scale-[1.02]">
                       Proceed to Checkout
                       <ArrowRight className="ml-2 h-4 w-4" />

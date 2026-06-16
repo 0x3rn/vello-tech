@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
-import { useParams } from 'next/navigation'
+import { useEffect, useState, useMemo, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import { collection, getDocs, query, where } from 'firebase/firestore'
@@ -36,14 +36,16 @@ interface CategoryData {
   parentCategoryId: string | null
 }
 
-export default function CategoryPage() {
-  const { slug } = useParams()
+function ShopPageContent() {
+  const searchParams = useSearchParams()
+  const isSale = searchParams.get('sale') === 'true'
   
-  const [categoryName, setCategoryName] = useState<string>('')
   const [products, setProducts] = useState<ProductData[]>([])
+  const [categories, setCategories] = useState<{id: string, name: string}[]>([])
   const [loading, setLoading] = useState(true)
   
   // Filter states
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([])
   const [selectedBrands, setSelectedBrands] = useState<string[]>([])
   const [selectedConditions, setSelectedConditions] = useState<string[]>([])
   const [hideOutOfStock, setHideOutOfStock] = useState(false)
@@ -54,42 +56,28 @@ export default function CategoryPage() {
   const addItem = useCartStore((state) => state.addItem)
 
   useEffect(() => {
-    const fetchCategoryProducts = async () => {
+    const fetchShopData = async () => {
       setLoading(true)
       try {
-        // 1. Find the category by slug
-        const catQuery = query(collection(db, 'categories'), where('slug', '==', slug))
-        const catSnap = await getDocs(catQuery)
-        
-        if (catSnap.empty) {
-          setProducts([])
-          setLoading(false)
-          return
-        }
-
-        const categoryDoc = catSnap.docs[0]
-        setCategoryName(categoryDoc.data().name)
-        const targetCategoryIds = [categoryDoc.id]
-
-        // 2. Fetch subcategories
-        const subCatQuery = query(collection(db, 'categories'), where('parentCategoryId', '==', categoryDoc.id))
-        const subCatSnap = await getDocs(subCatQuery)
-        subCatSnap.forEach(doc => {
-          targetCategoryIds.push(doc.id)
+        // Fetch categories for filter
+        const catSnap = await getDocs(collection(db, 'categories'))
+        const cats: {id: string, name: string}[] = []
+        catSnap.forEach(doc => {
+          cats.push({ id: doc.id, name: doc.data().name })
         })
+        setCategories(cats)
 
-        // 3. Fetch products
-        const fetchedProducts: ProductData[] = []
+        // Fetch products
+        const prodSnap = await getDocs(collection(db, 'products'))
+        let fetchedProducts: ProductData[] = []
         
-        if (targetCategoryIds.length > 0) {
-          for (let i = 0; i < targetCategoryIds.length; i += 30) {
-            const chunk = targetCategoryIds.slice(i, i + 30)
-            const prodQuery = query(collection(db, 'products'), where('categoryId', 'in', chunk))
-            const prodSnap = await getDocs(prodQuery)
-            prodSnap.forEach(doc => {
-              fetchedProducts.push({ id: doc.id, ...doc.data() } as ProductData)
-            })
-          }
+        prodSnap.forEach(doc => {
+          fetchedProducts.push({ id: doc.id, ...doc.data() } as ProductData)
+        })
+        
+        // If sale param is true, pre-filter
+        if (isSale) {
+          fetchedProducts = fetchedProducts.filter(p => p.discountPrice !== null && p.discountPrice < p.price)
         }
         
         setProducts(fetchedProducts)
@@ -100,10 +88,8 @@ export default function CategoryPage() {
       }
     }
 
-    if (slug) {
-      fetchCategoryProducts()
-    }
-  }, [slug])
+    fetchShopData()
+  }, [isSale])
 
   // Derived state for filters
   const availableBrands = useMemo(() => {
@@ -117,6 +103,12 @@ export default function CategoryPage() {
     )
   }
 
+  const toggleCategory = (categoryId: string) => {
+    setSelectedCategories(prev => 
+      prev.includes(categoryId) ? prev.filter(c => c !== categoryId) : [...prev, categoryId]
+    )
+  }
+
   const toggleCondition = (condition: string) => {
     setSelectedConditions(prev => 
       prev.includes(condition) ? prev.filter(c => c !== condition) : [...prev, condition]
@@ -125,6 +117,11 @@ export default function CategoryPage() {
 
   const filteredAndSortedProducts = useMemo(() => {
     let result = [...products]
+
+    // Apply Category Filter
+    if (selectedCategories.length > 0) {
+      result = result.filter(p => selectedCategories.includes(p.categoryId))
+    }
 
     // Apply Brand Filter
     if (selectedBrands.length > 0) {
@@ -157,7 +154,7 @@ export default function CategoryPage() {
     }
 
     return result
-  }, [products, selectedBrands, hideOutOfStock, sortBy])
+  }, [products, selectedCategories, selectedBrands, selectedConditions, hideOutOfStock, sortBy])
 
   const handleAddToCart = async (e: React.MouseEvent, product: ProductData) => {
     e.preventDefault()
@@ -190,10 +187,10 @@ export default function CategoryPage() {
         {/* Header */}
         <div className="mb-8 border-b border-border pb-8">
           <h1 className="text-3xl lg:text-4xl font-bold tracking-tight text-foreground mb-4">
-            {categoryName || 'Loading...'}
+            {isSale ? 'Sale Items' : 'All Products'}
           </h1>
           <p className="text-muted-foreground text-lg">
-            Explore our curated selection of top-tier {categoryName ? categoryName.toLowerCase() : 'products'}.
+            Explore our curated selection of top-tier products.
           </p>
         </div>
 
@@ -248,6 +245,26 @@ export default function CategoryPage() {
                   <span className="text-sm group-hover:text-primary transition-colors">In Stock Only</span>
                 </label>
               </div>
+
+              {/* Category Filter */}
+              {categories.length > 0 && (
+                <div className="mb-8 border-t border-border pt-6">
+                  <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">Categories</h3>
+                  <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2 scrollbar-thin">
+                    {categories.map(cat => (
+                      <label key={cat.id} className="flex items-center gap-2 cursor-pointer group">
+                        <input 
+                          type="checkbox" 
+                          checked={selectedCategories.includes(cat.id)} 
+                          onChange={() => toggleCategory(cat.id)} 
+                          className="rounded border-input text-primary accent-primary" 
+                        />
+                        <span className="text-sm group-hover:text-primary transition-colors">{cat.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Condition Filter */}
               <div className="mb-8 border-t border-border pt-6">
@@ -385,5 +402,13 @@ export default function CategoryPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function ShopPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex justify-center py-32"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+      <ShopPageContent />
+    </Suspense>
   )
 }
