@@ -13,5 +13,11 @@ export function resolveImageUrl(url: string | undefined): string {
     const filePath = parts.slice(1).join('%2F');
     return `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${filePath}?alt=media`;
   }
+  
+  // Basic validation to prevent next/image crash from bad data (e.g. "..")
+  if (!url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('/')) {
+    return 'https://via.placeholder.com/500x500.png?text=Invalid+Image';
+  }
+  
   return url;
 }

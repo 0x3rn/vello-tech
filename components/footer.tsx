@@ -1,12 +1,15 @@
+'use client'
+
 import Link from 'next/link'
 import { Mail, Phone, MapPin } from 'lucide-react'
+import { toast } from 'sonner'
 
 const footerLinks = {
   shop: [
-    { name: 'All Products', href: '#' },
-    { name: 'New Arrivals', href: '#' },
-    { name: 'Best Sellers', href: '#' },
-    { name: 'Deals', href: '#' },
+    { name: 'All Products', href: '/shop' },
+    { name: 'New Arrivals', href: '/new-arrivals' },
+    { name: 'Best Sellers', href: '/best-sellers' },
+    { name: 'Deals', href: '/shop?sale=true' },
     { name: 'Gift Cards', href: '#' },
   ],
   support: [
@@ -14,7 +17,7 @@ const footerLinks = {
     { name: 'Track Order', href: '#' },
     { name: 'Returns', href: '#' },
     { name: 'Shipping Info', href: '#' },
-    { name: 'Contact Us', href: '#' },
+    { name: 'Contact Us', href: 'mailto:support@vellotech.com' },
   ],
   company: [
     { name: 'About Us', href: '#' },
@@ -73,9 +76,15 @@ export function Footer() {
             <ul className="space-y-3">
               {footerLinks.shop.map((link) => (
                 <li key={link.name}>
-                  <Link href={link.href} className="text-sm text-muted-foreground hover:text-primary transition-colors duration-200">
-                    {link.name}
-                  </Link>
+                  {link.href === '#' ? (
+                    <button onClick={() => toast.info('Coming soon!')} className="text-sm text-muted-foreground hover:text-primary transition-colors duration-200">
+                      {link.name}
+                    </button>
+                  ) : (
+                    <Link href={link.href} className="text-sm text-muted-foreground hover:text-primary transition-colors duration-200">
+                      {link.name}
+                    </Link>
+                  )}
                 </li>
               ))}
             </ul>
@@ -87,9 +96,19 @@ export function Footer() {
             <ul className="space-y-3">
               {footerLinks.support.map((link) => (
                 <li key={link.name}>
-                  <Link href={link.href} className="text-sm text-muted-foreground hover:text-primary transition-colors duration-200">
-                    {link.name}
-                  </Link>
+                  {link.href === '#' ? (
+                    <button onClick={() => toast.info('Coming soon!')} className="text-sm text-muted-foreground hover:text-primary transition-colors duration-200">
+                      {link.name}
+                    </button>
+                  ) : link.href.startsWith('mailto:') ? (
+                    <a href={link.href} className="text-sm text-muted-foreground hover:text-primary transition-colors duration-200">
+                      {link.name}
+                    </a>
+                  ) : (
+                    <Link href={link.href} className="text-sm text-muted-foreground hover:text-primary transition-colors duration-200">
+                      {link.name}
+                    </Link>
+                  )}
                 </li>
               ))}
             </ul>
@@ -101,9 +120,15 @@ export function Footer() {
             <ul className="space-y-3">
               {footerLinks.company.map((link) => (
                 <li key={link.name}>
-                  <Link href={link.href} className="text-sm text-muted-foreground hover:text-primary transition-colors duration-200">
-                    {link.name}
-                  </Link>
+                  {link.href === '#' ? (
+                    <button onClick={() => toast.info('Coming soon!')} className="text-sm text-muted-foreground hover:text-primary transition-colors duration-200">
+                      {link.name}
+                    </button>
+                  ) : (
+                    <Link href={link.href} className="text-sm text-muted-foreground hover:text-primary transition-colors duration-200">
+                      {link.name}
+                    </Link>
+                  )}
                 </li>
               ))}
             </ul>
@@ -115,9 +140,15 @@ export function Footer() {
             <ul className="space-y-3">
               {footerLinks.legal.map((link) => (
                 <li key={link.name}>
-                  <Link href={link.href} className="text-sm text-muted-foreground hover:text-primary transition-colors duration-200">
-                    {link.name}
-                  </Link>
+                  {link.href === '#' ? (
+                    <button onClick={() => toast.info('Coming soon!')} className="text-sm text-muted-foreground hover:text-primary transition-colors duration-200">
+                      {link.name}
+                    </button>
+                  ) : (
+                    <Link href={link.href} className="text-sm text-muted-foreground hover:text-primary transition-colors duration-200">
+                      {link.name}
+                    </Link>
+                  )}
                 </li>
               ))}
             </ul>

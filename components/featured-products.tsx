@@ -11,6 +11,7 @@ import { db } from '@/lib/firebase'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useCartStore } from '@/lib/store/cart'
+import { useWishlist } from '@/lib/hooks/use-wishlist'
 import { toast } from 'sonner'
 
 interface ProductData {
@@ -52,7 +53,9 @@ const itemVariants = {
 }
 
 function ProductCard({ product }: { product: ProductData }) {
-  const [isLiked, setIsLiked] = useState(false)
+  const { toggleWishlist, loadingItems, wishlist } = useWishlist()
+  const isLiked = wishlist.includes(product.id)
+  const isWishlistLoading = loadingItems[product.id]
   const [isHovered, setIsHovered] = useState(false)
   const [isAdding, setIsAdding] = useState(false)
   const addItem = useCartStore((state) => state.addItem)
@@ -111,23 +114,27 @@ function ProductCard({ product }: { product: ProductData }) {
             isHovered ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4'
           )}>
             <button
-              onClick={(e) => { e.preventDefault(); setIsLiked(!isLiked); }}
+              onClick={(e) => toggleWishlist(e, product.id)}
+              disabled={isWishlistLoading}
               className={cn(
                 'w-10 h-10 rounded-full bg-background flex items-center justify-center border border-border shadow-sm transition-colors duration-300 hover:bg-secondary',
                 isLiked && 'bg-destructive/10 border-destructive/20 text-destructive'
               )}
             >
-              <Heart className={cn(
-                'h-5 w-5 transition-colors duration-300',
-                isLiked ? 'fill-destructive text-destructive' : 'text-foreground'
-              )} />
+              {isWishlistLoading ? (
+                <Loader2 className="h-5 w-5 animate-spin text-foreground" />
+              ) : (
+                <Heart className={cn(
+                  'h-5 w-5 transition-colors duration-300',
+                  isLiked ? 'fill-destructive text-destructive' : 'text-foreground'
+                )} />
+              )}
             </button>
-            <button 
-              onClick={(e) => e.preventDefault()}
-              className="w-10 h-10 rounded-full bg-background flex items-center justify-center border border-border shadow-sm transition-colors duration-300 hover:bg-secondary"
+            <div 
+              className="w-10 h-10 rounded-full bg-background flex items-center justify-center border border-border shadow-sm transition-colors duration-300 hover:bg-secondary cursor-pointer"
             >
               <Eye className="h-5 w-5 text-foreground" />
-            </button>
+            </div>
           </div>
 
           {/* Quick add button */}
