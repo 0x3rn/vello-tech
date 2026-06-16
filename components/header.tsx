@@ -10,14 +10,15 @@ import { useAuth } from '@/lib/contexts/auth-context'
 import { useUserStore } from '@/lib/store/user'
 
 const navigation = [
+  { name: 'Home', href: '/' },
   { 
     name: 'Shop', 
-    href: '#products',
+    href: '/shop',
     submenu: [
-      { name: 'All Products', href: '#products' },
-      { name: 'New Arrivals', href: '#new' },
-      { name: 'Best Sellers', href: '#bestsellers' },
-      { name: 'On Sale', href: '#sale' },
+      { name: 'All Products', href: '/shop' },
+      { name: 'New Arrivals', href: '/new-arrivals' },
+      { name: 'Best Sellers', href: '/best-sellers' },
+      { name: 'On Sale', href: '/shop?sale=true' },
     ]
   },
   { 
@@ -36,8 +37,8 @@ const navigation = [
       { name: 'Accessories', href: '/category/accessories' },
     ]
   },
-  { name: 'Deals', href: '#deals' },
-  { name: 'New Arrivals', href: '#new' },
+  { name: 'Deals', href: '/shop?sale=true' },
+  { name: 'New Arrivals', href: '/new-arrivals' },
   { name: 'Support', href: '#support' },
 ]
 

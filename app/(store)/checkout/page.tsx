@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import {
   ArrowLeft,
@@ -24,7 +24,11 @@ import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/lib/contexts/auth-context"
 import { useCartStore } from "@/lib/store/cart"
+import { useUserStore } from "@/lib/store/user"
 import { toast } from "sonner"
+import { signInAnonymously } from "firebase/auth"
+import { doc, setDoc, updateDoc } from "firebase/firestore"
+import { auth, db } from "@/lib/firebase"
 
 type CheckoutStep = "login" | "shipping" | "payment" | "review"
 
@@ -55,10 +59,85 @@ export default function CheckoutPage() {
   ]
 
   const { user } = useAuth()
+  const { userData } = useUserStore()
+
+  useEffect(() => {
+    if (user) {
+      if (user.email && !email) setEmail(user.email)
+      if (userData) {
+        if (userData.name) {
+          const parts = userData.name.split(" ")
+          if (!firstName) setFirstName(parts[0] || "")
+          if (!lastName) setLastName(parts.slice(1).join(" ") || "")
+        }
+        if (userData.phoneNumber && !phone) setPhone(userData.phoneNumber)
+        if (userData.address && !address) {
+          // Simplistic parsing of address if it contains commas
+          const parts = userData.address.split(",")
+          setAddress(parts[0]?.trim() || "")
+          if (parts.length > 1) {
+            setCity(parts[1]?.trim() || "")
+          }
+        }
+      }
+    }
+  }, [user, userData])
+
+  const handleGuestCheckout = async () => {
+    try {
+      const userCredential = await signInAnonymously(auth)
+      const anonymousUser = userCredential.user
+
+      // Initialize the user document with isAnonymous flag and current cart
+      await setDoc(doc(db, "users", anonymousUser.uid), {
+        isAnonymous: true,
+        cart: cartItems,
+        createdAt: new Date().toISOString()
+      }, { merge: true })
+
+      setCheckoutType("guest")
+      setStep("shipping")
+    } catch (error: any) {
+      console.error("Anonymous sign-in failed:", error)
+      toast.error("Failed to initialize guest checkout. Please try again.")
+    }
+  }
+
+  const handleContinue = async () => {
+    if (step === "shipping") {
+      if (!email || !firstName || !lastName || !address || !city || !zipCode || !phone) {
+        toast.error("Please fill out all shipping fields")
+        return
+      }
+
+      if (user) {
+        try {
+          await updateDoc(doc(db, "users", user.uid), {
+            name: `${firstName} ${lastName}`.trim(),
+            email,
+            address: `${address}, ${city}, ${zipCode}`,
+            phoneNumber: phone,
+            cart: cartItems
+          })
+        } catch (error) {
+          console.error("Error updating user info:", error)
+        }
+      }
+
+      setStep("payment")
+    } else if (step === "payment") {
+      setStep("review")
+    }
+  }
 
   const handlePlaceOrder = async () => {
     if (!user) {
       toast.error("Please log in to complete your order")
+      return
+    }
+
+    if (!user.isAnonymous && !user.emailVerified) {
+      toast.error("Action restricted: Please verify your email address using the link we sent you before proceeding.")
       return
     }
     
@@ -97,7 +176,7 @@ export default function CheckoutPage() {
     <div className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
         <button
-          onClick={() => setCheckoutType("guest")}
+          onClick={handleGuestCheckout}
           className={cn(
             "p-6 rounded-2xl text-left transition-all duration-200",
             checkoutType === "guest"
@@ -148,7 +227,7 @@ export default function CheckoutPage() {
 
   const renderShippingForm = () => (
     <div className="space-y-4">
-      {step === "shipping" && renderLoginChoice()}
+      {step === "shipping" && !user && renderLoginChoice()}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="text-sm font-medium text-foreground mb-1 block">First Name</label>
@@ -378,10 +457,7 @@ export default function CheckoutPage() {
                 ) : (
                   <Button
                     size="lg"
-                    onClick={() => {
-                      if (step === "shipping") setStep("payment")
-                      else setStep("review")
-                    }}
+                    onClick={handleContinue}
                     className="w-full sm:w-auto transition-all duration-200 hover:scale-105"
                   >
                     Continue to {step === "shipping" ? "Payment" : "Review"}

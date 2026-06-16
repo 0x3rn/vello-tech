@@ -4,14 +4,20 @@ import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/contexts/auth-context'
 import { Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.push('/auth/login')
+    if (!loading) {
+      if (!user) {
+        router.push('/auth/login')
+      } else if (user.isAnonymous) {
+        toast.error("Please create a full account to access the dashboard.")
+        router.push('/auth/login')
+      }
     }
   }, [user, loading, router])
 
@@ -24,7 +30,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     )
   }
 
-  if (!user) {
+  if (!user || user.isAnonymous) {
     return null // Will redirect in useEffect
   }
 
