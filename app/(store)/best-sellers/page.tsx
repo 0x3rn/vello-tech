@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -36,7 +36,7 @@ interface CategoryData {
   parentCategoryId: string | null
 }
 
-export default function BestSellersPage() {
+function BestSellersContent() {
   const searchParams = useSearchParams()
   const isSale = searchParams.get('sale') === 'true'
   
@@ -403,5 +403,13 @@ export default function BestSellersPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function BestSellersPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex justify-center py-32"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+      <BestSellersContent />
+    </Suspense>
   )
 }
