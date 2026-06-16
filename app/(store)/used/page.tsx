@@ -36,10 +36,7 @@ interface CategoryData {
   parentCategoryId: string | null
 }
 
-function ShopPageContent() {
-  const searchParams = useSearchParams()
-  const isSale = searchParams.get('sale') === 'true'
-  
+function UsedPageContent() {
   const [products, setProducts] = useState<ProductData[]>([])
   const [categories, setCategories] = useState<{id: string, name: string}[]>([])
   const [loading, setLoading] = useState(true)
@@ -67,18 +64,14 @@ function ShopPageContent() {
         })
         setCategories(cats)
 
-        // Fetch products
-        const prodSnap = await getDocs(collection(db, 'products'))
+        // Fetch used/refurbished products
+        const prodQuery = query(collection(db, 'products'), where('condition', 'in', ['used', 'refurbished']))
+        const prodSnap = await getDocs(prodQuery)
         let fetchedProducts: ProductData[] = []
         
         prodSnap.forEach(doc => {
           fetchedProducts.push({ id: doc.id, ...doc.data() } as ProductData)
         })
-        
-        // If sale param is true, pre-filter
-        if (isSale) {
-          fetchedProducts = fetchedProducts.filter(p => p.discountPrice !== null && p.discountPrice < p.price)
-        }
         
         setProducts(fetchedProducts)
       } catch (error) {
@@ -89,7 +82,7 @@ function ShopPageContent() {
     }
 
     fetchShopData()
-  }, [isSale])
+  }, [])
 
   // Derived state for filters
   const availableBrands = useMemo(() => {
@@ -187,10 +180,10 @@ function ShopPageContent() {
         {/* Header */}
         <div className="mb-8 border-b border-border pb-8">
           <h1 className="text-3xl lg:text-4xl font-bold tracking-tight text-foreground mb-4">
-            {isSale ? 'Sale Items' : 'All Products'}
+            Pre-Owned & Refurbished
           </h1>
           <p className="text-muted-foreground text-lg">
-            Explore our curated selection of top-tier products.
+            Certified pre-owned and fully refurbished devices at a fraction of the cost.
           </p>
         </div>
 
@@ -405,10 +398,14 @@ function ShopPageContent() {
   )
 }
 
-export default function ShopPage() {
+export default function UsedPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex justify-center py-32"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
-      <ShopPageContent />
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    }>
+      <UsedPageContent />
     </Suspense>
   )
 }

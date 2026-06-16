@@ -7,6 +7,7 @@ export interface UserData {
   phoneNumber?: string
   address?: string
   wishlist?: string[]
+  role?: 'admin' | 'user'
   createdAt?: string
 }
 

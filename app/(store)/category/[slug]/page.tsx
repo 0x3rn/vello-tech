@@ -133,7 +133,7 @@ export default function CategoryPage() {
 
     // Apply Condition Filter
     if (selectedConditions.length > 0) {
-      result = result.filter(p => selectedConditions.includes(p.condition || 'new'))
+      result = result.filter(p => selectedConditions.includes((p.condition || 'new').toLowerCase()))
     }
 
     // Apply Stock Filter
@@ -157,7 +157,7 @@ export default function CategoryPage() {
     }
 
     return result
-  }, [products, selectedBrands, hideOutOfStock, sortBy])
+  }, [products, selectedBrands, selectedConditions, hideOutOfStock, sortBy])
 
   const handleAddToCart = async (e: React.MouseEvent, product: ProductData) => {
     e.preventDefault()

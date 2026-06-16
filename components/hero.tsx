@@ -55,26 +55,46 @@ export function Hero() {
   useEffect(() => {
     const fetchSlides = async () => {
       try {
-        // Fetch up to 3 featured products for the carousel
-        const q = query(collection(db, 'products'), where('isFeatured', '==', true), limit(3))
-        const snapshot = await getDocs(q)
+        // 1. Try to fetch products explicitly marked for the carousel
+        let q = query(collection(db, 'products'), where('isCarousel', '==', true), limit(5))
+        let snapshot = await getDocs(q)
+        
+        // 2. Fallback to New Arrivals if no carousel items exist
+        if (snapshot.empty) {
+          q = query(collection(db, 'products'), where('isNewArrival', '==', true), limit(3))
+          snapshot = await getDocs(q)
+        }
+        
         const fetchedSlides: SlideData[] = []
         
         snapshot.forEach((doc) => {
           const data = doc.data()
           fetchedSlides.push({
             id: doc.id,
-            title: data.name || 'Featured Product',
+            title: data.name || 'Premium Tech',
             subtitle: data.brand ? `By ${data.brand}` : 'Top Choice',
             description: data.description || 'Discover our premium selection of tech products.',
             price: data.discountPrice || data.price || 0,
-            badge: data.badge || 'Featured',
-            slug: data.slug,
+            badge: data.isCarousel ? 'Featured' : 'New Arrival',
+            slug: data.slug || '',
             image: data.imageUrls?.[0] || '',
           })
         })
 
-        // If no featured products found in DB, fallback to an empty state or generic
+        // 3. Ultimate static fallback if the database is completely empty or missing flags
+        if (fetchedSlides.length === 0) {
+          fetchedSlides.push({
+            id: 'fallback-1',
+            title: 'Welcome to Vello Tech',
+            subtitle: 'Premium Electronics',
+            description: 'Discover the latest in premium tech gadgets, laptops, and accessories built for the modern professional.',
+            price: 0,
+            badge: 'Welcome',
+            slug: 'shop',
+            image: 'https://images.unsplash.com/photo-1498049794561-7780e7231661?q=80&w=1000&auto=format&fit=crop',
+          })
+        }
+
         setSlides(fetchedSlides)
       } catch (error) {
         console.error("Error fetching hero slides:", error)
@@ -142,7 +162,7 @@ export function Hero() {
                 transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
                 className="relative w-full aspect-square max-h-[400px] flex items-center justify-center"
               >
-                <Link href={`/product/${current.slug}`} className="absolute inset-0 z-10 flex items-center justify-center">
+                <Link href={current.slug === 'shop' ? '/shop' : `/product/${current.slug}`} className="absolute inset-0 z-10 flex items-center justify-center">
                   <Image 
                     src={resolveImageUrl(current.image)} 
                     alt={current.title} 
@@ -183,14 +203,16 @@ export function Hero() {
 
               {/* Price and CTA */}
               <div className="flex flex-col sm:flex-row items-center lg:items-center gap-6 w-full lg:w-auto">
-                <Link href={`/product/${current.slug}`} className="w-full sm:w-auto">
+                <Link href={current.slug === 'shop' ? '/shop' : `/product/${current.slug}`} className="w-full sm:w-auto">
                   <Button size="lg" className="w-full sm:w-auto h-14 px-8 text-base bg-primary text-primary-foreground hover:bg-primary/90 rounded-full font-bold transition-all duration-300">
                     Shop Now
                   </Button>
                 </Link>
-                <p className="text-2xl lg:text-3xl font-medium text-white/90">
-                  ${current.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                </p>
+                {current.price > 0 && (
+                  <p className="text-2xl lg:text-3xl font-medium text-white/90">
+                    ${current.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  </p>
+                )}
               </div>
             </motion.div>
           </AnimatePresence>
@@ -206,7 +228,7 @@ export function Hero() {
                 transition={{ duration: 0.7, ease: [0.25, 0.1, 0.25, 1] }}
                 className="absolute inset-0 flex items-center justify-center group"
               >
-                <Link href={`/product/${current.slug}`} className="relative w-full h-full max-h-[600px] flex items-center justify-center">
+                <Link href={current.slug === 'shop' ? '/shop' : `/product/${current.slug}`} className="relative w-full h-full max-h-[600px] flex items-center justify-center">
                   <Image 
                     src={resolveImageUrl(current.image)} 
                     alt={current.title} 
