@@ -199,7 +199,7 @@ function ProductCard({ product }: { product: ProductData }) {
   )
 }
 
-export function FeaturedProducts() {
+export function UsedProducts() {
   const [activeFilter, setActiveFilter] = useState('All')
   const [products, setProducts] = useState<ProductData[]>([])
   const filters = ['All', 'Smartphones', 'Laptops', 'Audio']
@@ -207,7 +207,7 @@ export function FeaturedProducts() {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const q = query(collection(db, 'products'), where('isFeatured', '==', true), limit(8))
+        const q = query(collection(db, 'products'), where('condition', 'in', ['used', 'refurbished']), limit(8))
         const snapshot = await getDocs(q)
         const fetchedProducts: ProductData[] = []
         snapshot.forEach((doc) => {
@@ -215,7 +215,7 @@ export function FeaturedProducts() {
         })
         setProducts(fetchedProducts)
       } catch (error) {
-        console.error("Error fetching featured products:", error)
+        console.error("Error fetching used products:", error)
       }
     }
     fetchProducts()
@@ -239,10 +239,10 @@ export function FeaturedProducts() {
         >
           <div>
             <h2 className="text-3xl lg:text-5xl font-extrabold text-foreground tracking-tight">
-              Featured <span className="text-primary">Products</span>
+              Shop <span className="text-primary">Pre-Owned</span> & Refurbished Deals
             </h2>
             <p className="mt-4 text-muted-foreground max-w-2xl text-lg">
-              Handpicked selection of our best-selling and most-loved tech products.
+              Get the tech you love for less. Certified pre-owned and fully refurbished devices.
             </p>
           </div>
           <Link href="/category/smartphones">

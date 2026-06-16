@@ -27,6 +27,7 @@ interface ProductData {
   rating: number
   numReviews: number
   slug: string
+  condition?: 'new' | 'used' | 'refurbished'
 }
 
 interface CategoryData {
@@ -47,7 +48,6 @@ export default function ProductDetailPage() {
   const { items, addItem, updateQuantity, removeItem } = useCartStore()
 
   const cartItem = product ? items.find((item) => item.id === product.id) : null
-  const displayQuantity = cartItem ? cartItem.quantity : quantity
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -123,21 +123,11 @@ export default function ProductDetailPage() {
   }
 
   const handleMinus = () => {
-    if (cartItem) {
-      if (cartItem.quantity > 1) {
-        updateQuantity(product.id, cartItem.quantity - 1)
-      } else {
-        removeItem(product.id)
-      }
-    } else {
-      setQuantity(Math.max(1, quantity - 1))
-    }
+    setQuantity(Math.max(1, quantity - 1))
   }
 
   const handlePlus = () => {
-    if (cartItem) {
-      updateQuantity(product.id, Math.min(product.stockQuantity, cartItem.quantity + 1))
-    } else {
+    if (product) {
       setQuantity(Math.min(product.stockQuantity, quantity + 1))
     }
   }
@@ -159,6 +149,7 @@ export default function ProductDetailPage() {
                 src={resolveImageUrl(product.imageUrls?.[activeImage])}
                 alt={product.name}
                 fill
+                sizes="(max-width: 1024px) 100vw, 50vw"
                 className="object-contain p-8"
               />
             </div>
@@ -172,7 +163,7 @@ export default function ProductDetailPage() {
                       activeImage === idx ? 'border-primary' : 'border-transparent hover:border-border'
                     }`}
                   >
-                    <Image src={resolveImageUrl(url)} alt={`${product.name} ${idx + 1}`} fill className="object-contain p-2" />
+                    <Image src={resolveImageUrl(url)} alt={`${product.name} ${idx + 1}`} fill sizes="100px" className="object-contain p-2" />
                   </button>
                 ))}
               </div>
@@ -221,11 +212,11 @@ export default function ProductDetailPage() {
                   >
                     <Minus className="h-4 w-4" />
                   </button>
-                  <span className="font-medium">{displayQuantity}</span>
+                  <span className="font-medium">{quantity}</span>
                   <button 
                     onClick={handlePlus}
                     className="p-2 hover:bg-secondary rounded-md transition-colors text-muted-foreground hover:text-foreground"
-                    disabled={displayQuantity >= product.stockQuantity}
+                    disabled={quantity >= product.stockQuantity}
                   >
                     <Plus className="h-4 w-4" />
                   </button>
@@ -238,17 +229,7 @@ export default function ProductDetailPage() {
                   )}
                 </div>
               </div>
-              {cartItem ? (
-                <Link href="/cart" className="w-full">
-                  <Button 
-                    variant="outline"
-                    className="w-full h-14 text-lg font-medium border-primary/20 hover:bg-primary/5 text-primary"
-                  >
-                    <ShoppingCart className="mr-2 h-5 w-5" />
-                    View in Cart
-                  </Button>
-                </Link>
-              ) : (
+              <div className="flex flex-col gap-3">
                 <Button 
                   onClick={handleAddToCart}
                   disabled={product.stockQuantity === 0 || isAdding}
@@ -261,7 +242,17 @@ export default function ProductDetailPage() {
                   )}
                   {isAdding ? 'Adding...' : 'Add to Cart'}
                 </Button>
-              )}
+                {cartItem && (
+                  <Link href="/cart" className="w-full">
+                    <Button 
+                      variant="outline"
+                      className="w-full h-12 font-medium border-primary/20 hover:bg-primary/5 text-primary"
+                    >
+                      View in Cart
+                    </Button>
+                  </Link>
+                )}
+              </div>
             </div>
 
             {/* Specifications Table */}

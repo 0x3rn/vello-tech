@@ -26,6 +26,7 @@ interface ProductData {
   rating: number
   numReviews: number
   slug: string
+  condition?: 'new' | 'used' | 'refurbished'
 }
 
 interface CategoryData {
@@ -44,6 +45,7 @@ export default function CategoryPage() {
   
   // Filter states
   const [selectedBrands, setSelectedBrands] = useState<string[]>([])
+  const [selectedConditions, setSelectedConditions] = useState<string[]>([])
   const [hideOutOfStock, setHideOutOfStock] = useState(false)
   const [sortBy, setSortBy] = useState<'featured' | 'price-asc' | 'price-desc'>('featured')
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false)
@@ -115,12 +117,23 @@ export default function CategoryPage() {
     )
   }
 
+  const toggleCondition = (condition: string) => {
+    setSelectedConditions(prev => 
+      prev.includes(condition) ? prev.filter(c => c !== condition) : [...prev, condition]
+    )
+  }
+
   const filteredAndSortedProducts = useMemo(() => {
     let result = [...products]
 
     // Apply Brand Filter
     if (selectedBrands.length > 0) {
       result = result.filter(p => selectedBrands.includes(p.brand))
+    }
+
+    // Apply Condition Filter
+    if (selectedConditions.length > 0) {
+      result = result.filter(p => selectedConditions.includes(p.condition || 'new'))
     }
 
     // Apply Stock Filter
@@ -236,6 +249,24 @@ export default function CategoryPage() {
                 </label>
               </div>
 
+              {/* Condition Filter */}
+              <div className="mb-8 border-t border-border pt-6">
+                <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">Condition</h3>
+                <div className="space-y-2">
+                  {['new', 'used', 'refurbished'].map(condition => (
+                    <label key={condition} className="flex items-center gap-2 cursor-pointer group">
+                      <input 
+                        type="checkbox" 
+                        checked={selectedConditions.includes(condition)} 
+                        onChange={() => toggleCondition(condition)} 
+                        className="rounded border-input text-primary accent-primary" 
+                      />
+                      <span className="text-sm group-hover:text-primary transition-colors capitalize">{condition}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
               {/* Brands Filter */}
               {availableBrands.length > 0 && (
                 <div className="border-t border-border pt-6">
@@ -299,6 +330,7 @@ export default function CategoryPage() {
                           src={resolveImageUrl(product.imageUrls?.[0])}
                           alt={product.name}
                           fill
+                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
                           className="object-contain p-6 group-hover:scale-105 transition-transform duration-500"
                         />
                         <div className="absolute top-4 left-4 bg-background/80 backdrop-blur-md px-2 py-1 rounded text-xs font-medium border border-border">

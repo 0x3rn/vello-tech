@@ -49,6 +49,7 @@ export function Header() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [isMounted, setIsMounted] = useState(false)
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -58,6 +59,7 @@ export function Header() {
   }
 
   useEffect(() => {
+    setIsMounted(true)
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50)
     }
@@ -182,7 +184,7 @@ export function Header() {
                   className="relative text-muted-foreground hover:text-foreground transition-all duration-200 hover:scale-105"
                 >
                   <Heart className="h-5 w-5" />
-                  {wishlistCount > 0 && (
+                  {isMounted && wishlistCount > 0 && (
                     <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center font-medium">
                       {wishlistCount}
                     </span>
@@ -208,7 +210,7 @@ export function Header() {
                 className="relative text-muted-foreground hover:text-foreground transition-all duration-200 hover:scale-105"
               >
                 <ShoppingCart className="h-5 w-5" />
-                {cartCount > 0 && (
+                {isMounted && cartCount > 0 && (
                   <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center font-medium">
                     {cartCount}
                   </span>
@@ -228,7 +230,7 @@ export function Header() {
                   className="relative text-muted-foreground transition-transform duration-200 hover:scale-105"
                 >
                   <Heart className="h-5 w-5" />
-                  {wishlistCount > 0 && (
+                  {isMounted && wishlistCount > 0 && (
                     <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-primary-foreground text-[10px] flex items-center justify-center font-medium">
                       {wishlistCount}
                     </span>
@@ -243,7 +245,7 @@ export function Header() {
                 className="relative text-muted-foreground transition-transform duration-200 hover:scale-105"
               >
                 <ShoppingCart className="h-5 w-5" />
-                {cartCount > 0 && (
+                {isMounted && cartCount > 0 && (
                   <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-primary-foreground text-[10px] flex items-center justify-center font-medium">
                     {cartCount}
                   </span>
@@ -346,7 +348,7 @@ export function Header() {
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     <Heart className="h-5 w-5" />
-                    Wishlist ({wishlistCount})
+                    Wishlist {isMounted ? `(${wishlistCount})` : ''}
                   </Link>
                 </>
               )}
