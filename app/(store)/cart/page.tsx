@@ -85,6 +85,7 @@ export default function CartPage() {
                         src={resolveImageUrl(item.image)}
                         alt={item.name}
                         fill
+                        sizes="96px"
                         className="object-contain p-2 group-hover:scale-105 transition-transform"
                       />
                     </Link>
