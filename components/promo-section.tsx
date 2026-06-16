@@ -3,6 +3,7 @@
 import { ArrowRight, Clock } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 
 export function PromoSection() {
   const [timeLeft, setTimeLeft] = useState({
@@ -53,9 +54,11 @@ export function PromoSection() {
             </p>
             
             <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-              <Button size="lg" className="rounded-none">
-                Shop the Sale
-                <ArrowRight className="ml-2 h-4 w-4" />
+              <Button asChild size="lg" className="rounded-none">
+                <Link href="/shop?sale=true">
+                  Shop the Sale
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
               </Button>
             </div>
           </div>

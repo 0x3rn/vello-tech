@@ -148,9 +148,14 @@ export default function CheckoutPage() {
         ? "/api/checkout/paystack" 
         : "/api/checkout/lemonsqueezy"
 
+      const idToken = await auth.currentUser?.getIdToken()
+
       const response = await fetch(endpoint, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${idToken}`
+        },
         body: JSON.stringify({
           uid: user.uid,
           email: user.email || email,
@@ -357,7 +362,10 @@ export default function CheckoutPage() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-foreground truncate">{item.name}</p>
-              <p className="text-xs text-muted-foreground">Qty: {item.quantity}</p>
+              {item.selectedColor && (
+                <p className="text-xs text-muted-foreground mt-0.5">Color: {item.selectedColor.name}</p>
+              )}
+              <p className="text-xs text-muted-foreground mt-0.5">Qty: {item.quantity}</p>
             </div>
             <span className="text-sm font-medium text-foreground whitespace-nowrap">
               ${(item.price * item.quantity).toLocaleString()}
@@ -479,7 +487,10 @@ export default function CheckoutPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-foreground truncate">{item.name}</p>
-                        <p className="text-xs text-muted-foreground">Qty: {item.quantity}</p>
+                        {item.selectedColor && (
+                          <p className="text-xs text-muted-foreground mt-0.5">Color: {item.selectedColor.name}</p>
+                        )}
+                        <p className="text-xs text-muted-foreground mt-0.5">Qty: {item.quantity}</p>
                       </div>
                       <span className="text-sm text-foreground">${item.price.toLocaleString()}</span>
                     </div>

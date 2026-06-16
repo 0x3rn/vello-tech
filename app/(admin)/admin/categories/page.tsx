@@ -43,11 +43,17 @@ export default function AdminCategoriesPage() {
     try {
       const snap = await getDocs(collection(db, 'categories'))
       const fetched: Category[] = []
-      snap.forEach(doc => fetched.push({ id: doc.id, ...doc.data() } as Category))
+      const ignoreNames = ['new', 'used', 'refurbished']
+      snap.forEach(doc => {
+        const data = doc.data()
+        if (!ignoreNames.includes(data.name.toLowerCase())) {
+          fetched.push({ id: doc.id, ...data } as Category)
+        }
+      })
       setCategories(fetched)
     } catch (error) {
       console.error("Error fetching categories:", error)
-      toast.error('Failed to load categories')
+      toast.error('Failed to load categories. Reference: ERR-VLT-DB-101')
     } finally {
       setLoading(false)
     }
@@ -66,6 +72,11 @@ export default function AdminCategoriesPage() {
     e.preventDefault()
     if (!formName || !formSlug) {
       toast.error("Name and Slug are required")
+      return
+    }
+
+    if (['new', 'used', 'refurbished'].includes(formName.toLowerCase())) {
+      toast.error('The names "New", "Used", and "Refurbished" are reserved for condition states.')
       return
     }
 

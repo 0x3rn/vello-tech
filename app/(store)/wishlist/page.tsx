@@ -54,15 +54,17 @@ export default function WishlistPage() {
             return {
               id: d.id,
               name: data.name || "Unknown Product",
-              category: data.category || "Uncategorized",
-              price: data.price || 0,
-              originalPrice: data.originalPrice || null,
-              rating: data.rating || 5.0,
-              reviews: data.reviews || 0,
-              badge: data.badge || null,
-              color: data.color || "bg-secondary",
-              inStock: data.inStock !== false, // default true
-              image: resolveImageUrl(data.images?.[0]),
+              category: data.brand || "Uncategorized", // Can use brand or categoryId
+              price: data.discountPrice || data.price || 0,
+              originalPrice: data.discountPrice ? data.price : null,
+              rating: data.rating || 0,
+              reviews: data.numReviews || 0,
+              badge: data.isNewArrival ? "New" : data.discountPrice ? "Sale" : null,
+              color: "bg-secondary",
+              inStock: data.stockQuantity > 0,
+              image: resolveImageUrl(data.imageUrls?.[0]),
+              imageAlt: data.imageAlts?.[0] || data.name || "Product",
+              slug: data.slug,
             }
           })
           
@@ -111,7 +113,7 @@ export default function WishlistPage() {
     
     addItem({
       id: item.id.toString(),
-      slug: item.name.toLowerCase().replace(/\s+/g, '-'),
+      slug: item.slug,
       name: item.name,
       price: item.price,
       image: item.image,
@@ -179,15 +181,14 @@ export default function WishlistPage() {
                   className="group bg-card rounded-xl border border-border overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
                 >
                   {/* Image */}
-                  <div className="relative aspect-square bg-secondary p-4 sm:p-6 overflow-hidden">
-                    <Link href={`/product/${item.name.toLowerCase().replace(/\s+/g, '-')}`}>
-                      <div
-                        className={cn(
-                          "w-full h-full rounded-xl flex items-center justify-center transition-transform duration-500 group-hover:scale-110",
-                          item.color
+                  <div className="relative aspect-square bg-secondary p-4 sm:p-6 overflow-hidden flex items-center justify-center">
+                    <Link href={`/product/${item.slug}`}>
+                      <div className="w-full h-full relative flex items-center justify-center transition-transform duration-500 group-hover:scale-110">
+                        {item.image ? (
+                          <img src={item.image} alt={item.imageAlt} className="object-contain max-h-full max-w-full mix-blend-multiply" />
+                        ) : (
+                          <div className="w-20 h-20 sm:w-24 sm:h-24 bg-foreground/5 rounded-2xl transition-transform duration-300 group-hover:rotate-3" />
                         )}
-                      >
-                        <div className="w-20 h-20 sm:w-24 sm:h-24 bg-foreground/5 rounded-2xl transition-transform duration-300 group-hover:rotate-3" />
                       </div>
                     </Link>
 
@@ -236,8 +237,8 @@ export default function WishlistPage() {
                     <p className="text-sm text-muted-foreground">
                       {item.category}
                     </p>
-                    <Link href={`/product/${item.name.toLowerCase().replace(/\s+/g, '-')}`}>
-                      <h3 className="font-semibold text-foreground mt-1 transition-colors duration-200 group-hover:text-primary">
+                    <Link href={`/product/${item.slug}`}>
+                      <h3 className="font-semibold text-foreground mt-1 transition-colors duration-200 group-hover:text-primary line-clamp-1">
                         {item.name}
                       </h3>
                     </Link>

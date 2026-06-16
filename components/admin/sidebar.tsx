@@ -70,7 +70,7 @@ export function AdminSidebar() {
         })}
       </nav>
 
-      {/* Footer / User Area (Optional placeholder for now) */}
+      {/* Footer Area */ }
       <div className="p-4 border-t border-border mt-auto">
         <Button variant="ghost" className="w-full justify-start text-muted-foreground hover:text-foreground">
           <LogOut className="mr-3 h-5 w-5" />

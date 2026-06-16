@@ -10,7 +10,7 @@ export async function sendOrderConfirmationEmail(
   total: number
 ) {
   if (!resend) {
-    console.log('No RESEND_API_KEY found. Mocking email sending:')
+    console.log('No RESEND_API_KEY found. Running local email delivery simulation:')
     console.log(`To: ${email}\nOrder: ${orderId}\nTotal: $${(total/100).toFixed(2)}\nItems:`, items)
     return
   }
@@ -65,5 +65,6 @@ export async function sendOrderConfirmationEmail(
     console.log('Order confirmation email sent:', data)
   } catch (error) {
     console.error('Error sending order confirmation email:', error)
+    throw new Error("ERR-VLT-MAIL-301")
   }
 }

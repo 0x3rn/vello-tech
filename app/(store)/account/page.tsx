@@ -23,6 +23,9 @@ import { AuthGuard } from "@/components/auth-guard"
 import { useAuth } from "@/lib/contexts/auth-context"
 import { useUserStore } from "@/lib/store/user"
 import { useCartStore } from "@/lib/store/cart"
+import { collection, query, where, getDocs, orderBy, limit } from "firebase/firestore"
+import { db } from "@/lib/firebase"
+import { useState, useEffect } from "react"
 
 const accountLinks = [
   { icon: Package, label: "Orders", href: "/account/orders", color: "bg-blue-500/10 text-blue-600" },
@@ -45,7 +48,40 @@ export default function AccountPage() {
     { label: "Rewards", value: userData?.rewardsPoints || "0", icon: Clock },
   ]
 
-  const recentOrders: any[] = [] // Default to empty instead of hardcoded data
+  const [recentOrders, setRecentOrders] = useState<any[]>([])
+
+  useEffect(() => {
+    const fetchRecentOrders = async () => {
+      if (!user) return
+      try {
+        const q = query(
+          collection(db, "orders"),
+          where("uid", "==", user.uid),
+          orderBy("createdAt", "desc"),
+          limit(3)
+        )
+        const snapshot = await getDocs(q)
+        const fetchedOrders = snapshot.docs.map(doc => {
+          const data = doc.data()
+          let dateStr = "Unknown Date"
+          if (data.createdAt) {
+            dateStr = new Date(data.createdAt).toLocaleDateString("en-US", { year: 'numeric', month: 'long', day: 'numeric' })
+          }
+          return {
+            id: data.orderId || doc.id,
+            status: data.status || "Processing",
+            date: dateStr,
+            items: (data.items || []).length,
+            total: `$${(data.totalPaid || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`
+          }
+        })
+        setRecentOrders(fetchedOrders)
+      } catch (error) {
+        console.error("Error fetching recent orders:", error)
+      }
+    }
+    fetchRecentOrders()
+  }, [user])
 
   const handleSignOut = async () => {
     try {

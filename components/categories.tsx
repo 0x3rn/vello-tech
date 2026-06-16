@@ -7,85 +7,68 @@ import { cn } from '@/lib/utils'
 import { collection, getDocs } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 
-const staticCategories = [
-  { 
-    name: 'Smartphones', 
-    slug: 'smartphones',
-    icon: Smartphone, 
-    color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
-    hoverColor: 'hover:bg-blue-500/20 hover:border-blue-500/30 hover:shadow-blue-500/10',
-  },
-  { 
-    name: 'Laptops', 
-    slug: 'laptops',
-    icon: Laptop, 
-    color: 'bg-purple-500/10 text-purple-600 dark:text-purple-400',
-    hoverColor: 'hover:bg-purple-500/20 hover:border-purple-500/30 hover:shadow-purple-500/10',
-  },
-  { 
-    name: 'Audio', 
-    slug: 'audio',
-    icon: Headphones, 
-    color: 'bg-orange-500/10 text-orange-600 dark:text-orange-400',
-    hoverColor: 'hover:bg-orange-500/20 hover:border-orange-500/30 hover:shadow-orange-500/10',
-  },
-  { 
-    name: 'Wearables', 
-    slug: 'wearables',
-    icon: Watch, 
-    color: 'bg-teal-500/10 text-teal-600 dark:text-teal-400',
-    hoverColor: 'hover:bg-teal-500/20 hover:border-teal-500/30 hover:shadow-teal-500/10',
-  },
-  { 
-    name: 'Cameras', 
-    slug: 'cameras',
-    icon: Camera, 
-    color: 'bg-red-500/10 text-red-600 dark:text-red-400',
-    hoverColor: 'hover:bg-red-500/20 hover:border-red-500/30 hover:shadow-red-500/10',
-  },
-  { 
-    name: 'Gaming', 
-    slug: 'gaming',
-    icon: Gamepad2, 
-    color: 'bg-green-500/10 text-green-600 dark:text-green-400',
-    hoverColor: 'hover:bg-green-500/20 hover:border-green-500/30 hover:shadow-green-500/10',
-  },
-  { 
-    name: 'Storage & Memory', 
-    slug: 'storage-and-memory',
-    icon: HardDrive, 
-    color: 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400',
-    hoverColor: 'hover:bg-yellow-500/20 hover:border-yellow-500/30 hover:shadow-yellow-500/10',
-  },
-  { 
-    name: 'PC Components', 
-    slug: 'pc-components',
-    icon: Cpu, 
-    color: 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400',
-    hoverColor: 'hover:bg-cyan-500/20 hover:border-cyan-500/30 hover:shadow-cyan-500/10',
-  },
-  { 
-    name: 'Networking', 
-    slug: 'networking',
-    icon: Wifi, 
-    color: 'bg-blue-600/10 text-blue-700 dark:text-blue-500',
-    hoverColor: 'hover:bg-blue-600/20 hover:border-blue-600/30 hover:shadow-blue-600/10',
-  },
-  { 
-    name: 'Accessories', 
-    slug: 'accessories',
-    icon: Cable, 
-    color: 'bg-pink-500/10 text-pink-600 dark:text-pink-400',
-    hoverColor: 'hover:bg-pink-500/20 hover:border-pink-500/30 hover:shadow-pink-500/10',
-  },
+const iconMap: Record<string, any> = {
+  'smartphones': Smartphone,
+  'laptops': Laptop,
+  'audio': Headphones,
+  'wearables': Watch,
+  'cameras': Camera,
+  'gaming': Gamepad2,
+  'storage-and-memory': HardDrive,
+  'pc-components': Cpu,
+  'networking': Wifi,
+  'accessories': Cable,
+}
+const defaultIcon = Smartphone
+
+const colors = [
+  { color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400', hoverColor: 'hover:bg-blue-500/20 hover:border-blue-500/30 hover:shadow-blue-500/10' },
+  { color: 'bg-purple-500/10 text-purple-600 dark:text-purple-400', hoverColor: 'hover:bg-purple-500/20 hover:border-purple-500/30 hover:shadow-purple-500/10' },
+  { color: 'bg-orange-500/10 text-orange-600 dark:text-orange-400', hoverColor: 'hover:bg-orange-500/20 hover:border-orange-500/30 hover:shadow-orange-500/10' },
+  { color: 'bg-teal-500/10 text-teal-600 dark:text-teal-400', hoverColor: 'hover:bg-teal-500/20 hover:border-teal-500/30 hover:shadow-teal-500/10' },
+  { color: 'bg-red-500/10 text-red-600 dark:text-red-400', hoverColor: 'hover:bg-red-500/20 hover:border-red-500/30 hover:shadow-red-500/10' },
+  { color: 'bg-green-500/10 text-green-600 dark:text-green-400', hoverColor: 'hover:bg-green-500/20 hover:border-green-500/30 hover:shadow-green-500/10' },
+  { color: 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400', hoverColor: 'hover:bg-yellow-500/20 hover:border-yellow-500/30 hover:shadow-yellow-500/10' },
+  { color: 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400', hoverColor: 'hover:bg-cyan-500/20 hover:border-cyan-500/30 hover:shadow-cyan-500/10' },
+  { color: 'bg-pink-500/10 text-pink-600 dark:text-pink-400', hoverColor: 'hover:bg-pink-500/20 hover:border-pink-500/30 hover:shadow-pink-500/10' },
 ]
 
 export function Categories() {
+  const [categories, setCategories] = useState<{id: string, name: string, slug: string}[]>([])
   const [counts, setCounts] = useState<Record<string, number>>({})
 
   useEffect(() => {
-    const fetchCounts = async () => {
+    const fetchData = async () => {
       try {
+        // Fetch valid categories
+        const catSnap = await getDocs(collection(db, 'categories'))
+        const fetchedCats: {id: string, name: string, slug: string}[] = []
+        const ignoreNames = ['new', 'used', 'refurbished']
+        catSnap.forEach(doc => {
+          const data = doc.data()
+          if (!ignoreNames.includes((data.name || '').toLowerCase()) && !data.parentCategoryId) {
+            fetchedCats.push({ id: doc.id, name: data.name, slug: data.slug })
+          }
+        })
+        
+        // Sort by predefined "commonness" order
+        const commonOrder = [
+          'smartphones', 'laptops', 'audio', 'wearables', 'cameras', 
+          'gaming', 'storage-and-memory', 'pc-components', 'networking', 'accessories'
+        ]
+        
+        fetchedCats.sort((a, b) => {
+          const indexA = commonOrder.indexOf(a.slug)
+          const indexB = commonOrder.indexOf(b.slug)
+          if (indexA === -1 && indexB === -1) return a.name.localeCompare(b.name)
+          if (indexA === -1) return 1
+          if (indexB === -1) return -1
+          return indexA - indexB
+        })
+        
+        setCategories(fetchedCats)
+
+        // Fetch products to compute counts per category
         const prodSnap = await getDocs(collection(db, 'products'))
         const newCounts: Record<string, number> = {}
         
@@ -98,11 +81,11 @@ export function Categories() {
         
         setCounts(newCounts)
       } catch (error) {
-        console.error("Error fetching category counts:", error)
+        console.error("Error fetching categories:", error)
       }
     }
     
-    fetchCounts()
+    fetchData()
   }, [])
 
   return (
@@ -121,22 +104,24 @@ export function Categories() {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-5 gap-6">
-          {staticCategories.map((category) => {
-            const Icon = category.icon
-            const count = counts[category.slug] || 0
+          {categories.map((category, index) => {
+            const Icon = iconMap[category.slug] || defaultIcon
+            const count = counts[category.id] || 0
+            const colorTheme = colors[index % colors.length]
+            
             return (
               <Link
-                key={category.name}
+                key={category.id}
                 href={`/category/${category.slug}`}
                 className={cn(
                   'group relative block bg-card/80 backdrop-blur-sm rounded-3xl sm:rounded-[2rem] p-4 sm:p-6 border border-white/10 dark:border-white/5 transition-colors transform duration-300',
                   'hover:shadow-lg',
-                  category.hoverColor
+                  colorTheme.hoverColor
                 )}
               >
                 <div className={cn(
                   'w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl flex items-center justify-center mb-4 sm:mb-6 transition-colors duration-300 shadow-inner',
-                  category.color
+                  colorTheme.color
                 )}>
                   <Icon className="h-6 w-6 sm:h-8 sm:w-8" />
                 </div>

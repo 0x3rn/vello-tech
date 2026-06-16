@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useMemo } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import { collection, getDocs, query, where } from 'firebase/firestore'
@@ -27,6 +27,8 @@ interface ProductData {
   numReviews: number
   slug: string
   condition?: 'new' | 'used' | 'refurbished'
+  imageAlts?: string[]
+  colors?: { name: string; hex: string }[]
 }
 
 interface CategoryData {
@@ -38,6 +40,7 @@ interface CategoryData {
 
 export default function CategoryPage() {
   const { slug } = useParams()
+  const router = useRouter()
   
   const [categoryName, setCategoryName] = useState<string>('')
   const [products, setProducts] = useState<ProductData[]>([])
@@ -74,8 +77,11 @@ export default function CategoryPage() {
         // 2. Fetch subcategories
         const subCatQuery = query(collection(db, 'categories'), where('parentCategoryId', '==', categoryDoc.id))
         const subCatSnap = await getDocs(subCatQuery)
+        const ignoreNames = ['new', 'used', 'refurbished']
         subCatSnap.forEach(doc => {
-          targetCategoryIds.push(doc.id)
+          if (!ignoreNames.includes(doc.data().name.toLowerCase())) {
+            targetCategoryIds.push(doc.id)
+          }
         })
 
         // 3. Fetch products
@@ -95,6 +101,7 @@ export default function CategoryPage() {
         setProducts(fetchedProducts)
       } catch (error) {
         console.error("Error fetching products:", error)
+        toast.error("Failed to load products. Reference: ERR-VLT-DB-101")
       } finally {
         setLoading(false)
       }
@@ -162,6 +169,13 @@ export default function CategoryPage() {
   const handleAddToCart = async (e: React.MouseEvent, product: ProductData) => {
     e.preventDefault()
     e.stopPropagation()
+
+    if (product.colors && product.colors.length > 0) {
+      toast.info("Please select a color for this product")
+      router.push(`/product/${product.slug}`)
+      return
+    }
+
     setAddingProduct(product.id)
     
     // Simulate short network delay for satisfying visual feedback
@@ -328,7 +342,7 @@ export default function CategoryPage() {
                       <div className="relative aspect-square bg-secondary/30 p-6 overflow-hidden flex items-center justify-center">
                         <Image
                           src={resolveImageUrl(product.imageUrls?.[0])}
-                          alt={product.name}
+                          alt={product.imageAlts?.[0] || product.name}
                           fill
                           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
                           className="object-contain p-6 group-hover:scale-105 transition-transform duration-500"

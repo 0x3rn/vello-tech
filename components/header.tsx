@@ -46,6 +46,7 @@ export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const cartCount = useCartStore((state) => state.totalItems())
   const wishlistCount = useUserStore((state) => state.userData?.wishlist?.length || 0)
+  const userData = useUserStore((state) => state.userData)
   const { user } = useAuth()
   const [isScrolled, setIsScrolled] = useState(false)
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
@@ -87,7 +88,7 @@ export function Header() {
             <div className="flex items-center gap-6">
               <span>Free shipping on orders over ₦150,000</span>
               <span className="w-px h-4 bg-background/30" />
-              <a href="#track" className="transition-opacity duration-200 hover:opacity-80">Track Order</a>
+              <button onClick={() => { import('sonner').then(m => m.toast.info('Coming soon!')) }} className="transition-opacity duration-200 hover:opacity-80">Track Order</button>
             </div>
           </div>
         </div>
@@ -191,6 +192,15 @@ export function Header() {
                     </span>
                   )}
                   <span className="sr-only">Wishlist</span>
+                </Button>
+              </Link>
+            )}
+            {userData?.role === 'admin' && (
+              <Link href="/admin" className="mr-2 hidden sm:block">
+                <Button 
+                  className="bg-amber-500 hover:bg-amber-600 text-white font-bold transition-all duration-200 shadow-md hover:shadow-lg shadow-amber-500/20 rounded-full px-5 h-9"
+                >
+                  Admin Dashboard
                 </Button>
               </Link>
             )}
@@ -324,6 +334,15 @@ export function Header() {
             </div>
 
             <div className="pt-2 mt-2 border-t border-border/50 space-y-1">
+              {userData?.role === 'admin' && (
+                <Link
+                  href="/admin"
+                  className="flex items-center justify-between px-4 py-3 mb-2 text-base font-bold text-amber-600 dark:text-amber-500 bg-amber-500/10 hover:bg-amber-500/20 rounded-xl transition-all duration-200"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Admin Dashboard
+                </Link>
+              )}
               {user && (
                 <>
                   <p className="px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">My Account</p>

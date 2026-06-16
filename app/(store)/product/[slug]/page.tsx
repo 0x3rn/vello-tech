@@ -28,6 +28,8 @@ interface ProductData {
   numReviews: number
   slug: string
   condition?: 'new' | 'used' | 'refurbished'
+  imageAlts?: string[]
+  colors?: { name: string; hex: string }[]
 }
 
 interface CategoryData {
@@ -44,6 +46,7 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true)
   const [quantity, setQuantity] = useState(1)
   const [activeImage, setActiveImage] = useState(0)
+  const [selectedColor, setSelectedColor] = useState<{ name: string; hex: string } | null>(null)
   const [isAdding, setIsAdding] = useState(false)
   const { items, addItem, updateQuantity, removeItem } = useCartStore()
 
@@ -101,6 +104,11 @@ export default function ProductDetailPage() {
   }
 
   const handleAddToCart = async () => {
+    if (product?.colors && product.colors.length > 0 && !selectedColor) {
+      toast.error("Please select a color first")
+      return
+    }
+
     setIsAdding(true)
     
     // Simulate short network delay for satisfying visual feedback
@@ -114,6 +122,7 @@ export default function ProductDetailPage() {
       quantity,
       slug: product.slug,
       categoryId: product.categoryId,
+      selectedColor: selectedColor || undefined
     })
     
     toast.success(`${quantity} ${product.name} added to cart`, {
@@ -147,7 +156,7 @@ export default function ProductDetailPage() {
             <div className="relative aspect-square w-full rounded-2xl bg-secondary/30 overflow-hidden border border-border">
               <Image
                 src={resolveImageUrl(product.imageUrls?.[activeImage])}
-                alt={product.name}
+                alt={product.imageAlts?.[activeImage] || product.name}
                 fill
                 sizes="(max-width: 1024px) 100vw, 50vw"
                 className="object-contain p-8"
@@ -163,7 +172,7 @@ export default function ProductDetailPage() {
                       activeImage === idx ? 'border-primary' : 'border-transparent hover:border-border'
                     }`}
                   >
-                    <Image src={resolveImageUrl(url)} alt={`${product.name} ${idx + 1}`} fill sizes="100px" className="object-contain p-2" />
+                    <Image src={resolveImageUrl(url)} alt={product.imageAlts?.[idx] || `${product.name} ${idx + 1}`} fill sizes="100px" className="object-contain p-2" />
                   </button>
                 ))}
               </div>
@@ -201,6 +210,30 @@ export default function ProductDetailPage() {
             <p className="text-muted-foreground text-lg mb-8 leading-relaxed">
               {product.description}
             </p>
+
+            {/* Colors */}
+            {product.colors && product.colors.length > 0 && (
+              <div className="mb-8">
+                <h3 className="text-sm font-medium text-foreground mb-3">
+                  Color: <span className="text-muted-foreground font-normal">{selectedColor?.name || 'Select a color'}</span>
+                </h3>
+                <div className="flex flex-wrap gap-3">
+                  {product.colors.map((color, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setSelectedColor(color)}
+                      className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all ${
+                        selectedColor?.name === color.name ? 'border-primary ring-2 ring-primary ring-offset-2' : 'border-border hover:scale-110 shadow-sm'
+                      }`}
+                      style={{ backgroundColor: color.hex }}
+                      title={color.name}
+                    >
+                      <span className="sr-only">{color.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Cart Actions */}
             <div className="p-6 bg-secondary/20 border border-border rounded-2xl mb-10">

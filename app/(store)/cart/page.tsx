@@ -100,6 +100,11 @@ export default function CartPage() {
                           <Link href={`/product/${item.slug}`} className="font-semibold text-foreground hover:text-primary transition-colors line-clamp-2">
                             {item.name}
                           </Link>
+                          {item.selectedColor && (
+                            <p className="text-sm text-muted-foreground mt-1">
+                              Color: {item.selectedColor.name}
+                            </p>
+                          )}
                         </div>
                         <p className="text-lg font-bold text-foreground whitespace-nowrap">
                           ${(item.price * item.quantity).toLocaleString(undefined, { minimumFractionDigits: 2 })}

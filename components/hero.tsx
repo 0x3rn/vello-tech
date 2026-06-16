@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { toast } from 'sonner'
 import { ArrowRight, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn, resolveImageUrl } from '@/lib/utils'
@@ -98,6 +99,7 @@ export function Hero() {
         setSlides(fetchedSlides)
       } catch (error) {
         console.error("Error fetching hero slides:", error)
+        toast.error("Failed to load products. Reference: ERR-VLT-DB-101")
       } finally {
         setLoading(false)
       }

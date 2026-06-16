@@ -9,7 +9,8 @@ export async function POST(req: Request) {
     const signature = req.headers.get("x-signature")
 
     if (!signature) {
-      return NextResponse.json({ error: "Missing signature" }, { status: 400 })
+      console.error("Lemon Squeezy Webhook Error: Missing signature")
+      return NextResponse.json({ error: "ERR-VLT-PAY-202" }, { status: 400 })
     }
 
     const secret = process.env.LEMON_SQUEEZY_WEBHOOK_SECRET || ""
@@ -18,7 +19,8 @@ export async function POST(req: Request) {
     const signatureBuffer = Buffer.from(signature, "utf8")
 
     if (!crypto.timingSafeEqual(digest, signatureBuffer)) {
-      return NextResponse.json({ error: "Invalid signature" }, { status: 400 })
+      console.error("Lemon Squeezy Webhook Error: Invalid signature")
+      return NextResponse.json({ error: "ERR-VLT-PAY-202" }, { status: 400 })
     }
 
     const payload = JSON.parse(rawBody)
@@ -31,38 +33,78 @@ export async function POST(req: Request) {
       const uid = customData.uid // we passed this in checkout_data.custom
 
       if (uid) {
-        // Fetch cart to get items
-        const userRef = adminDb.collection("users").doc(uid)
-        const userDoc = await userRef.get()
+        // Fetch cart to get items outside of transaction
+        let userDoc
+        try {
+          userDoc = await adminDb.collection("users").doc(uid).get()
+        } catch (error) {
+          console.error("Firestore Query Error (Users):", error)
+          return NextResponse.json({ error: "ERR-VLT-DB-101" }, { status: 500 })
+        }
+
         const cart = userDoc.data()?.cart || []
 
-        // Generate Order ID
-        const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, "")
-        const orderId = `ORD-${dateStr}-${randomHex}`
+        if (cart.length > 0) {
+          // Generate Order ID
+          const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, "")
+          const randomHex = crypto.randomBytes(4).toString("hex")
+          const orderId = `ORD-${dateStr}-${randomHex}`
 
-        // Create Order
-        await adminDb.collection("orders").doc(orderId).set({
-          orderId,
-          uid,
-          email,
-          items: cart,
-          totalPaid: amount,
-          status: "Paid",
-          paymentMethod: "lemonsqueezy",
-          createdAt: new Date().toISOString()
-        })
+          try {
+            await adminDb.runTransaction(async (transaction) => {
+              const productRefs = cart.map((item: any) => adminDb.collection("products").doc(item.id))
+              let productDocs: FirebaseFirestore.DocumentSnapshot[] = []
+              
+              if (productRefs.length > 0) {
+                productDocs = await transaction.getAll(...productRefs)
+              }
 
-        // Clear user cart
-        await userRef.update({ cart: [] })
+              // Compute new stocks
+              productDocs.forEach((pDoc, index) => {
+                if (pDoc.exists) {
+                  const currentStock = pDoc.data()?.stockQuantity || 0
+                  const quantityToBuy = cart[index].quantity
+                  const newStock = Math.max(0, currentStock - quantityToBuy)
+                  transaction.update(pDoc.ref, { stockQuantity: newStock })
+                }
+              })
 
-        // Send confirmation email
-        await sendOrderConfirmationEmail(email, orderId, cart, amount)
+              // Create Order
+              const orderRef = adminDb.collection("orders").doc(orderId)
+              transaction.set(orderRef, {
+                orderId,
+                uid,
+                email,
+                items: cart,
+                totalPaid: amount,
+                status: "pending",
+                paymentMethod: "lemonsqueezy",
+                createdAt: new Date().toISOString()
+              })
+
+              // Clear user cart
+              const userRef = adminDb.collection("users").doc(uid)
+              transaction.update(userRef, { cart: [] })
+            })
+          } catch (error) {
+            console.error("Firestore Transaction Error:", error)
+            return NextResponse.json({ error: "ERR-VLT-DB-102" }, { status: 500 })
+          }
+
+          // Send confirmation email
+          try {
+            await sendOrderConfirmationEmail(email, orderId, cart, amount)
+          } catch (error) {
+            console.error("Email Dispatch Error:", error)
+            // No error response returned since the transaction succeeded
+          }
+        }
       }
     }
 
     return NextResponse.json({ received: true })
   } catch (error: any) {
-    console.error("Lemon Squeezy Webhook Error:", error)
-    return NextResponse.json({ error: "Webhook handler failed" }, { status: 500 })
+    console.error("Lemon Squeezy Webhook Unknown Error:", error)
+    return NextResponse.json({ error: "ERR-VLT-PAY-202" }, { status: 500 })
   }
 }
