@@ -52,7 +52,7 @@ export default function AdminCustomersPage() {
         setCustomers(fetched)
       } catch (error) {
         console.error("Error fetching customers:", error)
-        toast.error('Failed to load customers')
+        toast.error('Failed to load customers. Reference: ERR-VLT-DB-101')
       } finally {
         setLoading(false)
       }

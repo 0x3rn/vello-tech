@@ -26,18 +26,22 @@ interface ProductData {
   discountPrice: number | null
   stockQuantity: number
   categoryId: string
+  subcategoryId?: string
   condition: 'new' | 'used' | 'refurbished'
   imageUrls: string[]
+  imageAlts?: string[]
   specifications: Record<string, string>
   isFeatured: boolean
   isNewArrival: boolean
   isBestSeller: boolean
   isCarousel: boolean
+  colors?: { name: string; hex: string }[]
 }
 
 interface Category {
   id: string
   name: string
+  parentCategoryId: string | null
 }
 
 export function ProductForm({ initialData }: { initialData?: ProductData }) {
@@ -56,19 +60,26 @@ export function ProductForm({ initialData }: { initialData?: ProductData }) {
       discountPrice: null,
       stockQuantity: 0,
       categoryId: '',
+      subcategoryId: '',
       condition: 'new',
       imageUrls: [],
+      imageAlts: [],
       specifications: {},
       isFeatured: false,
       isNewArrival: false,
       isBestSeller: false,
       isCarousel: false,
+      colors: [],
     }
   )
 
   // Specs UI State
   const [specKey, setSpecKey] = useState('')
   const [specValue, setSpecValue] = useState('')
+
+  // Colors UI State
+  const [colorName, setColorName] = useState('')
+  const [colorHex, setColorHex] = useState('#000000')
 
   // Images State
   const [uploadingImage, setUploadingImage] = useState(false)
@@ -77,7 +88,17 @@ export function ProductForm({ initialData }: { initialData?: ProductData }) {
     const fetchCategories = async () => {
       const snap = await getDocs(collection(db, 'categories'))
       const fetched: Category[] = []
-      snap.forEach(doc => fetched.push({ id: doc.id, name: doc.data().name }))
+      const ignoreNames = ['new', 'used', 'refurbished']
+      snap.forEach(doc => {
+        const name = doc.data().name
+        if (!ignoreNames.includes(name.toLowerCase())) {
+          fetched.push({ 
+            id: doc.id, 
+            name: name,
+            parentCategoryId: doc.data().parentCategoryId || null
+          })
+        }
+      })
       setCategories(fetched)
     }
     fetchCategories()
@@ -85,12 +106,17 @@ export function ProductForm({ initialData }: { initialData?: ProductData }) {
 
   const handleTextChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
-    setFormData(prev => ({
-      ...prev,
-      [name]: name === 'price' || name === 'discountPrice' || name === 'stockQuantity' 
-        ? (value === '' ? (name === 'discountPrice' ? null : 0) : Number(value)) 
-        : value
-    }))
+    setFormData(prev => {
+      const updates: any = {
+        [name]: name === 'price' || name === 'discountPrice' || name === 'stockQuantity' 
+          ? (value === '' ? (name === 'discountPrice' ? null : 0) : Number(value)) 
+          : value
+      }
+      if (name === 'categoryId') {
+        updates.subcategoryId = ''
+      }
+      return { ...prev, ...updates }
+    })
   }
 
   const handleToggle = (name: string, checked: boolean) => {
@@ -123,6 +149,24 @@ export function ProductForm({ initialData }: { initialData?: ProductData }) {
     })
   }
 
+  // Add Color
+  const addColor = () => {
+    if (!colorName || !colorHex) return
+    setFormData(prev => ({
+      ...prev,
+      colors: [...(prev.colors || []), { name: colorName, hex: colorHex }]
+    }))
+    setColorName('')
+    setColorHex('#000000')
+  }
+
+  const removeColor = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      colors: (prev.colors || []).filter((_, i) => i !== index)
+    }))
+  }
+
   // Handle Image Upload
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -137,7 +181,8 @@ export function ProductForm({ initialData }: { initialData?: ProductData }) {
       
       setFormData(prev => ({
         ...prev,
-        imageUrls: [...prev.imageUrls, downloadURL]
+        imageUrls: [...prev.imageUrls, downloadURL],
+        imageAlts: [...(prev.imageAlts || []), '']
       }))
       toast.success("Image uploaded")
     } catch (error) {
@@ -151,8 +196,21 @@ export function ProductForm({ initialData }: { initialData?: ProductData }) {
   const removeImage = (index: number) => {
     setFormData(prev => ({
       ...prev,
-      imageUrls: prev.imageUrls.filter((_, i) => i !== index)
+      imageUrls: prev.imageUrls.filter((_, i) => i !== index),
+      imageAlts: (prev.imageAlts || []).filter((_, i) => i !== index)
     }))
+  }
+
+  const handleAltTextChange = (index: number, text: string) => {
+    setFormData(prev => {
+      const newAlts = [...(prev.imageAlts || [])];
+      // Ensure the array is long enough if it's an old product being edited
+      while (newAlts.length < prev.imageUrls.length) {
+        newAlts.push('');
+      }
+      newAlts[index] = text;
+      return { ...prev, imageAlts: newAlts };
+    })
   }
 
   // Save Product
@@ -225,7 +283,7 @@ export function ProductForm({ initialData }: { initialData?: ProductData }) {
                   <Button type="button" variant="secondary" onClick={generateSlug}>Generate</Button>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="brand">Brand *</Label>
                   <Input id="brand" name="brand" value={formData.brand} onChange={handleTextChange} required />
@@ -257,17 +315,28 @@ export function ProductForm({ initialData }: { initialData?: ProductData }) {
               <CardTitle>Images</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex flex-wrap gap-4 mb-4">
+              <div className="flex flex-col gap-6 mb-4">
                 {formData.imageUrls.map((url, index) => (
-                  <div key={index} className="relative w-24 h-24 bg-secondary rounded-md border border-border flex items-center justify-center">
-                    <Image src={resolveImageUrl(url)} alt="Product" fill className="object-contain p-2" />
-                    <button 
-                      type="button" 
-                      onClick={() => removeImage(index)}
-                      className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 shadow-md hover:scale-110 transition-transform"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
+                  <div key={index} className="flex gap-4 items-start">
+                    <div className="relative w-24 h-24 bg-secondary rounded-md border border-border flex items-center justify-center shrink-0">
+                      <Image src={resolveImageUrl(url)} alt="Product" fill className="object-contain p-2" />
+                      <button 
+                        type="button" 
+                        onClick={() => removeImage(index)}
+                        className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 shadow-md hover:scale-110 transition-transform"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                    <div className="flex-1">
+                      <Label htmlFor={`alt-${index}`} className="text-xs text-muted-foreground mb-1 block">Alt Text (SEO & Accessibility)</Label>
+                      <Input 
+                        id={`alt-${index}`}
+                        placeholder="e.g. Silver iPhone 14 Pro Max back view"
+                        value={formData.imageAlts?.[index] || ''}
+                        onChange={(e) => handleAltTextChange(index, e.target.value)}
+                      />
+                    </div>
                   </div>
                 ))}
                 
@@ -310,6 +379,42 @@ export function ProductForm({ initialData }: { initialData?: ProductData }) {
               </div>
             </CardContent>
           </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Product Colors</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex flex-wrap gap-2">
+                  {(formData.colors || []).map((color, idx) => (
+                    <div key={idx} className="flex items-center gap-2 bg-secondary/50 border border-border px-3 py-1.5 rounded-full">
+                      <div className="w-4 h-4 rounded-full shadow-sm border border-black/10" style={{ backgroundColor: color.hex }} />
+                      <span className="text-sm font-medium">{color.name}</span>
+                      <button type="button" onClick={() => removeColor(idx)} className="text-muted-foreground hover:text-destructive ml-1">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex items-end gap-3 pt-4 border-t border-border mt-4">
+                  <div className="flex-1 space-y-1">
+                    <Label className="text-xs">Color Name (e.g. Midnight Green)</Label>
+                    <Input value={colorName} onChange={(e) => setColorName(e.target.value)} placeholder="Color Name" onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addColor())} />
+                  </div>
+                  <div className="w-24 space-y-1">
+                    <Label className="text-xs">Hex</Label>
+                    <div className="flex items-center gap-2 h-10 border border-input rounded-md px-2 bg-background">
+                      <input type="color" value={colorHex} onChange={(e) => setColorHex(e.target.value)} className="w-6 h-6 p-0 border-0 cursor-pointer bg-transparent" />
+                      <span className="text-xs uppercase text-muted-foreground flex-1">{colorHex}</span>
+                    </div>
+                  </div>
+                  <Button type="button" onClick={addColor} variant="secondary">Add</Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Right Column (Pricing, Inventory, Toggles) */}
@@ -340,7 +445,7 @@ export function ProductForm({ initialData }: { initialData?: ProductData }) {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="categoryId">Category *</Label>
+                <Label htmlFor="categoryId">Main Category *</Label>
                 <select 
                   id="categoryId" 
                   name="categoryId" 
@@ -349,8 +454,24 @@ export function ProductForm({ initialData }: { initialData?: ProductData }) {
                   required
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  <option value="" disabled>Select a category</option>
-                  {categories.map(cat => (
+                  <option value="" disabled>Select a main category</option>
+                  {categories.filter(c => !c.parentCategoryId).map(cat => (
+                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="subcategoryId">Subcategory</Label>
+                <select 
+                  id="subcategoryId" 
+                  name="subcategoryId" 
+                  value={formData.subcategoryId || ''} 
+                  onChange={handleTextChange}
+                  disabled={!formData.categoryId}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <option value="" disabled>Select a subcategory</option>
+                  {categories.filter(c => c.parentCategoryId === formData.categoryId).map(cat => (
                     <option key={cat.id} value={cat.id}>{cat.name}</option>
                   ))}
                 </select>

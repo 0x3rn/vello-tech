@@ -1,7 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, getDocs } from 'firebase/firestore';
 
-// Replace with your Firebase config or just use the existing one
+// Local environment configuration
 import dotenv from 'dotenv';
 dotenv.config({ path: '.env.local' });
 

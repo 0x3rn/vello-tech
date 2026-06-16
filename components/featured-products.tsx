@@ -30,6 +30,8 @@ interface ProductData {
   slug: string
   badge?: string
   condition?: 'new' | 'used' | 'refurbished'
+  imageAlts?: string[]
+  colors?: { name: string; hex: string }[]
 }
 
 const containerVariants = {
@@ -95,7 +97,7 @@ function ProductCard({ product }: { product: ProductData }) {
         <div className="relative aspect-square p-6 overflow-hidden bg-secondary/30 flex items-center justify-center">
           <Image
             src={resolveImageUrl(product.imageUrls?.[0])}
-            alt={product.name}
+            alt={product.imageAlts?.[0] || product.name}
             fill
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
             className="object-contain p-8 group-hover:scale-105 transition-transform duration-500"
@@ -209,7 +211,8 @@ function ProductCard({ product }: { product: ProductData }) {
 export function FeaturedProducts() {
   const [activeFilter, setActiveFilter] = useState('All')
   const [products, setProducts] = useState<ProductData[]>([])
-  const filters = ['All', 'Smartphones', 'Laptops', 'Audio']
+  const [categories, setCategories] = useState<{id: string, name: string}[]>([])
+  const [filters, setFilters] = useState<string[]>(['All'])
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -221,6 +224,21 @@ export function FeaturedProducts() {
           fetchedProducts.push({ id: doc.id, ...doc.data() } as ProductData)
         })
         setProducts(fetchedProducts)
+
+        const catSnap = await getDocs(collection(db, 'categories'))
+        const fetchedCats: {id: string, name: string}[] = []
+        const ignoreNames = ['new', 'used', 'refurbished']
+        catSnap.forEach(doc => {
+          const name = doc.data().name
+          if (!ignoreNames.includes(name.toLowerCase())) {
+            fetchedCats.push({ id: doc.id, name: name })
+          }
+        })
+        setCategories(fetchedCats)
+
+        const availableCategoryIds = Array.from(new Set(fetchedProducts.map(p => p.categoryId)))
+        const dynamicFilters = ['All', ...fetchedCats.filter(c => availableCategoryIds.includes(c.id)).map(c => c.name)]
+        setFilters(dynamicFilters.length > 1 ? dynamicFilters : ['All'])
       } catch (error) {
         console.error("Error fetching featured products:", error)
       }
@@ -228,11 +246,12 @@ export function FeaturedProducts() {
     fetchProducts()
   }, [])
 
-  // In a real app we'd filter by checking if categoryId matches the parent category ID
-  // For the sake of this mock UI filter on the homepage, we just do a rough substring match on categoryId
   const filteredProducts = activeFilter === 'All' 
     ? products 
-    : products.filter(p => p.categoryId.includes(activeFilter.toLowerCase()))
+    : products.filter(p => {
+        const cat = categories.find(c => c.id === p.categoryId)
+        return cat?.name === activeFilter
+      })
 
   return (
     <section id="products" className="py-16 lg:py-20 bg-background relative">

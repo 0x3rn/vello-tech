@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useMemo, Suspense } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import { collection, getDocs, query, where } from 'firebase/firestore'
@@ -27,6 +27,8 @@ interface ProductData {
   numReviews: number
   slug: string
   condition?: 'new' | 'used' | 'refurbished'
+  imageAlts?: string[]
+  colors?: { name: string; hex: string }[]
 }
 
 interface CategoryData {
@@ -38,10 +40,11 @@ interface CategoryData {
 
 function ShopPageContent() {
   const searchParams = useSearchParams()
+  const router = useRouter()
   const isSale = searchParams.get('sale') === 'true'
   
   const [products, setProducts] = useState<ProductData[]>([])
-  const [categories, setCategories] = useState<{id: string, name: string}[]>([])
+  const [categories, setCategories] = useState<{id: string, name: string, parentCategoryId: string | null}[]>([])
   const [loading, setLoading] = useState(true)
   
   // Filter states
@@ -59,11 +62,14 @@ function ShopPageContent() {
     const fetchShopData = async () => {
       setLoading(true)
       try {
-        // Fetch categories for filter
         const catSnap = await getDocs(collection(db, 'categories'))
-        const cats: {id: string, name: string}[] = []
+        const cats: {id: string, name: string, parentCategoryId: string | null}[] = []
+        const ignoreNames = ['new', 'used', 'refurbished']
         catSnap.forEach(doc => {
-          cats.push({ id: doc.id, name: doc.data().name })
+          const data = doc.data()
+          if (!ignoreNames.includes((data.name || '').toLowerCase())) {
+            cats.push({ id: doc.id, name: data.name, parentCategoryId: data.parentCategoryId || null })
+          }
         })
         setCategories(cats)
 
@@ -83,6 +89,7 @@ function ShopPageContent() {
         setProducts(fetchedProducts)
       } catch (error) {
         console.error("Error fetching products:", error)
+        toast.error("Failed to load products. Reference: ERR-VLT-DB-101")
       } finally {
         setLoading(false)
       }
@@ -159,6 +166,13 @@ function ShopPageContent() {
   const handleAddToCart = async (e: React.MouseEvent, product: ProductData) => {
     e.preventDefault()
     e.stopPropagation()
+
+    if (product.colors && product.colors.length > 0) {
+      toast.info("Please select a color for this product")
+      router.push(`/product/${product.slug}`)
+      return
+    }
+
     setAddingProduct(product.id)
     
     // Simulate short network delay for satisfying visual feedback
@@ -250,18 +264,41 @@ function ShopPageContent() {
               {categories.length > 0 && (
                 <div className="mb-8 border-t border-border pt-6">
                   <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">Categories</h3>
-                  <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2 scrollbar-thin">
-                    {categories.map(cat => (
-                      <label key={cat.id} className="flex items-center gap-2 cursor-pointer group">
-                        <input 
-                          type="checkbox" 
-                          checked={selectedCategories.includes(cat.id)} 
-                          onChange={() => toggleCategory(cat.id)} 
-                          className="rounded border-input text-primary accent-primary" 
-                        />
-                        <span className="text-sm group-hover:text-primary transition-colors">{cat.name}</span>
-                      </label>
-                    ))}
+                  <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 scrollbar-thin">
+                    {categories.filter(c => !c.parentCategoryId).map(mainCat => {
+                      const isSelected = selectedCategories.includes(mainCat.id)
+                      const subCats = categories.filter(c => c.parentCategoryId === mainCat.id)
+                      
+                      return (
+                        <div key={mainCat.id} className="space-y-2">
+                          <label className="flex items-center gap-2 cursor-pointer group">
+                            <input 
+                              type="checkbox" 
+                              checked={isSelected} 
+                              onChange={() => toggleCategory(mainCat.id)} 
+                              className="rounded border-input text-primary accent-primary" 
+                            />
+                            <span className="text-sm group-hover:text-primary transition-colors font-medium">{mainCat.name}</span>
+                          </label>
+                          
+                          {isSelected && subCats.length > 0 && (
+                            <div className="pl-6 space-y-2 mt-2 border-l-2 border-border/50 ml-2">
+                              {subCats.map(subCat => (
+                                <label key={subCat.id} className="flex items-center gap-2 cursor-pointer group">
+                                  <input 
+                                    type="checkbox" 
+                                    checked={selectedCategories.includes(subCat.id)} 
+                                    onChange={() => toggleCategory(subCat.id)} 
+                                    className="rounded border-input text-primary accent-primary" 
+                                  />
+                                  <span className="text-sm group-hover:text-primary transition-colors text-muted-foreground">{subCat.name}</span>
+                                </label>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
                   </div>
                 </div>
               )}
@@ -345,7 +382,7 @@ function ShopPageContent() {
                       <div className="relative aspect-square bg-secondary/30 p-6 overflow-hidden flex items-center justify-center">
                         <Image
                           src={resolveImageUrl(product.imageUrls?.[0])}
-                          alt={product.name}
+                          alt={product.imageAlts?.[0] || product.name}
                           fill
                           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
                           className="object-contain p-6 group-hover:scale-105 transition-transform duration-500"

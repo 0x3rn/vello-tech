@@ -9,6 +9,7 @@ export interface CartItem {
   image: string
   quantity: number
   categoryId?: string
+  selectedColor?: { name: string; hex: string }
 }
 
 interface CartState {

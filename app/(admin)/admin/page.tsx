@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/table'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 
 interface Order {
   id: string
@@ -36,6 +37,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true)
   const [metrics, setMetrics] = useState({ revenue: 0, ordersCount: 0 })
   const [recentOrders, setRecentOrders] = useState<Order[]>([])
+  const [pendingOrders, setPendingOrders] = useState<Order[]>([])
   const [lowStockProducts, setLowStockProducts] = useState<Product[]>([])
 
 
@@ -58,12 +60,15 @@ export default function AdminDashboard() {
             totalOrders += 1
           }
         })
-        
+
         setMetrics({ revenue: totalRevenue, ordersCount: totalOrders })
 
         // Sort for recent orders manually since we fetched all
         allOrders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
         setRecentOrders(allOrders.slice(0, 5))
+
+        // Filter pending orders
+        setPendingOrders(allOrders.filter(o => o.status === 'pending'))
 
         // Fetch low stock products
         const lowStockQuery = query(collection(db, 'products'), where('stockQuantity', '<', 5))
@@ -101,6 +106,30 @@ export default function AdminDashboard() {
         </p>
       </div>
 
+      {/* Pending Orders Alert Widget */}
+      {pendingOrders.length > 0 && (
+        <Card className="border-amber-500/50 bg-amber-500/5">
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              <CardTitle className="text-amber-700 dark:text-amber-500">Action Required: Pending Orders</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <p className="text-sm text-foreground">
+                You have <span className="font-bold">{pendingOrders.length}</span> order(s) waiting to be processed and shipped.
+              </p>
+              <Button asChild className="shrink-0 bg-amber-500 hover:bg-amber-600 text-white">
+                <Link href="/admin/orders">
+                  Review Orders
+                </Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Metrics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card>
@@ -113,7 +142,7 @@ export default function AdminDashboard() {
             <p className="text-xs text-muted-foreground mt-1">Excludes cancelled orders</p>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
@@ -221,5 +250,7 @@ export default function AdminDashboard() {
     </div>
   )
 }
+
+
 
 

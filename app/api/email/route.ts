@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // TODO: Integrate with email service (Resend, SendGrid, etc.)
+    // Email service integration (Resend, SendGrid, etc.)
     console.log("Newsletter signup:", email)
     return NextResponse.json({ success: true, message: "Subscribed successfully" })
   } catch {

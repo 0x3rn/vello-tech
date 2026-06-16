@@ -47,7 +47,7 @@ export default function AdminOrdersPage() {
       setOrders(fetched)
     } catch (error) {
       console.error("Error fetching orders:", error)
-      toast.error('Failed to load orders')
+      toast.error('Failed to load orders. Reference: ERR-VLT-DB-101')
     } finally {
       setLoading(false)
     }

@@ -48,3 +48,7 @@ next-env.d.ts
 
 # seed-database
 app/seed-database/*
+
+
+#developer-error-codes
+developer-error-codes.txt

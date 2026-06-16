@@ -4,7 +4,7 @@ import { getAnalytics } from "firebase/analytics";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
-// TODO: Add SDKs for Firebase products that you want to use
+// Initialize Firebase components
 // https://firebase.google.com/docs/web/setup#available-libraries
 
 // Your web app's Firebase configuration

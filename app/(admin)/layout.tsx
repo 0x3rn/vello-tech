@@ -44,9 +44,9 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-secondary/20">
+    <div className="flex min-h-screen w-full bg-secondary/20 overflow-y-auto">
       {/* Desktop Sidebar */}
-      <div className="hidden lg:block">
+      <div className="hidden lg:block lg:sticky lg:top-0 lg:h-screen lg:shrink-0">
         <AdminSidebar />
       </div>
 
@@ -74,7 +74,7 @@ export default function AdminLayout({
         </header>
 
         {/* Page Content Scroll Area */}
-        <main className="flex-1 overflow-y-auto focus:outline-none">
+        <main className="flex-1 w-full p-4 lg:p-8">
           {children}
         </main>
       </div>

@@ -48,7 +48,7 @@ export default function AdminProductsPage() {
       setProducts(fetched)
     } catch (error) {
       console.error("Error fetching products:", error)
-      toast.error('Failed to load products')
+      toast.error('Failed to load products. Reference: ERR-VLT-DB-101')
     } finally {
       setLoading(false)
     }

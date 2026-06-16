@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server"
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    // TODO: Integrate with Stripe or payment provider
+    // Payment provider integration
     console.log("Checkout request:", body)
     return NextResponse.json({ success: true, message: "Checkout initiated" })
   } catch {

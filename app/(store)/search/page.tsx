@@ -27,6 +27,8 @@ interface ProductData {
   numReviews: number
   slug: string
   condition?: 'new' | 'used' | 'refurbished'
+  imageAlts?: string[]
+  colors?: { name: string; hex: string }[]
 }
 
 function SearchResults() {
@@ -313,7 +315,7 @@ function SearchResults() {
                       <div className="relative aspect-square bg-secondary/30 p-6 overflow-hidden flex items-center justify-center">
                         <Image
                           src={resolveImageUrl(product.imageUrls?.[0])}
-                          alt={product.name}
+                          alt={product.imageAlts?.[0] || product.name}
                           fill
                           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
                           className="object-contain p-6 group-hover:scale-105 transition-transform duration-500"
