@@ -40,21 +40,21 @@ export function PromoSection() {
   }, [])
 
   return (
-    <section id="deals" className="py-16 bg-secondary/20 border-y border-border">
+    <section id="deals" className="py-16 bg-zinc-950 border-y border-border">
       <div className="mx-auto max-w-7xl px-4 lg:px-8">
         <div className="flex flex-col lg:flex-row items-center justify-between gap-12">
           
           {/* Content */}
           <div className="flex-1 text-center lg:text-left">
-            <h2 className="text-2xl lg:text-3xl font-semibold text-foreground tracking-tight">
+            <h2 className="text-2xl lg:text-3xl font-semibold text-white tracking-tight">
               Summer Tech Sale
             </h2>
-            <p className="mt-4 text-base text-muted-foreground max-w-2xl mx-auto lg:mx-0">
-              Don&apos;t miss out on our biggest sale of the year. Premium gadgets at unbeatable prices. Up to 40% Off on select items.
+            <p className="mt-4 text-base text-zinc-400 max-w-2xl mx-auto lg:mx-0">
+              Don&apos;t miss out on our biggest sale of the year. Premium gadgets at unbeatable prices. Up to 40% off on select items.
             </p>
             
             <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-              <Button asChild size="lg" className="rounded-none">
+              <Button asChild size="lg" className="rounded-none bg-primary text-primary-foreground hover:bg-primary/90">
                 <Link href="/shop?sale=true">
                   Shop the Sale
                   <ArrowRight className="ml-2 h-4 w-4" />
@@ -64,10 +64,10 @@ export function PromoSection() {
           </div>
 
           {/* Countdown Block */}
-          <div className="flex-shrink-0 w-full lg:w-auto lg:min-w-[320px] bg-background border border-border p-6 sm:p-8 text-center rounded-2xl lg:rounded-none">
-            <div className="flex items-center justify-center gap-2 text-muted-foreground mb-6">
+          <div className="flex-shrink-0 w-full lg:w-auto lg:min-w-[320px] bg-white/5 border border-white/10 p-6 sm:p-8 text-center rounded-2xl lg:rounded-none">
+            <div className="flex items-center justify-center gap-2 text-zinc-400 mb-6">
               <Clock className="h-4 w-4" />
-              <span className="text-sm font-medium uppercase tracking-wider">Offer Ends In</span>
+              <span className="text-sm font-medium uppercase tracking-wider text-zinc-300">Offer Ends In</span>
             </div>
             
             <div className="flex items-center justify-center gap-4">
@@ -78,10 +78,10 @@ export function PromoSection() {
                 { value: String(timeLeft.seconds).padStart(2, '0'), label: 'Sec' },
               ].map((item, index) => (
                 <div key={index} className="flex flex-col items-center">
-                  <span className="text-2xl sm:text-2xl lg:text-3xl font-light text-foreground tabular-nums tracking-tight">
+                  <span className="text-2xl sm:text-2xl lg:text-3xl font-light text-white tabular-nums tracking-tight">
                     {item.value}
                   </span>
-                  <span className="text-xs text-muted-foreground uppercase tracking-widest mt-2">
+                  <span className="text-xs text-zinc-500 uppercase tracking-widest mt-2">
                     {item.label}
                   </span>
                 </div>

@@ -78,7 +78,7 @@ export function Header() {
             <div className="flex items-center gap-6">
               <a href="tel:+1234567890" className="flex items-center gap-2 transition-opacity duration-200 hover:opacity-80">
                 <Phone className="h-3.5 w-3.5" />
-                <span>0800-VELLO-TECH</span>
+                <span>(555)-555-5555</span>
               </a>
               <a href="mailto:support@vellotech.com" className="flex items-center gap-2 transition-opacity duration-200 hover:opacity-80">
                 <Mail className="h-3.5 w-3.5" />
@@ -86,7 +86,7 @@ export function Header() {
               </a>
             </div>
             <div className="flex items-center gap-6">
-              <span>Free shipping on orders over ₦150,000</span>
+              <span>Free shipping on orders over $100</span>
               <span className="w-px h-4 bg-background/30" />
               <button onClick={() => { import('sonner').then(m => m.toast.info('Coming soon!')) }} className="transition-opacity duration-200 hover:opacity-80">Track Order</button>
             </div>
@@ -179,7 +179,7 @@ export function Header() {
 
           {/* Desktop Actions */}
           <div className="hidden lg:flex lg:items-center lg:gap-1">
-            {user && (
+            {isMounted && user && (
               <Link href="/wishlist" className="relative">
                 <Button 
                   variant="ghost" 
@@ -196,7 +196,7 @@ export function Header() {
                 </Button>
               </Link>
             )}
-            {userData?.role === 'admin' && (
+            {isMounted && userData?.role === 'admin' && (
               <Link href="/admin" className="mr-2 hidden sm:block">
                 <Button 
                   className="bg-amber-500 hover:bg-amber-600 text-white font-bold transition-all duration-200 shadow-md hover:shadow-lg shadow-amber-500/20 rounded-full px-5 h-9"
@@ -234,7 +234,7 @@ export function Header() {
 
           {/* Mobile menu button */}
           <div className="flex lg:hidden items-center gap-2">
-            {user && (
+            {isMounted && user && (
               <Link href="/wishlist" className="relative">
                 <Button 
                   variant="ghost" 
@@ -302,6 +302,7 @@ export function Header() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search products..."
                 className="w-full h-12 pl-11 pr-4 rounded-xl bg-secondary border border-transparent text-sm placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-all duration-200"
+                suppressHydrationWarning
               />
             </form>
 
@@ -335,7 +336,7 @@ export function Header() {
             </div>
 
             <div className="pt-2 mt-2 border-t border-border/50 space-y-1">
-              {userData?.role === 'admin' && (
+              {isMounted && userData?.role === 'admin' && (
                 <Link
                   href="/admin"
                   className="flex items-center justify-between px-4 py-3 mb-2 text-base font-bold text-amber-600 dark:text-amber-500 bg-amber-500/10 hover:bg-amber-500/20 rounded-xl transition-all duration-200"
@@ -344,7 +345,7 @@ export function Header() {
                   Admin Dashboard
                 </Link>
               )}
-              {user && (
+              {isMounted && user && (
                 <>
                   <p className="px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">My Account</p>
                   <Link
@@ -374,8 +375,7 @@ export function Header() {
                 </>
               )}
             </div>
-
-            {!user && (
+            {isMounted && !user && (
               <div className="pt-2 mt-2 border-t border-border/50">
                 <Link
                   href="/auth/login"

@@ -406,8 +406,8 @@ function ShopPageContent() {
                           {product.name}
                         </h3>
                         
-                        <div className="mt-auto pt-4 flex items-center justify-between">
-                          <div className="flex items-center gap-2">
+                        <div className="mt-auto pt-4 flex flex-wrap items-center justify-between gap-y-3 gap-x-2">
+                          <div className="flex flex-wrap items-center gap-2">
                             <span className="text-lg font-bold">
                               ${(product.discountPrice || product.price || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                             </span>

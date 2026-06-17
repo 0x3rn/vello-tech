@@ -94,8 +94,7 @@ function ProductCard({ product }: { product: ProductData }) {
   }
 
   return (
-    <motion.div 
-      variants={itemVariants}
+    <div 
       className="group bg-card rounded-xl border border-border overflow-hidden transition-all duration-300 hover:shadow-lg relative"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -195,7 +194,7 @@ function ProductCard({ product }: { product: ProductData }) {
           </div>
 
           {/* Price */}
-          <div className="flex items-center gap-3 mt-4">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 mt-4">
             <span className="text-lg font-bold text-foreground">
               ${(product.discountPrice || product.price).toLocaleString(undefined, { minimumFractionDigits: 2 })}
             </span>
@@ -212,7 +211,7 @@ function ProductCard({ product }: { product: ProductData }) {
           </div>
         </div>
       </Link>
-    </motion.div>
+    </div>
   )
 }
 
@@ -298,31 +297,35 @@ export function FeaturedProducts() {
               key={filter}
               onClick={() => setActiveFilter(filter)}
               className={cn(
-                'px-3 py-1.5 sm:px-4 sm:py-2 rounded-md text-xs sm:text-sm font-medium whitespace-nowrap transition-colors border',
+                'relative px-3 py-1.5 sm:px-4 sm:py-2 rounded-md text-xs sm:text-sm font-medium whitespace-nowrap transition-colors border outline-none',
                 activeFilter === filter
-                  ? 'bg-primary text-primary-foreground border-primary'
+                  ? 'text-primary-foreground border-transparent'
                   : 'bg-background text-muted-foreground border-border hover:bg-secondary hover:text-foreground'
               )}
             >
-              {filter}
+              {activeFilter === filter && (
+                <motion.div
+                  layoutId="activeTabFeatured"
+                  className="absolute inset-0 bg-primary rounded-md z-0"
+                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                />
+              )}
+              <span className="relative z-10">{filter}</span>
             </button>
           ))}
         </motion.div>
 
-        <AnimatePresence mode="wait">
-          <motion.div 
-            key={activeFilter}
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-            exit="hidden"
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8"
-          >
-            {filteredProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </motion.div>
-        </AnimatePresence>
+        <motion.div 
+          key={activeFilter}
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.2, ease: "easeOut" }}
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8"
+        >
+          {filteredProducts.map((product) => (
+            <ProductCard key={product.id} product={product} />
+          ))}
+        </motion.div>
       </div>
     </section>
   )
