@@ -14,6 +14,12 @@ export const metadata: Metadata = {
   title: 'Vello Tech | Premium Tech Gadgets & Electronics',
   description: 'Discover the latest tech gadgets, electronics, and accessories at Vello Tech. Premium quality, competitive prices, and exceptional customer service.',
   keywords: ['tech gadgets', 'electronics', 'smartphones', 'laptops', 'accessories', 'vello tech'],
+  formatDetection: {
+    telephone: false,
+    date: false,
+    email: false,
+    address: false,
+  },
 }
 
 export const viewport: Viewport = {
@@ -28,7 +34,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className="bg-background">
+    <html lang="en" className="bg-background" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans antialiased`}>
         <AuthProvider>
           {children}

@@ -61,11 +61,11 @@ export function Footer() {
               </a>
               <a href="tel:+1-800-VELLO" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors duration-200">
                 <Phone className="h-4 w-4" />
-                0800-VELLOTECH
+                (555)-555-5555
               </a>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <MapPin className="h-4 w-4" />
-                Lagos, Nigeria
+                San Francisco, California
               </div>
             </div>
           </div>
