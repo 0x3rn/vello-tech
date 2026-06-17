@@ -26,6 +26,13 @@ const testimonials = [
     rating: 5,
     avatar: 'CO',
   },
+  {
+    name: 'Sarah Johnson',
+    role: 'Photographer',
+    content: "Excellent camera gear selection! The delivery was swift and everything arrived in perfect condition.",
+    rating: 5,
+    avatar: 'SJ',
+  },
 ]
 
 const containerVariants = {
@@ -49,7 +56,7 @@ const itemVariants = {
 
 export function Testimonials() {
   return (
-    <section className="py-16 lg:py-20 bg-secondary/30 relative overflow-hidden">
+    <section className="py-10 lg:py-14 bg-secondary/30 relative overflow-hidden">
       <div className="absolute inset-0 bg-primary/5" />
       <div className="mx-auto max-w-7xl px-4 lg:px-8 relative z-10">
         <motion.div 
@@ -57,12 +64,12 @@ export function Testimonials() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="text-center mb-16"
+          className="text-center mb-10"
         >
-          <h2 className="text-3xl lg:text-5xl font-extrabold text-foreground tracking-tight">
+          <h2 className="text-2xl lg:text-3xl font-bold text-foreground tracking-tight">
             What Our <span className="text-primary">Customers Say</span>
           </h2>
-          <p className="mt-6 text-muted-foreground max-w-2xl mx-auto text-lg">
+          <p className="mt-4 text-muted-foreground max-w-2xl mx-auto text-sm">
             Join thousands of satisfied customers who trust Vello Tech for their tech needs.
           </p>
         </motion.div>
@@ -72,42 +79,46 @@ export function Testimonials() {
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-50px" }}
-          className="grid grid-cols-1 md:grid-cols-3 gap-8"
+          className="flex overflow-x-auto pb-6 gap-4 md:gap-6 snap-x snap-mandatory scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
         >
           {testimonials.map((testimonial, index) => (
-            <motion.div variants={itemVariants} key={index}>
+            <motion.div 
+              variants={itemVariants} 
+              key={index} 
+              className="flex-none w-[90vw] md:w-[calc(33.333%-1rem)] snap-center"
+            >
               <Card 
-                className="bg-card/80 backdrop-blur-sm border-white/5 transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 group rounded-2xl md:rounded-3xl overflow-hidden"
+                className="bg-card/80 backdrop-blur-sm border-white/5 transition-all duration-500 hover:shadow-lg group rounded-xl md:rounded-2xl overflow-hidden h-full"
               >
-                <CardContent className="p-8 relative h-full flex flex-col">
+                <CardContent className="p-6 relative h-full flex flex-col">
                   {/* Quote icon */}
-                  <Quote className="absolute top-6 right-6 h-10 w-10 text-primary/10 transition-colors duration-500 group-hover:text-primary/20" />
+                  <Quote className="absolute top-4 right-4 h-6 w-6 text-primary/10 transition-colors duration-500 group-hover:text-primary/20" />
                   
                   {/* Rating */}
-                  <div className="flex items-center gap-1.5 mb-6">
+                  <div className="flex items-center gap-1 mb-4">
                     {Array.from({ length: testimonial.rating }).map((_, i) => (
                       <Star 
                         key={i} 
-                        className="h-5 w-5 fill-amber-400 text-amber-400 transition-transform duration-300 group-hover:scale-110" 
+                        className="h-4 w-4 fill-amber-400 text-amber-400" 
                       />
                     ))}
                   </div>
 
                   {/* Content */}
-                  <p className="text-foreground leading-relaxed mb-8 text-lg font-medium italic flex-grow relative z-10">
+                  <p className="text-foreground leading-relaxed mb-6 text-sm font-medium italic flex-grow relative z-10">
                     &ldquo;{testimonial.content}&rdquo;
                   </p>
 
                   {/* Author */}
-                  <div className="flex items-center gap-4 mt-auto">
-                    <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center transition-all duration-500 group-hover:scale-110 shadow-lg">
-                      <span className="text-sm font-bold text-white">
+                  <div className="flex items-center gap-3 mt-auto">
+                    <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center shadow-md">
+                      <span className="text-xs font-bold text-white">
                         {testimonial.avatar}
                       </span>
                     </div>
                     <div>
-                      <p className="font-bold text-foreground">{testimonial.name}</p>
-                      <p className="text-sm text-muted-foreground font-medium">{testimonial.role}</p>
+                      <p className="font-semibold text-sm text-foreground">{testimonial.name}</p>
+                      <p className="text-xs text-muted-foreground font-medium">{testimonial.role}</p>
                     </div>
                   </div>
                 </CardContent>

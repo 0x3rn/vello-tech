@@ -194,7 +194,7 @@ export function Hero() {
               </div>
 
               {/* Title */}
-              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold text-white tracking-tight leading-[1.1] mb-6 line-clamp-3">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-white tracking-tight leading-[1.1] mb-6 line-clamp-3">
                 {current.title}
               </h1>
 
@@ -211,7 +211,7 @@ export function Hero() {
                   </Button>
                 </Link>
                 {current.price > 0 && (
-                  <p className="text-2xl lg:text-3xl font-medium text-white/90">
+                  <p className="text-lg lg:text-xl font-medium text-white/90">
                     ${current.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                   </p>
                 )}

@@ -47,7 +47,7 @@ export default function CartPage() {
                 <ArrowLeft className="h-4 w-4" />
                 Continue Shopping
               </button>
-              <h1 className="text-3xl lg:text-4xl font-bold text-foreground tracking-tight">
+              <h1 className="text-2xl lg:text-3xl font-bold text-foreground tracking-tight">
                 Shopping Cart
               </h1>
               <p className="mt-2 text-muted-foreground">
@@ -105,6 +105,11 @@ export default function CartPage() {
                               Color: {item.selectedColor.name}
                             </p>
                           )}
+                          {item.selectedVariants && item.selectedVariants.length > 0 && (
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {item.selectedVariants.map(v => `${v.groupName}: ${v.choiceName}`).join(' | ')}
+                            </p>
+                          )}
                         </div>
                         <p className="text-lg font-bold text-foreground whitespace-nowrap">
                           ${(item.price * item.quantity).toLocaleString(undefined, { minimumFractionDigits: 2 })}
@@ -124,8 +129,13 @@ export default function CartPage() {
                             {item.quantity}
                           </span>
                           <button
-                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                            className="w-8 h-8 rounded-lg border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-primary transition-all duration-200"
+                            onClick={() => updateQuantity(item.id, Math.min(item.stockQuantity, item.quantity + 1))}
+                            disabled={item.quantity >= item.stockQuantity}
+                            className={`w-8 h-8 rounded-lg border border-border flex items-center justify-center transition-all duration-200 ${
+                              item.quantity >= item.stockQuantity 
+                                ? 'opacity-50 cursor-not-allowed text-muted-foreground' 
+                                : 'text-muted-foreground hover:text-foreground hover:border-primary'
+                            }`}
                           >
                             <Plus className="h-4 w-4" />
                           </button>

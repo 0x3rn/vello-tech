@@ -62,6 +62,7 @@ export default function WishlistPage() {
               badge: data.isNewArrival ? "New" : data.discountPrice ? "Sale" : null,
               color: "bg-secondary",
               inStock: data.stockQuantity > 0,
+              stockQuantity: data.stockQuantity,
               image: resolveImageUrl(data.imageUrls?.[0]),
               imageAlt: data.imageAlts?.[0] || data.name || "Product",
               slug: data.slug,
@@ -106,19 +107,26 @@ export default function WishlistPage() {
   }
 
   const handleAddToCart = async (item: any) => {
+    if ((item.colors && item.colors.length > 0) || (item.variantGroups && item.variantGroups.length > 0)) {
+      toast.info("Please select options for this product")
+      window.location.href = `/product/${item.slug}`
+      return
+    }
+
     setAddingProduct(item.id)
     
     // Simulate short network delay for satisfying visual feedback
     await new Promise(resolve => setTimeout(resolve, 600))
     
     addItem({
-      id: item.id.toString(),
-      slug: item.slug,
+      id: item.id,
       name: item.name,
       price: item.price,
       image: item.image,
       quantity: 1,
-      categoryId: item.category,
+      stockQuantity: item.stockQuantity,
+      slug: item.slug,
+      categoryId: item.category
     })
     
     toast.success(`${item.name} added to cart`, {
@@ -143,7 +151,7 @@ export default function WishlistPage() {
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
             <div>
-              <h1 className="text-3xl lg:text-4xl font-bold text-foreground tracking-tight">
+              <h1 className="text-2xl lg:text-3xl font-bold text-foreground tracking-tight">
                 My Wishlist
               </h1>
               <p className="mt-2 text-muted-foreground">

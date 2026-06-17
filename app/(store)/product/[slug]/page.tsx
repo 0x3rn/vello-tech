@@ -29,7 +29,8 @@ interface ProductData {
   slug: string
   condition?: 'new' | 'used' | 'refurbished'
   imageAlts?: string[]
-  colors?: { name: string; hex: string }[]
+  colors?: { name: string; hex: string; priceModifier?: number }[]
+  variantGroups?: { groupName: string; choices: { choiceName: string; priceModifier: number; stockQuantity: number }[] }[]
 }
 
 interface CategoryData {
@@ -46,7 +47,8 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true)
   const [quantity, setQuantity] = useState(1)
   const [activeImage, setActiveImage] = useState(0)
-  const [selectedColor, setSelectedColor] = useState<{ name: string; hex: string } | null>(null)
+  const [selectedColor, setSelectedColor] = useState<{ name: string; hex: string; priceModifier?: number } | null>(null)
+  const [selectedChoices, setSelectedChoices] = useState<Record<string, string>>({})
   const [isAdding, setIsAdding] = useState(false)
   const { items, addItem, updateQuantity, removeItem } = useCartStore()
 
@@ -104,6 +106,13 @@ export default function ProductDetailPage() {
   }
 
   const handleAddToCart = async () => {
+    if (product?.variantGroups && product.variantGroups.length > 0) {
+      if (Object.keys(selectedChoices).length !== product.variantGroups.length) {
+        toast.error("Please select all options first")
+        return
+      }
+    }
+
     if (product?.colors && product.colors.length > 0 && !selectedColor) {
       toast.error("Please select a color first")
       return
@@ -114,15 +123,34 @@ export default function ProductDetailPage() {
     // Simulate short network delay for satisfying visual feedback
     await new Promise(resolve => setTimeout(resolve, 600))
     
+    const basePriceToUse = (product.discountPrice || product.price);
+    const colorModifier = selectedColor?.priceModifier || 0;
+    
+    let variantModifiers = 0;
+    if (product?.variantGroups) {
+      product.variantGroups.forEach(group => {
+        const choiceName = selectedChoices[group.groupName];
+        if (choiceName) {
+          const choice = group.choices.find(c => c.choiceName === choiceName);
+          if (choice) variantModifiers += choice.priceModifier || 0;
+        }
+      });
+    }
+
+    const finalPriceToUse = basePriceToUse + colorModifier + variantModifiers;
+    const activeStock = getActiveStock();
+
     addItem({
       id: product.id,
       name: product.name,
-      price: product.price,
+      price: finalPriceToUse,
       image: resolveImageUrl(product.imageUrls?.[0]),
       quantity,
+      stockQuantity: activeStock,
       slug: product.slug,
       categoryId: product.categoryId,
-      selectedColor: selectedColor || undefined
+      ...(selectedColor && { selectedColor }),
+      selectedVariants: Object.entries(selectedChoices).map(([groupName, choiceName]) => ({ groupName, choiceName }))
     })
     
     toast.success(`${quantity} ${product.name} added to cart`, {
@@ -137,9 +165,65 @@ export default function ProductDetailPage() {
 
   const handlePlus = () => {
     if (product) {
-      setQuantity(Math.min(product.stockQuantity, quantity + 1))
+      const activeStock = getActiveStock();
+      setQuantity(Math.min(activeStock, quantity + 1))
     }
   }
+
+  const getActiveStock = () => {
+    if (!product) return 0;
+    
+    // If there are variant groups, we check if user selected any choices.
+    // The active stock should be the minimum stockQuantity among all selected choices.
+    // If no variants selected, or variants don't specify stock, it falls back to product.stockQuantity.
+    let minStock = product.stockQuantity;
+    let hasSelectedVariantStock = false;
+    
+    if (product.variantGroups) {
+      product.variantGroups.forEach(group => {
+        const choiceName = selectedChoices[group.groupName];
+        if (choiceName) {
+          const choice = group.choices.find(c => c.choiceName === choiceName);
+          if (choice && choice.stockQuantity !== undefined) {
+            hasSelectedVariantStock = true;
+            if (choice.stockQuantity < minStock) {
+              minStock = choice.stockQuantity;
+            }
+          }
+        }
+      });
+    }
+    
+    // If we have selected variants with stock tracking, we strictly use their stock.
+    // If we have no variant groups, or none of the selected variants track stock, use base stock.
+    return hasSelectedVariantStock ? minStock : product.stockQuantity;
+  };
+
+  const getActivePricing = () => {
+    if (!product) return { displayPrice: 0, originalPrice: 0, hasDiscount: false };
+    
+    const colorMod = selectedColor?.priceModifier || 0;
+    
+    let varMod = 0;
+    if (product.variantGroups) {
+      product.variantGroups.forEach(group => {
+        const choiceName = selectedChoices[group.groupName];
+        if (choiceName) {
+          const choice = group.choices.find(c => c.choiceName === choiceName);
+          if (choice) varMod += choice.priceModifier || 0;
+        }
+      });
+    }
+    
+    return {
+      displayPrice: (product.discountPrice || product.price) + colorMod + varMod,
+      originalPrice: product.price + colorMod + varMod,
+      hasDiscount: !!product.discountPrice
+    };
+  };
+
+  const { displayPrice, originalPrice, hasDiscount } = getActivePricing();
+  const displayStock = getActiveStock();
 
   return (
     <div className="min-h-screen bg-background pb-20 pt-8 lg:pt-12">
@@ -192,24 +276,57 @@ export default function ProductDetailPage() {
               </div>
             </div>
 
-            <h1 className="text-3xl lg:text-4xl font-bold tracking-tight text-foreground mb-4">
+            <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-foreground mb-4">
               {product.name}
             </h1>
             
             <div className="flex items-center gap-3 mb-6">
-              <p className="text-2xl font-semibold text-foreground">
-                ${(product.discountPrice || product.price).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              <p className="text-xl font-bold text-foreground">
+                ${displayPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}
               </p>
-              {product.discountPrice && (
+              {hasDiscount && (
                 <p className="text-lg font-medium text-muted-foreground line-through">
-                  ${product.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  ${originalPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                 </p>
               )}
             </div>
 
-            <p className="text-muted-foreground text-lg mb-8 leading-relaxed">
+            <p className="text-muted-foreground text-base mb-8 leading-relaxed">
               {product.description}
             </p>
+
+            {/* Variant Groups */}
+            {product.variantGroups && product.variantGroups.length > 0 && (
+              <div className="mb-6 space-y-5">
+                {product.variantGroups.map((group, idx) => (
+                  <div key={idx}>
+                    <h3 className="text-sm font-medium text-foreground mb-3">
+                      {group.groupName}: <span className="text-muted-foreground font-normal">{selectedChoices[group.groupName] || 'Select an option'}</span>
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {group.choices.map((choice, cIdx) => {
+                        const isSelected = selectedChoices[group.groupName] === choice.choiceName;
+                        return (
+                          <button
+                            key={cIdx}
+                            onClick={() => {
+                              setSelectedChoices(prev => ({ ...prev, [group.groupName]: choice.choiceName }));
+                            }}
+                            className={`px-4 py-2 rounded-full border text-sm font-medium transition-all ${
+                              isSelected
+                                ? 'border-primary bg-primary text-primary-foreground'
+                                : 'border-border bg-background text-foreground hover:border-primary/50'
+                            }`}
+                          >
+                            {choice.choiceName}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
 
             {/* Colors */}
             {product.colors && product.colors.length > 0 && (
@@ -249,14 +366,14 @@ export default function ProductDetailPage() {
                   <button 
                     onClick={handlePlus}
                     className="p-2 hover:bg-secondary rounded-md transition-colors text-muted-foreground hover:text-foreground"
-                    disabled={quantity >= product.stockQuantity}
+                    disabled={quantity >= displayStock}
                   >
                     <Plus className="h-4 w-4" />
                   </button>
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  {product.stockQuantity > 0 ? (
-                    <span className="text-green-600 font-medium">{product.stockQuantity} in stock</span>
+                  {displayStock > 0 ? (
+                    <span className="text-green-600 font-medium">{displayStock} in stock</span>
                   ) : (
                     <span className="text-destructive font-medium">Out of stock</span>
                   )}

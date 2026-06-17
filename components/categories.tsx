@@ -95,10 +95,10 @@ export function Categories() {
       
       <div className="mx-auto max-w-7xl px-4 lg:px-8 relative z-10">
         <div className="text-center mb-16">
-          <h2 className="text-3xl lg:text-5xl font-extrabold text-foreground tracking-tight">
+          <h2 className="text-2xl lg:text-3xl font-extrabold text-foreground tracking-tight">
             Shop by <span className="text-primary">Category</span>
           </h2>
-          <p className="mt-6 text-muted-foreground max-w-2xl mx-auto text-lg">
+          <p className="mt-6 text-muted-foreground max-w-2xl mx-auto text-base">
             Browse our extensive collection organized by category for easy navigation and discovering exactly what you need.
           </p>
         </div>

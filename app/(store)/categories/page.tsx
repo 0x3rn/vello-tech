@@ -90,7 +90,7 @@ export default function CategoriesPage() {
       <div className="pt-16 pb-20">
         <div className="mx-auto max-w-7xl px-4 lg:px-8">
           <div className="mb-12">
-            <h1 className="text-3xl lg:text-4xl font-bold text-foreground tracking-tight mb-4">
+            <h1 className="text-2xl lg:text-3xl font-bold text-foreground tracking-tight mb-4">
               All Categories
             </h1>
             <p className="text-muted-foreground text-lg max-w-2xl">

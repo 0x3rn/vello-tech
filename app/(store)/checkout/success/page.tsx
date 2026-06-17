@@ -37,7 +37,7 @@ export default function SuccessPage() {
           <div className="w-20 h-20 rounded-full bg-accent/10 flex items-center justify-center mx-auto mb-6 animate-[fade-in-up_0.5s_ease-out]">
             <CheckCircle className="h-12 w-12 text-accent" />
           </div>
-          <h1 className="text-3xl lg:text-4xl font-bold text-foreground tracking-tight mb-2">
+          <h1 className="text-2xl lg:text-3xl font-bold text-foreground tracking-tight mb-2">
             Payment Successful!
           </h1>
           <p className="text-muted-foreground text-lg">

@@ -47,7 +47,44 @@ export async function POST(req: Request) {
     }
 
     // Calculate total securely
-    const subtotal = cart.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0)
+    let secureSubtotal = 0
+    for (const item of cart) {
+      const productDoc = await adminDb.collection("products").doc(item.id).get()
+      if (!productDoc.exists) {
+        return NextResponse.json({ error: `Product ${item.name} not found or no longer available` }, { status: 400 })
+      }
+      
+      const product = productDoc.data()!
+      let baseItemPrice = product.discountPrice || product.price
+
+      let variantModifiers = 0
+      if (item.selectedVariants && item.selectedVariants.length > 0) {
+        for (const sv of item.selectedVariants) {
+          const group = product.variantGroups?.find((g: any) => g.groupName === sv.groupName)
+          if (!group) {
+            return NextResponse.json({ error: `Variant group ${sv.groupName} not found for ${item.name}` }, { status: 400 })
+          }
+          const choice = group.choices.find((c: any) => c.choiceName === sv.choiceName)
+          if (!choice) {
+            return NextResponse.json({ error: `Variant choice ${sv.choiceName} not found for ${item.name}` }, { status: 400 })
+          }
+          variantModifiers += (choice.priceModifier || 0)
+        }
+      }
+      
+      let colorModifier = 0
+      if (item.selectedColor) {
+        const color = product.colors?.find((c: any) => c.name === item.selectedColor.name)
+        if (color && color.priceModifier !== undefined) {
+          colorModifier = color.priceModifier
+        }
+      }
+
+      const finalItemPrice = baseItemPrice + colorModifier + variantModifiers
+      secureSubtotal += (finalItemPrice * item.quantity)
+    }
+
+    const subtotal = secureSubtotal
     const shipping = subtotal > 99 ? 0 : 9.99
     const tax = subtotal * 0.08
     const totalInCents = Math.round((subtotal + shipping + tax) * 100)

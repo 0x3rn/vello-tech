@@ -365,6 +365,11 @@ export default function CheckoutPage() {
               {item.selectedColor && (
                 <p className="text-xs text-muted-foreground mt-0.5">Color: {item.selectedColor.name}</p>
               )}
+              {item.selectedVariants && item.selectedVariants.length > 0 && (
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {item.selectedVariants.map(v => `${v.groupName}: ${v.choiceName}`).join(' | ')}
+                </p>
+              )}
               <p className="text-xs text-muted-foreground mt-0.5">Qty: {item.quantity}</p>
             </div>
             <span className="text-sm font-medium text-foreground whitespace-nowrap">
@@ -396,7 +401,7 @@ export default function CheckoutPage() {
             Back to Cart
           </Link>
 
-          <h1 className="text-3xl lg:text-4xl font-bold text-foreground tracking-tight mb-8">Checkout</h1>
+          <h1 className="text-2xl lg:text-3xl font-bold text-foreground tracking-tight mb-8">Checkout</h1>
 
           {/* Steps Progress */}
           <div className="flex items-center gap-2 sm:gap-4 mb-8 overflow-x-auto pb-4 scrollbar-hide">
@@ -489,6 +494,11 @@ export default function CheckoutPage() {
                         <p className="text-sm font-medium text-foreground truncate">{item.name}</p>
                         {item.selectedColor && (
                           <p className="text-xs text-muted-foreground mt-0.5">Color: {item.selectedColor.name}</p>
+                        )}
+                        {item.selectedVariants && item.selectedVariants.length > 0 && (
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {item.selectedVariants.map(v => `${v.groupName}: ${v.choiceName}`).join(' | ')}
+                          </p>
                         )}
                         <p className="text-xs text-muted-foreground mt-0.5">Qty: {item.quantity}</p>
                       </div>
