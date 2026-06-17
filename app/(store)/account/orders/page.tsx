@@ -125,7 +125,7 @@ export default function OrdersPage() {
 
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
               <div>
-                <h1 className="text-3xl lg:text-4xl font-bold text-foreground tracking-tight">
+                <h1 className="text-2xl lg:text-3xl font-bold text-foreground tracking-tight">
                   Order History
                 </h1>
                 <p className="mt-2 text-muted-foreground">

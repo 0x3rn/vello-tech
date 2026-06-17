@@ -32,6 +32,7 @@ interface ProductData {
   condition?: 'new' | 'used' | 'refurbished'
   imageAlts?: string[]
   colors?: { name: string; hex: string }[]
+  variantGroups?: { groupName: string; choices: { choiceName: string; priceModifier: number; stockQuantity: number }[] }[]
 }
 
 const containerVariants = {
@@ -64,6 +65,13 @@ function ProductCard({ product }: { product: ProductData }) {
 
   const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault()
+    
+    if ((product.colors && product.colors.length > 0) || (product.variantGroups && product.variantGroups.length > 0)) {
+      toast.info("Please select options for this product")
+      window.location.href = `/product/${product.slug}`
+      return
+    }
+    
     setIsAdding(true)
     
     // Simulate short network delay for satisfying visual feedback
@@ -72,9 +80,10 @@ function ProductCard({ product }: { product: ProductData }) {
     addItem({
       id: product.id,
       name: product.name,
-      price: product.price,
+      price: product.discountPrice || product.price,
       image: resolveImageUrl(product.imageUrls?.[0]),
       quantity: 1,
+      stockQuantity: product.stockQuantity,
       slug: product.slug,
       categoryId: product.categoryId,
     })
@@ -188,7 +197,7 @@ function ProductCard({ product }: { product: ProductData }) {
 
           {/* Price */}
           <div className="flex items-center gap-3 mt-4">
-            <span className="text-xl font-extrabold text-foreground">
+            <span className="text-lg font-bold text-foreground">
               ${(product.discountPrice || product.price).toLocaleString(undefined, { minimumFractionDigits: 2 })}
             </span>
             {product.discountPrice && (
@@ -264,10 +273,10 @@ export function UsedProducts() {
           className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12"
         >
           <div>
-            <h2 className="text-3xl lg:text-5xl font-extrabold text-foreground tracking-tight">
+            <h2 className="text-2xl lg:text-3xl font-extrabold text-foreground tracking-tight">
               Shop <span className="text-primary">Pre-Owned</span> & Refurbished Deals
             </h2>
-            <p className="mt-4 text-muted-foreground max-w-2xl text-lg">
+            <p className="mt-4 text-muted-foreground max-w-2xl text-base">
               Get the tech you love for less. Certified pre-owned and fully refurbished devices.
             </p>
           </div>

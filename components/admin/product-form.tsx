@@ -35,7 +35,8 @@ interface ProductData {
   isNewArrival: boolean
   isBestSeller: boolean
   isCarousel: boolean
-  colors?: { name: string; hex: string }[]
+  colors?: { name: string; hex: string; priceModifier?: number }[]
+  variantGroups?: { groupName: string; choices: { choiceName: string; priceModifier: number; stockQuantity: number }[] }[]
 }
 
 interface Category {
@@ -70,6 +71,7 @@ export function ProductForm({ initialData }: { initialData?: ProductData }) {
       isBestSeller: false,
       isCarousel: false,
       colors: [],
+      variantGroups: [],
     }
   )
 
@@ -80,6 +82,14 @@ export function ProductForm({ initialData }: { initialData?: ProductData }) {
   // Colors UI State
   const [colorName, setColorName] = useState('')
   const [colorHex, setColorHex] = useState('#000000')
+  const [colorPriceModifier, setColorPriceModifier] = useState('')
+
+  // Variant Groups UI State
+  const [vgName, setVgName] = useState('')
+  const [vgChoiceName, setVgChoiceName] = useState('')
+  const [vgChoicePrice, setVgChoicePrice] = useState('')
+  const [vgChoiceStock, setVgChoiceStock] = useState('')
+  const [activeGroupIndex, setActiveGroupIndex] = useState<number | null>(null)
 
   // Images State
   const [uploadingImage, setUploadingImage] = useState(false)
@@ -152,12 +162,17 @@ export function ProductForm({ initialData }: { initialData?: ProductData }) {
   // Add Color
   const addColor = () => {
     if (!colorName || !colorHex) return
+    
+    const newColor: any = { name: colorName, hex: colorHex }
+    if (colorPriceModifier) newColor.priceModifier = Number(colorPriceModifier)
+    
     setFormData(prev => ({
       ...prev,
-      colors: [...(prev.colors || []), { name: colorName, hex: colorHex }]
+      colors: [...(prev.colors || []), newColor]
     }))
     setColorName('')
     setColorHex('#000000')
+    setColorPriceModifier('')
   }
 
   const removeColor = (index: number) => {
@@ -165,6 +180,52 @@ export function ProductForm({ initialData }: { initialData?: ProductData }) {
       ...prev,
       colors: (prev.colors || []).filter((_, i) => i !== index)
     }))
+  }
+
+  // Variant Groups
+  const addVariantGroup = () => {
+    if (!vgName) return
+    setFormData(prev => ({
+      ...prev,
+      variantGroups: [...(prev.variantGroups || []), { groupName: vgName, choices: [] }]
+    }))
+    setVgName('')
+  }
+
+  const removeVariantGroup = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      variantGroups: (prev.variantGroups || []).filter((_, i) => i !== index)
+    }))
+    if (activeGroupIndex === index) setActiveGroupIndex(null)
+  }
+
+  const addVariantChoice = (groupIndex: number) => {
+    if (!vgChoiceName) return
+    setFormData(prev => {
+      const groups = [...(prev.variantGroups || [])]
+      const priceMod = vgChoicePrice ? Number(vgChoicePrice) : 0
+      const stockQty = vgChoiceStock ? Number(vgChoiceStock) : 0
+      groups[groupIndex] = {
+        ...groups[groupIndex],
+        choices: [...groups[groupIndex].choices, { choiceName: vgChoiceName, priceModifier: priceMod, stockQuantity: stockQty }]
+      }
+      return { ...prev, variantGroups: groups }
+    })
+    setVgChoiceName('')
+    setVgChoicePrice('')
+    setVgChoiceStock('')
+  }
+
+  const removeVariantChoice = (groupIndex: number, choiceIndex: number) => {
+    setFormData(prev => {
+      const groups = [...(prev.variantGroups || [])]
+      groups[groupIndex] = {
+        ...groups[groupIndex],
+        choices: groups[groupIndex].choices.filter((_, i) => i !== choiceIndex)
+      }
+      return { ...prev, variantGroups: groups }
+    })
   }
 
   // Handle Image Upload
@@ -225,10 +286,41 @@ export function ProductForm({ initialData }: { initialData?: ProductData }) {
         return
       }
 
-      const productRef = formData.id ? doc(db, 'products', formData.id) : doc(collection(db, 'products'))
+      // Auto-commit any pending inputs that the user forgot to explicitly add
+      let finalFormData = { ...formData }
       
-      const payload = { ...formData, updatedAt: serverTimestamp() }
-      if (!formData.id) {
+      if (vgName) {
+        finalFormData.variantGroups = [
+          ...(finalFormData.variantGroups || []),
+          { groupName: vgName, choices: [] }
+        ]
+      }
+      if (activeGroupIndex !== null && vgChoiceName) {
+        if (!finalFormData.variantGroups) finalFormData.variantGroups = []
+        if (finalFormData.variantGroups[activeGroupIndex]) {
+          const priceMod = vgChoicePrice ? Number(vgChoicePrice) : 0
+          const stockQty = vgChoiceStock ? Number(vgChoiceStock) : 0;
+          finalFormData.variantGroups[activeGroupIndex].choices.push({ choiceName: vgChoiceName, priceModifier: priceMod, stockQuantity: stockQty })
+        }
+      }
+      
+      if (colorName && colorHex) {
+        const newColor: any = { name: colorName, hex: colorHex }
+        if (colorPriceModifier) newColor.priceModifier = Number(colorPriceModifier)
+        finalFormData.colors = [...(finalFormData.colors || []), newColor]
+      }
+      
+      if (specKey && specValue) {
+        finalFormData.specifications = {
+          ...finalFormData.specifications,
+          [specKey]: specValue
+        }
+      }
+
+      const productRef = finalFormData.id ? doc(db, 'products', finalFormData.id) : doc(collection(db, 'products'))
+      
+      const payload = { ...finalFormData, updatedAt: serverTimestamp() }
+      if (!finalFormData.id) {
         (payload as any).createdAt = serverTimestamp()
         await setDoc(productRef, payload)
         toast.success("Product created successfully")
@@ -248,12 +340,13 @@ export function ProductForm({ initialData }: { initialData?: ProductData }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8">
+    <form onSubmit={handleSubmit} className="space-y-8 pb-24 sm:pb-0 relative">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="text-3xl font-bold tracking-tight text-foreground">
           {initialData ? 'Edit Product' : 'Add New Product'}
         </h1>
-        <div className="flex items-center gap-3 w-full sm:w-auto">
+        {/* Desktop Actions */}
+        <div className="hidden sm:flex items-center gap-3 w-full sm:w-auto">
           <Button variant="outline" type="button" onClick={() => router.push('/admin/products')} className="w-full sm:w-auto">
             Cancel
           </Button>
@@ -388,29 +481,112 @@ export function ProductForm({ initialData }: { initialData?: ProductData }) {
               <div className="space-y-4">
                 <div className="flex flex-wrap gap-2">
                   {(formData.colors || []).map((color, idx) => (
-                    <div key={idx} className="flex items-center gap-2 bg-secondary/50 border border-border px-3 py-1.5 rounded-full">
-                      <div className="w-4 h-4 rounded-full shadow-sm border border-black/10" style={{ backgroundColor: color.hex }} />
-                      <span className="text-sm font-medium">{color.name}</span>
-                      <button type="button" onClick={() => removeColor(idx)} className="text-muted-foreground hover:text-destructive ml-1">
-                        <X className="w-3 h-3" />
-                      </button>
+                    <div key={idx} className="flex flex-col gap-1 bg-secondary/50 border border-border px-3 py-2 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 rounded-full shadow-sm border border-black/10" style={{ backgroundColor: color.hex }} />
+                        <span className="text-sm font-medium">{color.name}</span>
+                        <button type="button" onClick={() => removeColor(idx)} className="text-muted-foreground hover:text-destructive ml-1">
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                      {color.priceModifier !== undefined && color.priceModifier !== 0 && (
+                        <span className="text-xs text-muted-foreground">
+                          {color.priceModifier > 0 ? '+' : ''}${color.priceModifier}
+                        </span>
+                      )}
                     </div>
                   ))}
                 </div>
 
-                <div className="flex items-end gap-3 pt-4 border-t border-border mt-4">
-                  <div className="flex-1 space-y-1">
-                    <Label className="text-xs">Color Name (e.g. Midnight Green)</Label>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-4 border-t border-border mt-4">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Color Name (e.g. Red)</Label>
                     <Input value={colorName} onChange={(e) => setColorName(e.target.value)} placeholder="Color Name" onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addColor())} />
                   </div>
-                  <div className="w-24 space-y-1">
+                  <div className="space-y-1">
                     <Label className="text-xs">Hex</Label>
                     <div className="flex items-center gap-2 h-10 border border-input rounded-md px-2 bg-background">
                       <input type="color" value={colorHex} onChange={(e) => setColorHex(e.target.value)} className="w-6 h-6 p-0 border-0 cursor-pointer bg-transparent" />
                       <span className="text-xs uppercase text-muted-foreground flex-1">{colorHex}</span>
                     </div>
                   </div>
-                  <Button type="button" onClick={addColor} variant="secondary">Add</Button>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Additional Cost ($) (Optional)</Label>
+                    <Input type="number" step="0.01" value={colorPriceModifier} onChange={(e) => setColorPriceModifier(e.target.value)} placeholder="0.00" />
+                  </div>
+                  <div className="flex items-end mb-0.5">
+                    <Button type="button" onClick={addColor} variant="secondary" className="w-full">Add Color</Button>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Product Variants</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                {(formData.variantGroups || []).map((group, groupIndex) => (
+                  <div key={groupIndex} className="bg-secondary/10 border border-border p-4 rounded-lg space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-semibold text-foreground">{group.groupName}</h4>
+                      <Button type="button" variant="ghost" size="sm" className="text-destructive h-8" onClick={() => removeVariantGroup(groupIndex)}>
+                        <Trash2 className="w-4 h-4 mr-2" /> Remove Group
+                      </Button>
+                    </div>
+                    
+                    {group.choices.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {group.choices.map((choice, choiceIndex) => (
+                          <div key={choiceIndex} className="flex items-center bg-background border border-border rounded-full pl-3 pr-1 py-1 text-sm">
+                            <span>{choice.choiceName}</span>
+                            {choice.priceModifier ? (
+                              <span className="text-muted-foreground ml-1 text-xs">({choice.priceModifier > 0 ? '+' : ''}${choice.priceModifier})</span>
+                            ) : null}
+                            <span className="text-muted-foreground ml-1 text-xs">[Stock: {choice.stockQuantity}]</span>
+                            <button type="button" onClick={() => removeVariantChoice(groupIndex, choiceIndex)} className="ml-2 p-1 hover:bg-destructive/10 hover:text-destructive rounded-full transition-colors">
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {activeGroupIndex === groupIndex ? (
+                      <div className="flex items-end gap-3 pt-2 border-t border-border mt-2">
+                        <div className="flex-1 space-y-1">
+                          <Label className="text-xs">Choice Name</Label>
+                          <Input size={1} value={vgChoiceName} onChange={(e) => setVgChoiceName(e.target.value)} placeholder="e.g. 512GB" />
+                        </div>
+                        <div className="w-24 space-y-1">
+                          <Label className="text-xs">Cost ($)</Label>
+                          <Input size={1} type="number" step="0.01" value={vgChoicePrice} onChange={(e) => setVgChoicePrice(e.target.value)} placeholder="0.00" />
+                        </div>
+                        <div className="w-24 space-y-1">
+                          <Label className="text-xs">Stock</Label>
+                          <Input size={1} type="number" value={vgChoiceStock} onChange={(e) => setVgChoiceStock(e.target.value)} placeholder="0" />
+                        </div>
+                        <div className="flex gap-2">
+                          <Button type="button" onClick={() => addVariantChoice(groupIndex)} variant="secondary">Add</Button>
+                          <Button type="button" onClick={() => { setActiveGroupIndex(null); setVgChoiceName(''); setVgChoicePrice(''); setVgChoiceStock(''); }} variant="ghost" size="icon"><X className="w-4 h-4" /></Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <Button type="button" variant="outline" size="sm" onClick={() => setActiveGroupIndex(groupIndex)} className="text-xs">
+                        <Plus className="w-3 h-3 mr-1" /> Add Choice
+                      </Button>
+                    )}
+                  </div>
+                ))}
+
+                <div className="flex items-end gap-3 pt-4 border-t border-border">
+                  <div className="flex-1 space-y-1">
+                    <Label className="text-xs">New Group Name</Label>
+                    <Input value={vgName} onChange={(e) => setVgName(e.target.value)} placeholder="e.g. Storage Capacity" />
+                  </div>
+                  <Button type="button" onClick={addVariantGroup} variant="secondary">Add Group</Button>
                 </div>
               </div>
             </CardContent>
@@ -515,6 +691,17 @@ export function ProductForm({ initialData }: { initialData?: ProductData }) {
             </CardContent>
           </Card>
         </div>
+      </div>
+
+      {/* Mobile Sticky Action Bar */}
+      <div className="sm:hidden fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-md border-t border-border z-50 flex gap-3 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
+        <Button variant="outline" type="button" onClick={() => router.push('/admin/products')} className="flex-1">
+          Cancel
+        </Button>
+        <Button type="submit" disabled={loading} className="flex-1">
+          {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+          Save
+        </Button>
       </div>
     </form>
   )

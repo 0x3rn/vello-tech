@@ -8,8 +8,10 @@ export interface CartItem {
   price: number
   image: string
   quantity: number
+  stockQuantity: number
   categoryId?: string
-  selectedColor?: { name: string; hex: string }
+  selectedColor?: { name: string; hex: string; priceModifier?: number }
+  selectedVariants?: { groupName: string; choiceName: string }[]
 }
 
 interface CartState {

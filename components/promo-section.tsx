@@ -46,10 +46,10 @@ export function PromoSection() {
           
           {/* Content */}
           <div className="flex-1 text-center lg:text-left">
-            <h2 className="text-3xl md:text-4xl font-semibold text-foreground tracking-tight">
+            <h2 className="text-2xl lg:text-3xl font-semibold text-foreground tracking-tight">
               Summer Tech Sale
             </h2>
-            <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto lg:mx-0">
+            <p className="mt-4 text-base text-muted-foreground max-w-2xl mx-auto lg:mx-0">
               Don&apos;t miss out on our biggest sale of the year. Premium gadgets at unbeatable prices. Up to 40% Off on select items.
             </p>
             
@@ -78,7 +78,7 @@ export function PromoSection() {
                 { value: String(timeLeft.seconds).padStart(2, '0'), label: 'Sec' },
               ].map((item, index) => (
                 <div key={index} className="flex flex-col items-center">
-                  <span className="text-2xl sm:text-3xl md:text-4xl font-light text-foreground tabular-nums tracking-tight">
+                  <span className="text-2xl sm:text-2xl lg:text-3xl font-light text-foreground tabular-nums tracking-tight">
                     {item.value}
                   </span>
                   <span className="text-xs text-muted-foreground uppercase tracking-widest mt-2">

@@ -44,7 +44,7 @@ export function Newsletter() {
               <Mail className="h-10 w-10 text-primary drop-shadow-md" />
             </motion.div>
             
-            <h2 className="text-3xl lg:text-5xl font-extrabold text-foreground tracking-tight">
+            <h2 className="text-2xl lg:text-3xl font-extrabold text-foreground tracking-tight">
               Stay <span className="text-primary">Updated</span>
             </h2>
             <p className="mt-6 text-muted-foreground max-w-xl mx-auto text-lg">

@@ -172,6 +172,7 @@ export function Header() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search products..."
                 className="w-full h-10 pl-11 pr-4 rounded-full bg-secondary border border-transparent text-sm placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                suppressHydrationWarning
               />
             </form>
           </div>

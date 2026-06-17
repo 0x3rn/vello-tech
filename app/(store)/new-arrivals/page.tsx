@@ -29,6 +29,7 @@ interface ProductData {
   condition?: 'new' | 'used' | 'refurbished'
   imageAlts?: string[]
   colors?: { name: string; hex: string }[]
+  variantGroups?: { groupName: string; choices: { choiceName: string; priceModifier: number; stockQuantity: number }[] }[]
 }
 
 interface CategoryData {
@@ -165,6 +166,13 @@ function NewArrivalsContent() {
   const handleAddToCart = async (e: React.MouseEvent, product: ProductData) => {
     e.preventDefault()
     e.stopPropagation()
+    
+    if ((product.colors && product.colors.length > 0) || (product.variantGroups && product.variantGroups.length > 0)) {
+      toast.info("Please select options for this product")
+      window.location.href = `/product/${product.slug}`
+      return
+    }
+    
     setAddingProduct(product.id)
     
     // Simulate short network delay for satisfying visual feedback
@@ -172,12 +180,13 @@ function NewArrivalsContent() {
     
     addItem({
       id: product.id,
-      slug: product.slug,
       name: product.name,
       price: product.price,
       image: resolveImageUrl(product.imageUrls?.[0]),
       quantity: 1,
-      categoryId: product.categoryId,
+      stockQuantity: product.stockQuantity,
+      slug: product.slug,
+      categoryId: product.categoryId
     })
     
     toast.success(`${product.name} added to cart`, {
@@ -192,7 +201,7 @@ function NewArrivalsContent() {
         
         {/* Header */}
         <div className="mb-8 border-b border-border pb-8">
-          <h1 className="text-3xl lg:text-4xl font-bold tracking-tight text-foreground mb-4">
+          <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-foreground mb-4">
             New Arrivals
           </h1>
           <p className="text-muted-foreground text-lg">
