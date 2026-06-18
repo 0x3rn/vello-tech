@@ -4,12 +4,13 @@ import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { auth } from "@/lib/firebase"
-import { createUserWithEmailAndPassword, updateProfile, GoogleAuthProvider, signInWithPopup } from "firebase/auth"
+import { createUserWithEmailAndPassword, updateProfile, GoogleAuthProvider, signInWithPopup, sendEmailVerification } from "firebase/auth"
 import { syncCartWithFirestore } from "@/lib/store/cart-sync"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Eye, EyeOff, Mail, Lock, User, ArrowLeft, Loader2, Check } from "lucide-react"
+import { toast } from "sonner"
 
 export default function RegisterPage() {
   const [fullName, setFullName] = useState("")
@@ -47,6 +48,8 @@ export default function RegisterPage() {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password)
       await updateProfile(userCredential.user, { displayName: fullName })
       await syncCartWithFirestore(userCredential.user)
+      await sendEmailVerification(userCredential.user)
+      toast.success("Account created! Please check your email (and spam folder) for the verification link.")
     } catch (err) {
       setError((err as Error).message)
       setLoading(false)

@@ -33,41 +33,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               ...data,
             } as any)
 
-            // Cart Merge Logic
+            // Strict Sync: Firestore is the absolute source of truth for authenticated users.
+            // (Guest carts are merged explicitly during login via syncCartWithFirestore)
             const cloudCart: CartItem[] = data.cart || []
-            const localCart = useCartStore.getState().items
-
-            if (cloudCart.length > 0 || localCart.length > 0) {
-              const mergedCart = [...cloudCart]
-              
-              localCart.forEach(localItem => {
-                const existingIndex = mergedCart.findIndex(
-                  ci => {
-                    if (ci.id !== localItem.id) return false;
-                    if (ci.selectedColor?.name !== localItem.selectedColor?.name) return false;
-                    
-                    const v1 = ci.selectedVariants || [];
-                    const v2 = localItem.selectedVariants || [];
-                    if (v1.length !== v2.length) return false;
-                    
-                    const str1 = [...v1].sort((a,b) => a.groupName.localeCompare(b.groupName)).map(v => v.groupName+v.choiceName).join('|');
-                    const str2 = [...v2].sort((a,b) => a.groupName.localeCompare(b.groupName)).map(v => v.groupName+v.choiceName).join('|');
-                    return str1 === str2;
-                  }
-                )
-                
-                if (existingIndex >= 0) {
-                  // Merge quantities (use max to prevent doubling on refresh) and cap at stockQuantity
-                  const maxQty = Math.max(mergedCart[existingIndex].quantity, localItem.quantity)
-                  const stock = mergedCart[existingIndex].stockQuantity || localItem.stockQuantity || 1
-                  mergedCart[existingIndex].quantity = Math.min(maxQty, stock)
-                } else {
-                  mergedCart.push(localItem)
-                }
-              })
-              
-              useCartStore.getState().setItems(mergedCart)
-            }
+            useCartStore.getState().setItems(cloudCart)
           }
         } catch (error) {
           console.error("Failed to fetch user data:", error)

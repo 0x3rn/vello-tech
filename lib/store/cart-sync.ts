@@ -18,7 +18,8 @@ export async function syncCartWithFirestore(user: User) {
     const mergedCart = [...firestoreCart]
     
     localCart.forEach((localItem) => {
-      const existingItem = mergedCart.find((i) => i.id === localItem.id)
+      const localId = localItem.cartItemId || localItem.id;
+      const existingItem = mergedCart.find((i) => (i.cartItemId || i.id) === localId);
       if (existingItem) {
         existingItem.quantity += localItem.quantity
       } else {

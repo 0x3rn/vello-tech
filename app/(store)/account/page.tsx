@@ -13,10 +13,12 @@ import {
   Clock,
   ChevronRight,
   ArrowLeft,
+  Loader2,
 } from "lucide-react"
+import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import { auth } from "@/lib/firebase"
-import { signOut } from "firebase/auth"
+import { signOut, sendEmailVerification } from "firebase/auth"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { AuthGuard } from "@/components/auth-guard"
@@ -49,6 +51,35 @@ export default function AccountPage() {
   ]
 
   const [recentOrders, setRecentOrders] = useState<any[]>([])
+  const [sendingEmail, setSendingEmail] = useState(false)
+  const [cooldown, setCooldown] = useState(0)
+
+  useEffect(() => {
+    if (cooldown > 0) {
+      const timer = setTimeout(() => setCooldown(cooldown - 1), 1000)
+      return () => clearTimeout(timer)
+    }
+  }, [cooldown])
+
+  const handleResendEmail = async () => {
+    if (!auth.currentUser || cooldown > 0) return
+    
+    setSendingEmail(true)
+    try {
+      await sendEmailVerification(auth.currentUser)
+      toast.success("Verification email sent! Please check your inbox.")
+      setCooldown(60)
+    } catch (error: any) {
+      console.error(error)
+      if (error.code === 'auth/too-many-requests') {
+        toast.error("Too many requests. Please try again later.")
+      } else {
+        toast.error("Failed to send verification email.")
+      }
+    } finally {
+      setSendingEmail(false)
+    }
+  }
 
   useEffect(() => {
     const fetchRecentOrders = async () => {
@@ -120,8 +151,20 @@ export default function AccountPage() {
                 <h3 className="font-semibold text-amber-600">Verify your email</h3>
                 <p className="text-sm text-amber-600/80 mt-1">Please check your inbox to verify your email address.</p>
               </div>
-              <Button variant="outline" size="sm" className="border-amber-500/30 text-amber-600 hover:bg-amber-500/10">
-                Resend Email
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="border-amber-500/30 text-amber-600 hover:bg-amber-500/10"
+                onClick={handleResendEmail}
+                disabled={sendingEmail || cooldown > 0}
+              >
+                {sendingEmail ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : cooldown > 0 ? (
+                  `Wait ${cooldown}s`
+                ) : (
+                  "Resend Email"
+                )}
               </Button>
             </div>
           )}

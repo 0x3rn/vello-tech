@@ -62,10 +62,42 @@ export async function POST(req: Request) {
               // Compute new stocks
               productDocs.forEach((pDoc, index) => {
                 if (pDoc.exists) {
-                  const currentStock = pDoc.data()?.stockQuantity || 0
-                  const quantityToBuy = cart[index].quantity
-                  const newStock = Math.max(0, currentStock - quantityToBuy)
-                  transaction.update(pDoc.ref, { stockQuantity: newStock })
+                  const pData = pDoc.data()
+                  const cartItem = cart[index]
+                  const quantityToBuy = cartItem.quantity
+                  const currentStock = pData?.stockQuantity || 0
+                  
+                  const updates: any = { stockQuantity: Math.max(0, currentStock - quantityToBuy) }
+                  
+                  // 1. Decrement specific color stock
+                  if (cartItem.selectedColor && pData?.colors) {
+                    const colorName = cartItem.selectedColor.name || cartItem.selectedColor
+                    const cIdx = pData.colors.findIndex((c: any) => c.name === colorName)
+                    if (cIdx !== -1) {
+                      pData.colors[cIdx].stockQuantity = Math.max(0, (pData.colors[cIdx].stockQuantity || 0) - quantityToBuy)
+                      updates.colors = pData.colors
+                    }
+                  }
+
+                  // 2. Decrement specific variant choices stock
+                  if (cartItem.selectedVariants && pData?.variantGroups) {
+                    let variantsChanged = false
+                    const selectedVariantsArray = Array.isArray(cartItem.selectedVariants) ? cartItem.selectedVariants : Object.entries(cartItem.selectedVariants).map(([groupName, choiceName]) => ({ groupName, choiceName }))
+                    
+                    selectedVariantsArray.forEach((v: any) => {
+                      const gIdx = pData.variantGroups.findIndex((g: any) => g.groupName === v.groupName)
+                      if (gIdx !== -1) {
+                        const cIdx = pData.variantGroups[gIdx].choices.findIndex((c: any) => c.choiceName === v.choiceName)
+                        if (cIdx !== -1) {
+                          pData.variantGroups[gIdx].choices[cIdx].stockQuantity = Math.max(0, (pData.variantGroups[gIdx].choices[cIdx].stockQuantity || 0) - quantityToBuy)
+                          variantsChanged = true
+                        }
+                      }
+                    })
+                    if (variantsChanged) updates.variantGroups = pData.variantGroups
+                  }
+
+                  transaction.update(pDoc.ref, updates)
                 }
               })
 
