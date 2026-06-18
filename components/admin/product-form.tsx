@@ -35,7 +35,7 @@ interface ProductData {
   isNewArrival: boolean
   isBestSeller: boolean
   isCarousel: boolean
-  colors?: { name: string; hex: string; priceModifier?: number }[]
+  colors?: { name: string; hex: string; priceModifier?: number; stockQuantity: number; imageUrls?: string[] }[]
   variantGroups?: { groupName: string; choices: { choiceName: string; priceModifier: number; stockQuantity: number }[] }[]
 }
 
@@ -83,6 +83,7 @@ export function ProductForm({ initialData }: { initialData?: ProductData }) {
   const [colorName, setColorName] = useState('')
   const [colorHex, setColorHex] = useState('#000000')
   const [colorPriceModifier, setColorPriceModifier] = useState('')
+  const [colorStockQuantity, setColorStockQuantity] = useState('')
 
   // Variant Groups UI State
   const [vgName, setVgName] = useState('')
@@ -93,6 +94,7 @@ export function ProductForm({ initialData }: { initialData?: ProductData }) {
 
   // Images State
   const [uploadingImage, setUploadingImage] = useState(false)
+  const [uploadingColorImageIndex, setUploadingColorImageIndex] = useState<number | null>(null)
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -163,7 +165,7 @@ export function ProductForm({ initialData }: { initialData?: ProductData }) {
   const addColor = () => {
     if (!colorName || !colorHex) return
     
-    const newColor: any = { name: colorName, hex: colorHex }
+    const newColor: any = { name: colorName, hex: colorHex, stockQuantity: Number(colorStockQuantity) || 0 }
     if (colorPriceModifier) newColor.priceModifier = Number(colorPriceModifier)
     
     setFormData(prev => ({
@@ -173,6 +175,7 @@ export function ProductForm({ initialData }: { initialData?: ProductData }) {
     setColorName('')
     setColorHex('#000000')
     setColorPriceModifier('')
+    setColorStockQuantity('')
   }
 
   const removeColor = (index: number) => {
@@ -254,12 +257,57 @@ export function ProductForm({ initialData }: { initialData?: ProductData }) {
     }
   }
 
+  const handleColorImageUpload = async (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setUploadingColorImageIndex(index)
+    try {
+      const filename = `${Date.now()}_color_${file.name.replace(/[^a-zA-Z0-9.]/g, '')}`
+      const storageRef = ref(storage, `products/colors/${filename}`)
+      await uploadBytes(storageRef, file)
+      const downloadURL = await getDownloadURL(storageRef)
+      
+      setFormData(prev => {
+        const newColors = [...(prev.colors || [])];
+        const colorToUpdate = { ...newColors[index] };
+        const currentUrls = colorToUpdate.imageUrls ? [...colorToUpdate.imageUrls] : [];
+        
+        if (currentUrls.length < 2 && !currentUrls.includes(downloadURL)) {
+          currentUrls.push(downloadURL);
+        }
+        
+        colorToUpdate.imageUrls = currentUrls;
+        newColors[index] = colorToUpdate;
+        
+        return { ...prev, colors: newColors };
+      })
+      toast.success("Color image uploaded")
+    } catch (error) {
+      console.error("Upload error:", error)
+      toast.error("Failed to upload color image")
+    } finally {
+      setUploadingColorImageIndex(null)
+    }
+  }
+
   const removeImage = (index: number) => {
     setFormData(prev => ({
       ...prev,
       imageUrls: prev.imageUrls.filter((_, i) => i !== index),
       imageAlts: (prev.imageAlts || []).filter((_, i) => i !== index)
     }))
+  }
+
+  const removeColorImage = (colorIndex: number, imageIndex: number) => {
+    setFormData(prev => {
+      const newColors = [...(prev.colors || [])];
+      newColors[colorIndex] = {
+        ...newColors[colorIndex],
+        imageUrls: newColors[colorIndex].imageUrls?.filter((_, i) => i !== imageIndex)
+      };
+      return { ...prev, colors: newColors };
+    })
   }
 
   const handleAltTextChange = (index: number, text: string) => {
@@ -489,23 +537,64 @@ export function ProductForm({ initialData }: { initialData?: ProductData }) {
                           <X className="w-3 h-3" />
                         </button>
                       </div>
-                      {color.priceModifier !== undefined && color.priceModifier !== 0 && (
-                        <span className="text-xs text-muted-foreground">
-                          {color.priceModifier > 0 ? '+' : ''}${color.priceModifier}
+                      <div className="flex justify-between items-center mt-1">
+                        {color.priceModifier !== undefined && color.priceModifier !== 0 && (
+                          <span className="text-xs text-muted-foreground">
+                            {color.priceModifier > 0 ? '+' : ''}${color.priceModifier}
+                          </span>
+                        )}
+                        <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded ml-auto">
+                          Stock: {color.stockQuantity ?? 0}
                         </span>
-                      )}
+                      </div>
+                      
+                      {/* Color Images */}
+                      <div className="mt-3 space-y-2 border-t border-border/50 pt-3">
+                        <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">Color Images (Max 2)</Label>
+                        <div className="flex flex-wrap gap-2">
+                          {color.imageUrls?.map((url: string, imgIdx: number) => (
+                            <div key={imgIdx} className="relative w-12 h-12 rounded-md overflow-hidden border border-border group bg-secondary/30">
+                              <Image src={resolveImageUrl(url)} alt={`${color.name} image ${imgIdx + 1}`} fill sizes="48px" className="object-cover" />
+                              <button
+                                type="button"
+                                onClick={() => removeColorImage(idx, imgIdx)}
+                                className="absolute top-0.5 right-0.5 p-0.5 bg-destructive text-destructive-foreground rounded-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </div>
+                          ))}
+                          
+                          {(!color.imageUrls || color.imageUrls.length < 2) && (
+                            <div className="relative w-12 h-12 rounded-md border border-dashed border-border flex items-center justify-center bg-secondary/10 hover:bg-secondary/20 transition-colors">
+                              {uploadingColorImageIndex === idx ? (
+                                <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                              ) : (
+                                <Plus className="w-4 h-4 text-muted-foreground" />
+                              )}
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => handleColorImageUpload(idx, e)}
+                                disabled={uploadingColorImageIndex === idx}
+                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+                              />
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-4 border-t border-border mt-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 pt-4 border-t border-border mt-4 items-end">
                   <div className="space-y-1">
                     <Label className="text-xs">Color Name (e.g. Red)</Label>
                     <Input value={colorName} onChange={(e) => setColorName(e.target.value)} placeholder="Color Name" onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addColor())} />
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs">Hex</Label>
-                    <div className="flex items-center gap-2 h-10 border border-input rounded-md px-2 bg-background">
+                    <div className="flex items-center gap-2 h-9 border border-input rounded-md px-2 bg-background">
                       <input type="color" value={colorHex} onChange={(e) => setColorHex(e.target.value)} className="w-6 h-6 p-0 border-0 cursor-pointer bg-transparent" />
                       <span className="text-xs uppercase text-muted-foreground flex-1">{colorHex}</span>
                     </div>
@@ -514,7 +603,11 @@ export function ProductForm({ initialData }: { initialData?: ProductData }) {
                     <Label className="text-xs">Additional Cost ($) (Optional)</Label>
                     <Input type="number" step="0.01" value={colorPriceModifier} onChange={(e) => setColorPriceModifier(e.target.value)} placeholder="0.00" />
                   </div>
-                  <div className="flex items-end mb-0.5">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Stock Quantity</Label>
+                    <Input type="number" value={colorStockQuantity} onChange={(e) => setColorStockQuantity(e.target.value)} placeholder="0" onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addColor())} />
+                  </div>
+                  <div className="md:col-span-1 sm:col-span-2">
                     <Button type="button" onClick={addColor} variant="secondary" className="w-full">Add Color</Button>
                   </div>
                 </div>

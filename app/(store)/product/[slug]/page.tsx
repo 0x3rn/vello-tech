@@ -6,7 +6,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
-import { useCartStore } from '@/lib/store/cart'
+import { useCartStore, generateCartItemId } from '@/lib/store/cart'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, Loader2, Minus, Plus, ShoppingCart, Star } from 'lucide-react'
 import { toast } from 'sonner'
@@ -29,7 +29,7 @@ interface ProductData {
   slug: string
   condition?: 'new' | 'used' | 'refurbished'
   imageAlts?: string[]
-  colors?: { name: string; hex: string; priceModifier?: number }[]
+  colors?: { name: string; hex: string; priceModifier?: number; stockQuantity: number; imageUrls?: string[] }[]
   variantGroups?: { groupName: string; choices: { choiceName: string; priceModifier: number; stockQuantity: number }[] }[]
 }
 
@@ -52,7 +52,19 @@ export default function ProductDetailPage() {
   const [isAdding, setIsAdding] = useState(false)
   const { items, addItem, updateQuantity, removeItem } = useCartStore()
 
-  const cartItem = product ? items.find((item) => item.id === product.id) : null
+  const currentCartItemId = product ? generateCartItemId({
+    id: product.id,
+    slug: product.slug,
+    name: product.name,
+    price: 0,
+    image: '',
+    quantity: 0,
+    stockQuantity: 0,
+    ...(selectedColor && { selectedColor }),
+    selectedVariants: Object.entries(selectedChoices).map(([groupName, choiceName]) => ({ groupName, choiceName }))
+  }) : null;
+
+  const cartItem = currentCartItemId ? items.find((item) => (item.cartItemId || item.id) === currentCartItemId) : null;
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -142,6 +154,7 @@ export default function ProductDetailPage() {
 
     addItem({
       id: product.id,
+      cartItemId: currentCartItemId || undefined,
       name: product.name,
       price: finalPriceToUse,
       image: resolveImageUrl(product.imageUrls?.[0]),
@@ -173,30 +186,22 @@ export default function ProductDetailPage() {
   const getActiveStock = () => {
     if (!product) return 0;
     
-    // If there are variant groups, we check if user selected any choices.
-    // The active stock should be the minimum stockQuantity among all selected choices.
-    // If no variants selected, or variants don't specify stock, it falls back to product.stockQuantity.
-    let minStock = product.stockQuantity;
-    let hasSelectedVariantStock = false;
-    
-    if (product.variantGroups) {
-      product.variantGroups.forEach(group => {
-        const choiceName = selectedChoices[group.groupName];
-        if (choiceName) {
-          const choice = group.choices.find(c => c.choiceName === choiceName);
-          if (choice && choice.stockQuantity !== undefined) {
-            hasSelectedVariantStock = true;
-            if (choice.stockQuantity < minStock) {
-              minStock = choice.stockQuantity;
-            }
-          }
-        }
+    const baseStock = product.stockQuantity || 0;
+    const colorStock = selectedColor && product.colors 
+      ? (product.colors.find(c => c.name === selectedColor.name)?.stockQuantity ?? Infinity)
+      : Infinity;
+
+    let variantsStock = Infinity;
+    if (selectedChoices && Object.keys(selectedChoices).length > 0 && product.variantGroups) {
+      const minVariantStock = Object.entries(selectedChoices).map(([gName, cName]) => {
+         const group = product.variantGroups?.find(g => g.groupName === gName);
+         const choice = group?.choices.find(c => c.choiceName === cName);
+         return choice?.stockQuantity ?? Infinity;
       });
+      variantsStock = Math.min(...minVariantStock);
     }
-    
-    // If we have selected variants with stock tracking, we strictly use their stock.
-    // If we have no variant groups, or none of the selected variants track stock, use base stock.
-    return hasSelectedVariantStock ? minStock : product.stockQuantity;
+
+    return Math.min(baseStock, colorStock, variantsStock);
   };
 
   const getActivePricing = () => {
@@ -225,6 +230,14 @@ export default function ProductDetailPage() {
   const { displayPrice, originalPrice, hasDiscount } = getActivePricing();
   const displayStock = getActiveStock();
 
+  const specificColorObj = selectedColor && product?.colors?.find(c => c.name === selectedColor.name);
+  const displayImages = specificColorObj?.imageUrls?.length 
+    ? specificColorObj.imageUrls 
+    : product?.imageUrls || [];
+  const displayAlts = specificColorObj?.imageUrls?.length 
+    ? specificColorObj.imageUrls.map(() => product?.name || '')
+    : product?.imageAlts || [];
+
   return (
     <div className="min-h-screen bg-background pb-20 pt-8 lg:pt-12">
       <div className="mx-auto max-w-7xl px-4 lg:px-8">
@@ -239,16 +252,16 @@ export default function ProductDetailPage() {
           <div className="flex flex-col gap-4">
             <div className="relative aspect-square w-full rounded-2xl bg-secondary/30 overflow-hidden border border-border">
               <Image
-                src={resolveImageUrl(product.imageUrls?.[activeImage])}
-                alt={product.imageAlts?.[activeImage] || product.name}
+                src={resolveImageUrl(displayImages[activeImage])}
+                alt={displayAlts[activeImage] || product.name}
                 fill
                 sizes="(max-width: 1024px) 100vw, 50vw"
                 className="object-contain p-8"
               />
             </div>
-            {product.imageUrls.length > 1 && (
+            {displayImages.length > 1 && (
               <div className="grid grid-cols-4 gap-4">
-                {product.imageUrls.map((url, idx) => (
+                {displayImages.map((url, idx) => (
                   <button 
                     key={idx}
                     onClick={() => setActiveImage(idx)}
@@ -256,7 +269,7 @@ export default function ProductDetailPage() {
                       activeImage === idx ? 'border-primary' : 'border-transparent hover:border-border'
                     }`}
                   >
-                    <Image src={resolveImageUrl(url)} alt={product.imageAlts?.[idx] || `${product.name} ${idx + 1}`} fill sizes="100px" className="object-contain p-2" />
+                    <Image src={resolveImageUrl(url)} alt={displayAlts[idx] || `${product.name} ${idx + 1}`} fill sizes="100px" className="object-contain p-2" />
                   </button>
                 ))}
               </div>
@@ -338,7 +351,7 @@ export default function ProductDetailPage() {
                   {product.colors.map((color, idx) => (
                     <button
                       key={idx}
-                      onClick={() => setSelectedColor(color)}
+                      onClick={() => { setSelectedColor(color); setActiveImage(0); }}
                       className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all ${
                         selectedColor?.name === color.name ? 'border-primary ring-2 ring-primary ring-offset-2' : 'border-border hover:scale-110 shadow-sm'
                       }`}

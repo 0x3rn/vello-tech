@@ -1,6 +1,6 @@
 # Vello Tech
 
-Premium e-commerce store for tech gadgets and electronics — built with modern web technologies. A performant, accessible, and beautiful shopping experience with full auth, checkout, and dashboard.
+Premium e-commerce store for tech gadgets and electronics. Built with modern web technologies. A performant, accessible, and beautiful shopping experience with full authentication, checkout, and an admin dashboard.
 
 ![Vello Tech](public/next.svg)
 
@@ -12,85 +12,55 @@ Premium e-commerce store for tech gadgets and electronics — built with modern 
 | **Runtime** | [React 19](https://react.dev/) |
 | **Language** | [TypeScript](https://www.typescriptlang.org/) |
 | **Styling** | [Tailwind CSS v4](https://tailwindcss.com/) |
-| **UI Components** | [shadcn/ui](https://ui.shadcn.com/) (60+ components) |
+| **UI Components** | [shadcn/ui](https://ui.shadcn.com/) |
+| **State Management**| [Zustand](https://zustand-demo.pmnd.rs/) |
 | **Icons** | [Lucide React](https://lucide.dev/) |
-| **Auth** | [Supabase Auth](https://supabase.com/auth) (email/password + OAuth) |
-| **Database** | [Supabase](https://supabase.com/) (PostgreSQL) |
-| **Analytics** | [Vercel Analytics](https://vercel.com/analytics) |
-| **Charts** | [Recharts](https://recharts.org/) |
-| **Forms** | [React Hook Form](https://react-hook-form.com/) |
-| **Package Manager** | npm |
+| **Auth** | [Firebase Authentication](https://firebase.google.com/products/auth) |
+| **Database** | [Firebase Firestore](https://firebase.google.com/products/firestore) (NoSQL) |
+| **Animations** | [Framer Motion](https://www.framer.com/motion/) |
 
 ## Features
 
 ### Storefront
-- **Hero slider** — full-screen carousel with animated transitions, stats bar
-- **Featured products** — filterable grid (All, New, Sale, Best Seller, Popular)
-- **Category navigation** — 6 product categories with icon grid
-- **Promo section** — countdown timer, sale highlights
-- **Customer testimonials** — star ratings, review cards
-- **Newsletter signup** — email subscription form
-- **Features bar** — free shipping, secure payments, support, returns
+- **Hero slider** - full-screen carousel with animated transitions
+- **Featured products** - filterable grid with dynamic layout animations
+- **Category navigation** - comprehensive product categories with icon grid
+- **Promo section** - countdown timer and sale highlights
+- **Customer testimonials** - star ratings and review cards
+- **Features bar** - free shipping, secure payments, support, returns
 
 ### Shopping Experience
-- **Shopping cart** — quantity controls, promo codes, order summary
-- **Checkout** — 3-step flow (Shipping → Payment → Review)
-- **Guest or login checkout** — toggle between quick guest checkout or sign in
-- **Payment success page** — order confirmation, receipt, tracking info
+- **Shopping cart** - quantity controls, local persistence, order summary
+- **Checkout** - multi-step checkout flow
+- **Search & Filters** - fully functional product search and filtering system
 
-### User Account
-- **Dashboard** — profile header, stats cards, quick links, recent orders
-- **Order history** — searchable, filterable by status (Delivered, Shipped, Processing, Cancelled)
-- **Wishlist** — save favorite products, add to cart, out-of-stock badges
-- **Auth pages** — login, register with password requirements, email verification
-
-### API Routes
-- `POST /api/checkout` — checkout endpoint (Stripe-ready)
-- `POST /api/email` — newsletter subscription endpoint
-
-### Design System
-- Full shadcn/ui component library (60+ components)
-- CSS custom properties for light/dark theme
-- Tailwind v4 with `tw-animate-css` animations
-- Responsive design (mobile, tablet, desktop)
-- Subtle, soft borders for premium aesthetic
+### User Account & Admin
+- **Admin Dashboard** - manage products, track inventory, view statistics
+- **User Dashboard** - profile management, order history tracking
+- **Wishlist** - save favorite products to a personalized list
+- **Authentication** - secure login and registration using Firebase Auth
 
 ## Project Structure
 
-```
+```text
 vello-tech/
 ├── app/                    # Next.js App Router
-│   ├── page.tsx            # Homepage
-│   ├── layout.tsx          # Root layout (fonts, metadata, analytics)
-│   ├── globals.css         # Global styles & theme variables
-│   ├── cart/               # Shopping cart page
-│   ├── checkout/           # Checkout flow + success page
-│   ├── account/            # User dashboard + order history
-│   ├── wishlist/           # Wishlist page
-│   ├── auth/               # Auth pages (login, register, verify, callback)
-│   └── api/                # API routes (checkout, email)
+│   ├── (store)/            # Main storefront routes
+│   ├── admin/              # Admin dashboard routes
+│   ├── auth/               # Authentication pages
+│   ├── layout.tsx          # Root layout
+│   └── globals.css         # Global styles
 ├── components/
-│   ├── ui/                 # shadcn/ui components (60+)
-│   ├── header.tsx          # Site header with navigation
-│   ├── hero.tsx            # Hero slider
-│   ├── featured-products.tsx
-│   ├── categories.tsx
-│   ├── features.tsx
-│   ├── testimonials.tsx
-│   ├── newsletter.tsx
-│   ├── promo-section.tsx
-│   └── footer.tsx
+│   ├── ui/                 # Reusable UI components
+│   ├── admin/              # Admin-specific components
+│   └── ...                 # Storefront components
 ├── lib/
-│   ├── utils.ts            # Utility functions (cn)
-│   └── supabase/
-│       ├── client.ts       # Browser Supabase client
-│       └── server.ts       # Server Supabase client
+│   ├── contexts/           # React contexts (e.g., AuthContext)
+│   ├── store/              # Zustand state stores
+│   ├── firebase.ts         # Firebase initialization
+│   └── utils.ts            # Utility functions
 ├── public/                 # Static assets
-├── package.json
-├── tsconfig.json
-├── next.config.ts
-├── tailwind.config.ts
-└── .env.local              # Environment variables (gitignored)
+└── firestore.rules         # Firebase security rules
 ```
 
 ## Getting Started
@@ -115,51 +85,29 @@ cp .env.example .env.local
 
 ### Environment Variables
 
-Create a `.env.local` file with the following:
+Create a `.env.local` file with the following Firebase configuration details:
 
 ```env
-# Supabase (required for auth)
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-
-# Optional: Dev redirect for Supabase email auth
-NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL=http://localhost:3000/auth/callback
+NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project_id.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project_id.appspot.com
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
 ```
 
-### Supabase Setup
+### Firebase Setup
 
-1. Create a project at [supabase.com](https://supabase.com)
-2. Go to **Authentication → Settings**:
-   - Set **Site URL** to `http://localhost:3000`
-   - Add `http://localhost:3000/auth/callback` to **Redirect URLs**
-3. Copy your project URL and anon key from **Settings → API** into `.env.local`
-4. (Optional) Run this SQL in the SQL Editor to auto-create user profiles:
-
-```sql
-CREATE TABLE public.profiles (
-  id UUID REFERENCES auth.users NOT NULL PRIMARY KEY,
-  full_name TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE FUNCTION public.handle_new_user()
-RETURNS trigger AS $$
-BEGIN
-  INSERT INTO public.profiles (id, full_name)
-  VALUES (NEW.id, NEW.raw_user_meta_data->>'full_name');
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
-```
+1. Create a project at [Firebase Console](https://console.firebase.google.com/)
+2. Register a Web App and copy the configuration keys into your `.env.local` file.
+3. Go to **Authentication** and enable **Email/Password** sign-in.
+4. Go to **Firestore Database** and create a database.
+5. Deploy the provided Firestore security rules or update them via the Firebase console using the `firestore.rules` file in the repository.
 
 ### Development
 
 ```bash
-# Start dev server
+# Start development server
 npm run dev
 
 # Build for production
@@ -167,26 +115,10 @@ npm run build
 
 # Start production server
 npm run start
-
-# Run linter
-npm run lint
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to view the app.
-
-## Deployment
-
-The easiest way to deploy is on [Vercel](https://vercel.com/):
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new)
-
-Or deploy manually:
-
-```bash
-npm run build
-npm run start
-```
+Open [http://localhost:3000](http://localhost:3000) to view the application.
 
 ## License
 
-MIT © Vello Tech
+MIT - Vello Tech

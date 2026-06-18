@@ -31,7 +31,7 @@ interface ProductData {
   badge?: string
   condition?: 'new' | 'used' | 'refurbished'
   imageAlts?: string[]
-  colors?: { name: string; hex: string }[]
+  colors?: { name: string; hex: string; priceModifier?: number; stockQuantity: number; imageUrls?: string[] }[]
   variantGroups?: { groupName: string; choices: { choiceName: string; priceModifier: number; stockQuantity: number }[] }[]
 }
 

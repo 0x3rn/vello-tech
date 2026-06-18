@@ -409,11 +409,13 @@ export default function CheckoutPage() {
               <div key={s.id} className="flex items-center gap-2 sm:gap-4 shrink-0">
                 <button
                   onClick={() => {
-                    if (steps.findIndex(x => x.id === s.id) <= steps.findIndex(x => x.id === step)) return
+                    // Only allow clicking completed steps (previous steps)
+                    if (steps.findIndex(x => x.id === s.id) >= steps.findIndex(x => x.id === step)) return
                     setStep(s.id)
                   }}
+                  disabled={steps.findIndex(x => x.id === s.id) > steps.findIndex(x => x.id === step)}
                   className={cn(
-                    "flex items-center gap-3 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200",
+                    "flex items-center gap-3 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed",
                     step === s.id
                       ? "bg-primary text-primary-foreground"
                       : steps.findIndex(x => x.id === s.id) < steps.findIndex(x => x.id === step)

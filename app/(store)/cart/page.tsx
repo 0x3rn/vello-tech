@@ -79,13 +79,13 @@ export default function CartPage() {
               <div className="lg:col-span-2 space-y-4">
                 {items.map((item) => (
                   <div
-                    key={item.id}
+                    key={item.cartItemId || item.id}
                     className="bg-card border border-border rounded-xl p-4 sm:p-5 flex gap-4 transition-all duration-200 hover:shadow-md"
                   >
                     {/* Product Image */}
                     <Link href={`/product/${item.slug}`} className="block relative w-20 h-20 sm:w-24 sm:h-24 lg:w-24 lg:h-24 rounded-lg flex-shrink-0 flex items-center justify-center bg-secondary/30 border border-border overflow-hidden group">
                       <Image
-                        src={resolveImageUrl(item.image)}
+                        src={resolveImageUrl(item.selectedColor?.imageUrls?.[0] || item.image)}
                         alt={item.name}
                         fill
                         sizes="96px"
@@ -120,7 +120,7 @@ export default function CartPage() {
                         {/* Quantity Controls */}
                         <div className="flex items-center gap-2">
                           <button
-                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                            onClick={() => updateQuantity(item.cartItemId || item.id, item.quantity - 1)}
                             className="w-8 h-8 rounded-lg border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-primary transition-all duration-200"
                           >
                             <Minus className="h-4 w-4" />
@@ -129,7 +129,7 @@ export default function CartPage() {
                             {item.quantity}
                           </span>
                           <button
-                            onClick={() => updateQuantity(item.id, Math.min(item.stockQuantity, item.quantity + 1))}
+                            onClick={() => updateQuantity(item.cartItemId || item.id, Math.min(item.stockQuantity, item.quantity + 1))}
                             disabled={item.quantity >= item.stockQuantity}
                             className={`w-8 h-8 rounded-lg border border-border flex items-center justify-center transition-all duration-200 ${
                               item.quantity >= item.stockQuantity 
@@ -142,7 +142,7 @@ export default function CartPage() {
                         </div>
 
                         <button
-                          onClick={() => removeItem(item.id)}
+                          onClick={() => removeItem(item.cartItemId || item.id)}
                           className="p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all duration-200"
                         >
                           <Trash2 className="h-4 w-4" />
