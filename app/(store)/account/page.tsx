@@ -183,7 +183,14 @@ export default function AccountPage() {
                 </h1>
                 <p className="text-muted-foreground">{userData?.email || user?.email}</p>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                {userData?.role === 'admin' && (
+                  <Link href="/admin">
+                    <Button size="sm" className="bg-amber-500 hover:bg-amber-600 text-white font-bold transition-all duration-200 shadow-md hover:shadow-lg shadow-amber-500/20">
+                      Admin Dashboard
+                    </Button>
+                  </Link>
+                )}
                 <Link href="/account/settings">
                   <Button variant="outline" size="sm">
                     <Settings className="h-4 w-4 mr-2" />

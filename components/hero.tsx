@@ -1,17 +1,14 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { toast } from 'sonner'
-import { ArrowRight, Loader2 } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn, resolveImageUrl } from '@/lib/utils'
 import { motion, AnimatePresence } from 'framer-motion'
-import { collection, getDocs, limit, query, where } from 'firebase/firestore'
-import { db } from '@/lib/firebase'
 import Image from 'next/image'
 import Link from 'next/link'
 
-interface SlideData {
+export interface SlideData {
   id: string
   title: string
   subtitle: string
@@ -22,10 +19,8 @@ interface SlideData {
   image: string
 }
 
-export function Hero() {
-  const [slides, setSlides] = useState<SlideData[]>([])
+export function Hero({ initialSlides = [] }: { initialSlides?: SlideData[] }) {
   const [currentSlide, setCurrentSlide] = useState(0)
-  const [loading, setLoading] = useState(true)
 
   // Touch handlers for swipe navigation
   const [touchStart, setTouchStart] = useState<number | null>(null)
@@ -53,90 +48,27 @@ export function Hero() {
     }
   }
 
-  useEffect(() => {
-    const fetchSlides = async () => {
-      try {
-        // 1. Try to fetch products explicitly marked for the carousel
-        let q = query(collection(db, 'products'), where('isCarousel', '==', true), limit(5))
-        let snapshot = await getDocs(q)
-        
-        // 2. Fallback to New Arrivals if no carousel items exist
-        if (snapshot.empty) {
-          q = query(collection(db, 'products'), where('isNewArrival', '==', true), limit(3))
-          snapshot = await getDocs(q)
-        }
-        
-        const fetchedSlides: SlideData[] = []
-        
-        snapshot.forEach((doc) => {
-          const data = doc.data()
-          fetchedSlides.push({
-            id: doc.id,
-            title: data.name || 'Premium Tech',
-            subtitle: data.brand ? `By ${data.brand}` : 'Top Choice',
-            description: data.description || 'Discover our premium selection of tech products.',
-            price: data.discountPrice || data.price || 0,
-            badge: data.isCarousel ? 'Featured' : 'New Arrival',
-            slug: data.slug || '',
-            image: data.imageUrls?.[0] || '',
-          })
-        })
-
-        // 3. Ultimate static fallback if the database is completely empty or missing flags
-        if (fetchedSlides.length === 0) {
-          fetchedSlides.push({
-            id: 'fallback-1',
-            title: 'Welcome to Vello Tech',
-            subtitle: 'Premium Electronics',
-            description: 'Discover the latest in premium tech gadgets, laptops, and accessories built for the modern professional.',
-            price: 0,
-            badge: 'Welcome',
-            slug: 'shop',
-            image: 'https://images.unsplash.com/photo-1498049794561-7780e7231661?q=80&w=1000&auto=format&fit=crop',
-          })
-        }
-
-        setSlides(fetchedSlides)
-      } catch (error) {
-        console.error("Error fetching hero slides:", error)
-        toast.error("Failed to load products. Reference: ERR-VLT-DB-101")
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchSlides()
-  }, [])
-
   const nextSlide = useCallback(() => {
-    if (slides.length <= 1) return
-    setCurrentSlide((prev) => (prev + 1) % slides.length)
-  }, [slides.length])
+    if (initialSlides.length <= 1) return
+    setCurrentSlide((prev) => (prev + 1) % initialSlides.length)
+  }, [initialSlides.length])
 
   const prevSlide = useCallback(() => {
-    if (slides.length <= 1) return
-    setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length)
-  }, [slides.length])
+    if (initialSlides.length <= 1) return
+    setCurrentSlide((prev) => (prev - 1 + initialSlides.length) % initialSlides.length)
+  }, [initialSlides.length])
 
   useEffect(() => {
-    if (slides.length <= 1) return
+    if (initialSlides.length <= 1) return
     const timer = setInterval(nextSlide, 8000)
     return () => clearInterval(timer)
-  }, [nextSlide, slides.length])
+  }, [nextSlide, initialSlides.length])
 
-  if (loading) {
-    return (
-      <section className="relative w-full h-[600px] overflow-hidden bg-background border-b border-border flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </section>
-    )
+  if (initialSlides.length === 0) {
+    return null
   }
 
-  if (slides.length === 0) {
-    return null // Or render a static fallback hero if desired
-  }
-
-  const current = slides[currentSlide]
+  const current = initialSlides[currentSlide]
 
   return (
     <section 
@@ -171,7 +103,7 @@ export function Hero() {
                     fill 
                     sizes="(max-width: 768px) 100vw, 50vw"
                     className="object-contain p-4 hover:scale-105 transition-transform duration-700 drop-shadow-2xl" 
-                    priority
+                    priority={currentSlide === 0}
                   />
                 </Link>
               </motion.div>
@@ -237,7 +169,7 @@ export function Hero() {
                     fill 
                     sizes="(max-width: 768px) 100vw, 50vw"
                     className="object-contain p-8 group-hover:scale-105 transition-transform duration-700 drop-shadow-2xl" 
-                    priority
+                    priority={currentSlide === 0}
                   />
                 </Link>
               </motion.div>
@@ -247,9 +179,9 @@ export function Hero() {
       </div>
 
       {/* Slide Indicators */}
-      {slides.length > 1 && (
+      {initialSlides.length > 1 && (
         <div className="absolute bottom-6 lg:bottom-12 left-1/2 -translate-x-1/2 flex items-center gap-3 z-30">
-            {slides.map((_, index) => (
+            {initialSlides.map((_, index) => (
               <button
                 key={index}
                 onClick={() => setCurrentSlide(index)}
