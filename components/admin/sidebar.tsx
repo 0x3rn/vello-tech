@@ -10,7 +10,10 @@ import {
   Tags,
   Users,
   LogOut,
-  ChevronLeft
+  ChevronLeft,
+  Truck,
+  Percent,
+  Star
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -20,6 +23,9 @@ const navItems = [
   { name: 'Orders', href: '/admin/orders', icon: ShoppingCart },
   { name: 'Categories', href: '/admin/categories', icon: Tags },
   { name: 'Customers', href: '/admin/customers', icon: Users },
+  { name: 'Shipping', href: '/admin/shipping', icon: Truck },
+  { name: 'Taxes', href: '/admin/taxes', icon: Percent },
+  { name: 'Reviews', href: '/admin/reviews', icon: Star },
 ]
 
 export function AdminSidebar() {

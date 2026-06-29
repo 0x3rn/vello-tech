@@ -97,10 +97,10 @@ export function Header() {
       {/* Main Header */}
       <header 
         className={cn(
-          'sticky top-0 z-40 w-full transition-all duration-300',
+          'sticky top-0 z-40 w-full transition-all duration-300 py-3',
           isScrolled 
-            ? 'bg-background/95 backdrop-blur-md shadow-sm py-2' 
-            : 'bg-background/80 backdrop-blur-md py-4',
+            ? 'bg-background/95 backdrop-blur-md shadow-sm' 
+            : 'bg-background/80 backdrop-blur-md',
         )}
       >
         <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 lg:px-8">

@@ -64,7 +64,7 @@ export default function SettingsPage() {
       router.push("/account")
     } catch (error: any) {
       console.error("Error updating profile:", error)
-      toast.error(error.message || "Failed to update profile")
+      toast.error("Failed to update profile. Please check your connection and try again.")
     } finally {
       setSaving(false)
     }

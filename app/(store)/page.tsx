@@ -76,6 +76,21 @@ export default async function Home() {
     usedProducts.push({ id: doc.id, ...doc.data() } as ProductData)
   })
 
+  // Fetch Reviews for Testimonials
+  const reviewsQ = query(collection(db, 'reviews'), where('rating', '==', 5), limit(6))
+  const reviewsSnap = await getDocs(reviewsQ)
+  const realTestimonials: any[] = []
+  reviewsSnap.forEach(doc => {
+    const data = doc.data()
+    realTestimonials.push({
+      name: data.userName || 'Verified Buyer',
+      role: 'Customer',
+      content: data.title ? `${data.title} - ${data.content}` : data.content,
+      rating: data.rating,
+      avatar: data.userName ? data.userName.substring(0, 2).toUpperCase() : 'VB'
+    })
+  })
+
   return (
     <div>
       <Hero initialSlides={slides} />
@@ -84,7 +99,7 @@ export default async function Home() {
       <FeaturedProducts initialProducts={featuredProducts} categories={categories} />
       <PromoSection />
       <UsedProducts initialProducts={usedProducts} categories={categories} />
-      <Testimonials />
+      <Testimonials initialTestimonials={realTestimonials} />
       <Newsletter />
     </div>
   )

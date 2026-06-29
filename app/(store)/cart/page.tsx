@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
@@ -21,17 +21,109 @@ import { useCartStore } from "@/lib/store/cart"
 import { useAuth } from "@/lib/contexts/auth-context"
 import { resolveImageUrl } from "@/lib/utils"
 import { toast } from "sonner"
+import { db } from "@/lib/firebase"
+import { collection, query, where, getDocs, doc, getDoc } from "firebase/firestore"
 
 export default function CartPage() {
   const { items, updateQuantity, removeItem, totalPrice } = useCartStore()
   const { user } = useAuth()
   const router = useRouter()
   const [promoCode, setPromoCode] = useState("")
+  
+  const [taxRate, setTaxRate] = useState<{ percentage: number | null, amount: number | null } | null>(null)
+  const [shippingRate, setShippingRate] = useState<number | null>(null)
+  const [freeShippingThreshold, setFreeShippingThreshold] = useState<number | null>(null)
+  const [fetchingRates, setFetchingRates] = useState(false)
+  const [hasDefaultAddress, setHasDefaultAddress] = useState(false)
+
+  useEffect(() => {
+    const fetchThreshold = async () => {
+      try {
+        const docRef = doc(db, "settings", "shipping")
+        const snap = await getDoc(docRef)
+        if (snap.exists() && typeof snap.data().threshold === 'number') {
+          setFreeShippingThreshold(snap.data().threshold)
+        }
+      } catch (e) {}
+    }
+    fetchThreshold()
+  }, [])
+
+  useEffect(() => {
+    const fetchDefaultAddressRates = async () => {
+      if (!user) {
+        setHasDefaultAddress(false)
+        return
+      }
+      
+      setFetchingRates(true)
+      try {
+        const q = query(collection(db, "users", user.uid, "addresses"), where("isDefault", "==", true))
+        const snapshot = await getDocs(q)
+        
+        if (!snapshot.empty) {
+          const address = snapshot.docs[0].data()
+          setHasDefaultAddress(true)
+          
+          if (address.country && address.state) {
+            const docId = `${address.country}_${address.state}`
+            const taxSnap = await getDoc(doc(db, "taxRates", docId))
+            const shipSnap = await getDoc(doc(db, "shippingRates", docId))
+            
+            if (taxSnap.exists()) {
+              const td = taxSnap.data()
+              setTaxRate({
+                percentage: typeof td.percentage === 'number' ? td.percentage : null,
+                amount: typeof td.amount === 'number' ? td.amount : null
+              })
+            } else {
+              setTaxRate(null)
+            }
+            
+            if (shipSnap.exists() && typeof shipSnap.data().amount === 'number') {
+              setShippingRate(shipSnap.data().amount)
+            } else {
+              setShippingRate(null)
+            }
+          }
+        } else {
+          setHasDefaultAddress(false)
+        }
+      } catch (e) {
+        console.error("Failed to fetch address rates", e)
+      } finally {
+        setFetchingRates(false)
+      }
+    }
+    
+    fetchDefaultAddressRates()
+  }, [user])
 
   const subtotal = totalPrice()
-  const shipping = subtotal > 99 ? 0 : 9.99
   const discount = promoCode === "TECH20" ? subtotal * 0.2 : 0
-  const total = subtotal + shipping - discount
+  
+  let shipping = 0
+  let tax = 0
+  const isShippingBlocked = shippingRate === null
+  const isTaxBlocked = taxRate !== null && taxRate.percentage === null && taxRate.amount === null
+  const isRegionSupported = !isShippingBlocked && !isTaxBlocked
+  
+  if (hasDefaultAddress && isRegionSupported) {
+    if (freeShippingThreshold !== null && subtotal > freeShippingThreshold) {
+      shipping = 0
+    } else {
+      shipping = shippingRate as number
+    }
+    
+    if (taxRate && taxRate.percentage !== null) {
+      tax += subtotal * (taxRate.percentage / 100)
+    }
+    if (taxRate && taxRate.amount !== null) {
+      tax += taxRate.amount
+    }
+  }
+
+  const total = subtotal + shipping - discount + tax
 
   return (
     <div className="min-h-screen bg-background">
@@ -182,13 +274,36 @@ export default function CartPage() {
                     <div className="flex justify-between text-muted-foreground">
                       <span>Shipping</span>
                       <span>
-                        {shipping === 0 ? (
+                        {!hasDefaultAddress ? (
+                          <span className="text-xs text-muted-foreground italic">(calculated at checkout)</span>
+                        ) : fetchingRates ? (
+                          <span className="animate-pulse">...</span>
+                        ) : !isRegionSupported ? (
+                          <span className="text-destructive font-medium text-xs">Not Supported</span>
+                        ) : shipping === 0 ? (
                           <span className="text-accent font-medium">Free</span>
                         ) : (
                           `$${shipping.toFixed(2)}`
                         )}
                       </span>
                     </div>
+                    
+                    {/* Add Tax Row */}
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>Tax</span>
+                      <span>
+                        {!hasDefaultAddress ? (
+                          <span className="text-xs text-muted-foreground italic">(calculated at checkout)</span>
+                        ) : fetchingRates ? (
+                          <span className="animate-pulse">...</span>
+                        ) : !isRegionSupported ? (
+                          <span className="text-destructive font-medium text-xs">Not Supported</span>
+                        ) : (
+                          `$${tax.toFixed(2)}`
+                        )}
+                      </span>
+                    </div>
+                    
                     {discount > 0 && (
                       <div className="flex justify-between text-accent">
                         <span>Discount (20%)</span>
@@ -229,9 +344,11 @@ export default function CartPage() {
                     </div>
                     <div className="flex items-center gap-3 text-sm text-muted-foreground">
                       <Truck className="h-4 w-4 text-accent" />
-                      {shipping === 0
-                        ? "Free Shipping"
-                        : `$${(99 - subtotal).toLocaleString(undefined, { minimumFractionDigits: 2 })} away from free shipping`}
+                      {freeShippingThreshold !== null && subtotal > freeShippingThreshold
+                        ? "Free Shipping Applied!"
+                        : freeShippingThreshold !== null
+                        ? `$${(freeShippingThreshold - subtotal).toLocaleString(undefined, { minimumFractionDigits: 2 })} away from free shipping`
+                        : "Fast & Reliable Shipping"}
                     </div>
                   </div>
                 </div>

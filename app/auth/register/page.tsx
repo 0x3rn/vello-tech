@@ -12,6 +12,23 @@ import { Label } from "@/components/ui/label"
 import { Eye, EyeOff, Mail, Lock, User, ArrowLeft, Loader2, Check } from "lucide-react"
 import { toast } from "sonner"
 
+const getAuthErrorMessage = (err: any) => {
+  const code = err.code || ""
+  if (code === "auth/email-already-in-use") {
+    return "An account with this email already exists."
+  }
+  if (code === "auth/weak-password") {
+    return "Password is too weak. Please use a stronger password."
+  }
+  if (code === "auth/invalid-email") {
+    return "Invalid email format."
+  }
+  if (code === "auth/network-request-failed") {
+    return "Network error. Please check your connection."
+  }
+  return "An unexpected error occurred. Please try again."
+}
+
 export default function RegisterPage() {
   const [fullName, setFullName] = useState("")
   const [email, setEmail] = useState("")
@@ -50,8 +67,8 @@ export default function RegisterPage() {
       await syncCartWithFirestore(userCredential.user)
       await sendEmailVerification(userCredential.user)
       toast.success("Account created! Please check your email (and spam folder) for the verification link.")
-    } catch (err) {
-      setError((err as Error).message)
+    } catch (err: any) {
+      setError(getAuthErrorMessage(err))
       setLoading(false)
       return
     }
@@ -69,8 +86,8 @@ export default function RegisterPage() {
       await syncCartWithFirestore(userCredential.user)
       router.push("/account")
       router.refresh()
-    } catch (err) {
-      setError((err as Error).message)
+    } catch (err: any) {
+      setError(getAuthErrorMessage(err))
       setLoading(false)
     }
   }

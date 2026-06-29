@@ -4,37 +4,13 @@ import { Star, Quote } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { motion } from 'framer-motion'
 
-const testimonials = [
-  {
-    name: 'Mike Adenuga',
-    role: 'Tech Enthusiast',
-    content: "Vello Tech has become my go-to store for all gadgets. The quality and customer service are exceptional!",
-    rating: 5,
-    avatar: 'MA',
-  },
-  {
-    name: 'Michael Chen',
-    role: 'Software Developer',
-    content: "Fast shipping, great prices, and authentic products. I've ordered multiple times and never been disappointed.",
-    rating: 5,
-    avatar: 'MC',
-  },
-  {
-    name: 'Chris Onwuka',
-    role: 'Content Creator',
-    content: "The product selection is amazing. Found exactly what I needed for my setup at a competitive price.",
-    rating: 5,
-    avatar: 'CO',
-  },
-  {
-    name: 'Sarah Johnson',
-    role: 'Photographer',
-    content: "Excellent camera gear selection! The delivery was swift and everything arrived in perfect condition.",
-    rating: 5,
-    avatar: 'SJ',
-  },
-]
-
+export interface TestimonialData {
+  name: string
+  role: string
+  content: string
+  rating: number
+  avatar: string
+}
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -54,7 +30,9 @@ const itemVariants = {
   }
 }
 
-export function Testimonials() {
+export function Testimonials({ initialTestimonials }: { initialTestimonials: TestimonialData[] }) {
+  if (!initialTestimonials || initialTestimonials.length === 0) return null;
+
   return (
     <section className="py-10 lg:py-14 bg-secondary/30 relative overflow-hidden">
       <div className="absolute inset-0 bg-primary/5" />
@@ -81,7 +59,7 @@ export function Testimonials() {
           viewport={{ once: true, margin: "-50px" }}
           className="flex overflow-x-auto pb-6 gap-4 md:gap-6 snap-x snap-mandatory scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
         >
-          {testimonials.map((testimonial, index) => (
+          {initialTestimonials.map((testimonial, index) => (
             <motion.div 
               variants={itemVariants} 
               key={index} 

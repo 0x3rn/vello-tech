@@ -11,6 +11,20 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Eye, EyeOff, Mail, Lock, ArrowLeft, Loader2 } from "lucide-react"
 
+const getAuthErrorMessage = (err: any) => {
+  const code = err.code || ""
+  if (code === "auth/invalid-credential" || code === "auth/user-not-found" || code === "auth/wrong-password") {
+    return "Invalid email or password."
+  }
+  if (code === "auth/too-many-requests") {
+    return "Too many failed attempts. Please try again later."
+  }
+  if (code === "auth/network-request-failed") {
+    return "Network error. Please check your connection."
+  }
+  return "An unexpected error occurred. Please try again."
+}
+
 export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -27,8 +41,8 @@ export default function LoginPage() {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password)
       await syncCartWithFirestore(userCredential.user)
-    } catch (err) {
-      setError((err as Error).message)
+    } catch (err: any) {
+      setError(getAuthErrorMessage(err))
       setLoading(false)
       return
     }
@@ -47,8 +61,8 @@ export default function LoginPage() {
       await syncCartWithFirestore(userCredential.user)
       router.push("/account")
       router.refresh()
-    } catch (err) {
-      setError((err as Error).message)
+    } catch (err: any) {
+      setError(getAuthErrorMessage(err))
       setLoading(false)
     }
   }
