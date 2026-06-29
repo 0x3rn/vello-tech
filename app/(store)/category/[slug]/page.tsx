@@ -4,11 +4,11 @@ import { useEffect, useState, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
-import { collection, getDocs, query, where } from 'firebase/firestore'
+import { collection, getDocs, query, where, doc, getDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { useCartStore } from '@/lib/store/cart'
 import { Button } from '@/components/ui/button'
-import { Loader2, ShoppingCart, Star, SlidersHorizontal, X } from 'lucide-react'
+import { Loader2, ShoppingCart, Star, SlidersHorizontal, X, ArrowLeft } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn, resolveImageUrl } from '@/lib/utils'
 
@@ -44,12 +44,15 @@ export default function CategoryPage() {
   const router = useRouter()
   
   const [categoryName, setCategoryName] = useState<string>('')
+  const [parentCategory, setParentCategory] = useState<{name: string, slug: string} | null>(null)
   const [products, setProducts] = useState<ProductData[]>([])
+  const [subcategories, setSubcategories] = useState<CategoryData[]>([])
   const [loading, setLoading] = useState(true)
   
   // Filter states
   const [selectedBrands, setSelectedBrands] = useState<string[]>([])
   const [selectedConditions, setSelectedConditions] = useState<string[]>([])
+  const [selectedSubcategories, setSelectedSubcategories] = useState<string[]>([])
   const [hideOutOfStock, setHideOutOfStock] = useState(false)
   const [sortBy, setSortBy] = useState<'featured' | 'price-asc' | 'price-desc'>('featured')
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false)
@@ -75,26 +78,57 @@ export default function CategoryPage() {
         setCategoryName(categoryDoc.data().name)
         const targetCategoryIds = [categoryDoc.id]
 
+        // Fetch parent category for breadcrumb navigation
+        const parentId = categoryDoc.data().parentCategoryId
+        if (parentId) {
+          const parentRef = doc(db, 'categories', parentId)
+          const parentSnap = await getDoc(parentRef)
+          if (parentSnap.exists()) {
+            setParentCategory({ name: parentSnap.data().name, slug: parentSnap.data().slug })
+          }
+        } else {
+          setParentCategory(null)
+        }
+
         // 2. Fetch subcategories
         const subCatQuery = query(collection(db, 'categories'), where('parentCategoryId', '==', categoryDoc.id))
         const subCatSnap = await getDocs(subCatQuery)
         const ignoreNames = ['new', 'used', 'refurbished']
+        const subCats: CategoryData[] = []
+        
         subCatSnap.forEach(doc => {
           if (!ignoreNames.includes(doc.data().name.toLowerCase())) {
             targetCategoryIds.push(doc.id)
+            subCats.push({ id: doc.id, ...doc.data() } as CategoryData)
           }
         })
+        setSubcategories(subCats)
 
         // 3. Fetch products
         const fetchedProducts: ProductData[] = []
+        const addedIds = new Set<string>()
         
         if (targetCategoryIds.length > 0) {
           for (let i = 0; i < targetCategoryIds.length; i += 30) {
             const chunk = targetCategoryIds.slice(i, i + 30)
-            const prodQuery = query(collection(db, 'products'), where('categoryId', 'in', chunk))
-            const prodSnap = await getDocs(prodQuery)
-            prodSnap.forEach(doc => {
-              fetchedProducts.push({ id: doc.id, ...doc.data() } as ProductData)
+            
+            const prodQuery1 = query(collection(db, 'products'), where('categoryId', 'in', chunk))
+            const prodQuery2 = query(collection(db, 'products'), where('subcategoryId', 'in', chunk))
+            
+            const [snap1, snap2] = await Promise.all([getDocs(prodQuery1), getDocs(prodQuery2)])
+            
+            snap1.forEach(doc => {
+              if (!addedIds.has(doc.id)) {
+                addedIds.add(doc.id)
+                fetchedProducts.push({ id: doc.id, ...doc.data() } as ProductData)
+              }
+            })
+            
+            snap2.forEach(doc => {
+              if (!addedIds.has(doc.id)) {
+                addedIds.add(doc.id)
+                fetchedProducts.push({ id: doc.id, ...doc.data() } as ProductData)
+              }
             })
           }
         }
@@ -131,8 +165,19 @@ export default function CategoryPage() {
     )
   }
 
+  const toggleSubcategory = (subCatId: string) => {
+    setSelectedSubcategories(prev => 
+      prev.includes(subCatId) ? prev.filter(id => id !== subCatId) : [...prev, subCatId]
+    )
+  }
+
   const filteredAndSortedProducts = useMemo(() => {
     let result = [...products]
+
+    // Apply Subcategory Filter
+    if (selectedSubcategories.length > 0) {
+      result = result.filter(p => p.subcategoryId && selectedSubcategories.includes(p.subcategoryId))
+    }
 
     // Apply Brand Filter
     if (selectedBrands.length > 0) {
@@ -203,6 +248,13 @@ export default function CategoryPage() {
     <div className="min-h-screen bg-background pb-20 pt-8 lg:pt-12">
       <div className="mx-auto max-w-7xl px-4 lg:px-8">
         
+        {parentCategory && (
+          <Link href={`/category/${parentCategory.slug}`} className="inline-flex items-center text-sm text-muted-foreground hover:text-primary mb-6 transition-colors">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to {parentCategory.name}
+          </Link>
+        )}
+
         {/* Header */}
         <div className="mb-8 border-b border-border pb-8">
           <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-foreground mb-4">
@@ -255,6 +307,26 @@ export default function CategoryPage() {
                   </label>
                 </div>
               </div>
+
+              {/* Subcategories */}
+              {subcategories.length > 0 && (
+                <div className="mb-8 border-t border-border pt-6">
+                  <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">Categories</h3>
+                  <div className="space-y-2">
+                    {subcategories.map(subCat => (
+                      <label key={subCat.id} className="flex items-center gap-2 cursor-pointer group">
+                        <input 
+                          type="checkbox" 
+                          checked={selectedSubcategories.includes(subCat.id)} 
+                          onChange={() => toggleSubcategory(subCat.id)} 
+                          className="rounded border-input text-primary accent-primary" 
+                        />
+                        <span className="text-sm group-hover:text-primary transition-colors">{subCat.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Stock Status */}
               <div className="mb-8 border-t border-border pt-6">

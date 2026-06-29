@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Country, State } from "country-state-city"
+import { useRouter } from "next/navigation"
 import {
   ArrowLeft,
   Shield,
@@ -16,12 +17,9 @@ import {
   Lock,
   ChevronRight,
   Package,
-  Minus,
-  Plus,
-  ShoppingBag,
   Globe,
   Map as MapIcon,
-  Loader2,
+  Loader2
 } from "lucide-react"
 import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs } from "firebase/firestore"
 import { Button } from "@/components/ui/button"
@@ -29,7 +27,6 @@ import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/lib/contexts/auth-context"
-import { useCartStore } from "@/lib/store/cart"
 import { useUserStore } from "@/lib/store/user"
 import { toast } from "sonner"
 import { signInAnonymously } from "firebase/auth"
@@ -37,8 +34,10 @@ import { auth, db } from "@/lib/firebase"
 
 type CheckoutStep = "login" | "shipping" | "payment" | "review"
 
-export default function CheckoutPage() {
-  const { items: cartItems } = useCartStore()
+export default function DirectCheckoutPage() {
+  const router = useRouter()
+  const [directItem, setDirectItem] = useState<any>(null)
+  
   const [step, setStep] = useState<CheckoutStep>("shipping")
   const [checkoutType, setCheckoutType] = useState<"guest" | "login">("guest")
   const [email, setEmail] = useState("")
@@ -60,38 +59,6 @@ export default function CheckoutPage() {
   const [shippingRate, setShippingRate] = useState<number | null>(null)
   const [freeShippingThreshold, setFreeShippingThreshold] = useState<number | null>(null)
   const [fetchingRates, setFetchingRates] = useState(false)
-
-  const subtotal = cartItems.reduce((s, i) => s + i.price * i.quantity, 0)
-  
-  let shipping = 0
-  let tax = 0
-  
-  const isShippingBlocked = shippingRate === null
-  const isTaxBlocked = taxRate !== null && taxRate.percentage === null && taxRate.amount === null
-  const isRegionSupported = !!country && !!stateCode && !isShippingBlocked && !isTaxBlocked
-  
-  if (isRegionSupported) {
-    if (freeShippingThreshold !== null && subtotal > freeShippingThreshold) {
-      shipping = 0
-    } else {
-      shipping = shippingRate as number
-    }
-    
-    if (taxRate && taxRate.percentage !== null) {
-      tax += subtotal * (taxRate.percentage / 100)
-    }
-    if (taxRate && taxRate.amount !== null) {
-      tax += taxRate.amount
-    }
-  }
-
-  const total = subtotal + shipping + tax
-
-  const steps = [
-    { id: "shipping" as const, label: "Shipping" },
-    { id: "payment" as const, label: "Payment" },
-    { id: "review" as const, label: "Review" },
-  ]
 
   const { user } = useAuth()
   const { userData } = useUserStore()
@@ -162,12 +129,22 @@ export default function CheckoutPage() {
   }, [country, stateCode])
 
   useEffect(() => {
+    const storedItem = sessionStorage.getItem('directCheckoutItem')
+    if (storedItem) {
+      setDirectItem(JSON.parse(storedItem))
+    } else {
+      toast.error("No item selected for checkout")
+      router.push("/")
+    }
+  }, [router])
+
+  useEffect(() => {
     if (user) {
       if (user.email && !email) setEmail(user.email)
       if (userData) {
         if (userData.phoneNumber && !phone) setPhone(userData.phoneNumber)
       }
-      
+
       const fetchDefaultAddress = async () => {
         if (!address) {
           try {
@@ -186,7 +163,6 @@ export default function CheckoutPage() {
               if (defAddr.country) setCountry(defAddr.country)
               if (defAddr.state) setStateCode(defAddr.state)
             } else if (userData?.address && !address) {
-              // Fallback to legacy address format if no structured addresses exist
               const parts = userData.address.split(",")
               setAddress(parts[0]?.trim() || "")
               if (parts.length > 1) {
@@ -198,20 +174,52 @@ export default function CheckoutPage() {
           }
         }
       }
-      
+
       fetchDefaultAddress()
     }
   }, [user, userData, email, firstName, lastName, phone, address, city])
+
+  if (!directItem) return null
+
+  const subtotal = directItem.price * directItem.quantity
+  
+  let shipping = 0
+  let tax = 0
+  
+  const isShippingBlocked = shippingRate === null
+  const isTaxBlocked = taxRate !== null && taxRate.percentage === null && taxRate.amount === null
+  const isRegionSupported = !!country && !!stateCode && !isShippingBlocked && !isTaxBlocked
+  
+  if (isRegionSupported) {
+    if (freeShippingThreshold !== null && subtotal > freeShippingThreshold) {
+      shipping = 0
+    } else {
+      shipping = shippingRate as number
+    }
+    
+    if (taxRate && taxRate.percentage !== null) {
+      tax += subtotal * (taxRate.percentage / 100)
+    }
+    if (taxRate && taxRate.amount !== null) {
+      tax += taxRate.amount
+    }
+  }
+
+  const total = subtotal + shipping + tax
+
+  const steps = [
+    { id: "shipping" as const, label: "Shipping" },
+    { id: "payment" as const, label: "Payment" },
+    { id: "review" as const, label: "Review" },
+  ]
 
   const handleGuestCheckout = async () => {
     try {
       const userCredential = await signInAnonymously(auth)
       const anonymousUser = userCredential.user
 
-      // Initialize the user document with isAnonymous flag and current cart
       await setDoc(doc(db, "users", anonymousUser.uid), {
         isAnonymous: true,
-        cart: cartItems,
         createdAt: new Date().toISOString()
       }, { merge: true })
 
@@ -242,7 +250,6 @@ export default function CheckoutPage() {
             email,
             address: `${address}, ${city}, ${zipCode}`,
             phoneNumber: phone,
-            cart: cartItems
           })
         } catch (error) {
           console.error("Error updating user info:", error)
@@ -284,6 +291,7 @@ export default function CheckoutPage() {
         body: JSON.stringify({
           uid: user.uid,
           email: user.email || email,
+          directItem: directItem
         }),
       })
 
@@ -294,6 +302,7 @@ export default function CheckoutPage() {
       }
 
       if (data.url) {
+        sessionStorage.removeItem('directCheckoutItem')
         window.location.href = data.url
       }
     } catch (error: any) {
@@ -516,28 +525,26 @@ export default function CheckoutPage() {
       </div>
       <div className="space-y-3">
         <h4 className="text-sm font-medium text-foreground">Order Items</h4>
-        {cartItems.map((item) => (
-          <div key={item.id} className="flex items-center gap-3 p-3 bg-secondary/50 rounded-xl">
-            <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center flex-shrink-0">
-              <Package className="h-5 w-5" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground truncate">{item.name}</p>
-              {item.selectedColor && (
-                <p className="text-xs text-muted-foreground mt-0.5">Color: {item.selectedColor.name}</p>
-              )}
-              {item.selectedVariants && item.selectedVariants.length > 0 && (
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {item.selectedVariants.map(v => `${v.groupName}: ${v.choiceName}`).join(' | ')}
-                </p>
-              )}
-              <p className="text-xs text-muted-foreground mt-0.5">Qty: {item.quantity}</p>
-            </div>
-            <span className="text-sm font-medium text-foreground whitespace-nowrap">
-              ${(item.price * item.quantity).toLocaleString()}
-            </span>
+        <div className="flex items-center gap-3 p-3 bg-secondary/50 rounded-xl">
+          <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center flex-shrink-0">
+            <Package className="h-5 w-5" />
           </div>
-        ))}
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-foreground truncate">{directItem.name}</p>
+            {directItem.selectedColor && (
+              <p className="text-xs text-muted-foreground mt-0.5">Color: {directItem.selectedColor.name}</p>
+            )}
+            {directItem.selectedVariants && directItem.selectedVariants.length > 0 && (
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {directItem.selectedVariants.map((v: any) => `${v.groupName}: ${v.choiceName}`).join(' | ')}
+              </p>
+            )}
+            <p className="text-xs text-muted-foreground mt-0.5">Qty: {directItem.quantity}</p>
+          </div>
+          <span className="text-sm font-medium text-foreground whitespace-nowrap">
+            ${(directItem.price * directItem.quantity).toLocaleString()}
+          </span>
+        </div>
       </div>
     </div>
   )
@@ -555,22 +562,20 @@ export default function CheckoutPage() {
       <div className="pt-16 pb-20">
         <div className="mx-auto max-w-7xl px-4 lg:px-8">
           <Link
-            href="/cart"
-            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors duration-200 mb-6"
+            href={`/product/${directItem.slug}`}
+            className="inline-flex items-center gap-2 text-sm font-medium text-destructive hover:text-destructive/80 transition-colors duration-200 mb-6 bg-destructive/10 hover:bg-destructive/20 px-4 py-2 rounded-full"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to Cart
+            Cancel Checkout
           </Link>
 
-          <h1 className="text-2xl lg:text-3xl font-bold text-foreground tracking-tight mb-8">Checkout</h1>
+          <h1 className="text-2xl lg:text-3xl font-bold text-foreground tracking-tight mb-8">Direct Checkout</h1>
 
-          {/* Steps Progress */}
           <div className="flex items-center gap-2 sm:gap-4 mb-8 overflow-x-auto pb-4 scrollbar-hide">
             {steps.map((s, i) => (
               <div key={s.id} className="flex items-center gap-2 sm:gap-4 shrink-0">
                 <button
                   onClick={() => {
-                    // Only allow clicking completed steps (previous steps)
                     if (steps.findIndex(x => x.id === s.id) >= steps.findIndex(x => x.id === step)) return
                     setStep(s.id)
                   }}
@@ -607,7 +612,7 @@ export default function CheckoutPage() {
                   variant="outline"
                   className="w-full sm:w-auto"
                   onClick={() => {
-                    if (step === "shipping") window.location.href = "/cart"
+                    if (step === "shipping") router.push(`/product/${directItem.slug}`)
                     else if (step === "payment") setStep("shipping")
                     else setStep("payment")
                   }}
@@ -644,31 +649,28 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            {/* Order Summary Sidebar */}
             <div className="lg:col-span-1">
               <div className="bg-card rounded-2xl p-6 border border-border/50 shadow-sm sticky top-24">
                 <h2 className="text-lg font-bold text-foreground mb-4">Order Summary</h2>
                 <div className="space-y-3">
-                  {cartItems.map((item) => (
-                    <div key={item.id} className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center flex-shrink-0">
-                        <Package className="h-5 w-5" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-foreground truncate">{item.name}</p>
-                        {item.selectedColor && (
-                          <p className="text-xs text-muted-foreground mt-0.5">Color: {item.selectedColor.name}</p>
-                        )}
-                        {item.selectedVariants && item.selectedVariants.length > 0 && (
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            {item.selectedVariants.map(v => `${v.groupName}: ${v.choiceName}`).join(' | ')}
-                          </p>
-                        )}
-                        <p className="text-xs text-muted-foreground mt-0.5">Qty: {item.quantity}</p>
-                      </div>
-                      <span className="text-sm text-foreground">${item.price.toLocaleString()}</span>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center flex-shrink-0">
+                      <Package className="h-5 w-5" />
                     </div>
-                  ))}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{directItem.name}</p>
+                      {directItem.selectedColor && (
+                        <p className="text-xs text-muted-foreground mt-0.5">Color: {directItem.selectedColor.name}</p>
+                      )}
+                      {directItem.selectedVariants && directItem.selectedVariants.length > 0 && (
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {directItem.selectedVariants.map((v: any) => `${v.groupName}: ${v.choiceName}`).join(' | ')}
+                        </p>
+                      )}
+                      <p className="text-xs text-muted-foreground mt-0.5">Qty: {directItem.quantity}</p>
+                    </div>
+                    <span className="text-sm text-foreground">${directItem.price.toLocaleString()}</span>
+                  </div>
                 </div>
                 <Separator className="my-4" />
                 <div className="space-y-2 text-sm">

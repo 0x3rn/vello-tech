@@ -165,7 +165,15 @@ export function ProductForm({ initialData }: { initialData?: ProductData }) {
   const addColor = () => {
     if (!colorName || !colorHex) return
     
-    const newColor: any = { name: colorName, hex: colorHex, stockQuantity: Number(colorStockQuantity) || 0 }
+    const newStockQty = Number(colorStockQuantity) || 0
+    const currentTotal = (formData.colors || []).reduce((acc, c) => acc + (c.stockQuantity || 0), 0)
+    
+    if (currentTotal + newStockQty > formData.stockQuantity) {
+      toast.error(`Cannot add ${newStockQty} items. Total color stock would exceed product capacity (${formData.stockQuantity}). Currently used: ${currentTotal}.`)
+      return
+    }
+    
+    const newColor: any = { name: colorName, hex: colorHex, stockQuantity: newStockQty }
     if (colorPriceModifier) newColor.priceModifier = Number(colorPriceModifier)
     
     setFormData(prev => ({
@@ -205,15 +213,26 @@ export function ProductForm({ initialData }: { initialData?: ProductData }) {
 
   const addVariantChoice = (groupIndex: number) => {
     if (!vgChoiceName) return
+
+    const priceMod = vgChoicePrice ? Number(vgChoicePrice) : 0
+    const stockQty = vgChoiceStock ? Number(vgChoiceStock) : 0
+
+    const groups = [...(formData.variantGroups || [])]
+    const group = groups[groupIndex]
+    const currentTotal = group.choices.reduce((acc, c) => acc + (c.stockQuantity || 0), 0)
+    
+    if (currentTotal + stockQty > formData.stockQuantity) {
+      toast.error(`Cannot add ${stockQty} items. Total variant stock would exceed product capacity (${formData.stockQuantity}). Currently used: ${currentTotal}.`)
+      return
+    }
+
     setFormData(prev => {
-      const groups = [...(prev.variantGroups || [])]
-      const priceMod = vgChoicePrice ? Number(vgChoicePrice) : 0
-      const stockQty = vgChoiceStock ? Number(vgChoiceStock) : 0
-      groups[groupIndex] = {
-        ...groups[groupIndex],
-        choices: [...groups[groupIndex].choices, { choiceName: vgChoiceName, priceModifier: priceMod, stockQuantity: stockQty }]
+      const updatedGroups = [...(prev.variantGroups || [])]
+      updatedGroups[groupIndex] = {
+        ...updatedGroups[groupIndex],
+        choices: [...updatedGroups[groupIndex].choices, { choiceName: vgChoiceName, priceModifier: priceMod, stockQuantity: stockQty }]
       }
-      return { ...prev, variantGroups: groups }
+      return { ...prev, variantGroups: updatedGroups }
     })
     setVgChoiceName('')
     setVgChoicePrice('')

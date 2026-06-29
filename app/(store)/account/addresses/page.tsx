@@ -12,6 +12,7 @@ import { db } from "@/lib/firebase"
 import { collection, query, getDocs, addDoc, deleteDoc, doc } from "firebase/firestore"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { toast } from "sonner"
+import { Country, State as CSCState } from "country-state-city"
 
 interface Address {
   id: string
@@ -38,6 +39,21 @@ export default function AddressesPage() {
   const [zip, setZip] = useState("")
   const [country, setCountry] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
+  
+  const [countriesList, setCountriesList] = useState<any[]>([])
+  const [statesList, setStatesList] = useState<any[]>([])
+
+  useEffect(() => {
+    setCountriesList(Country.getAllCountries())
+  }, [])
+
+  useEffect(() => {
+    if (country) {
+      setStatesList(CSCState.getStatesOfCountry(country))
+    } else {
+      setStatesList([])
+    }
+  }, [country])
 
   const fetchAddresses = async () => {
     if (!user) return
@@ -135,22 +151,48 @@ export default function AddressesPage() {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="city">City</Label>
-                        <Input id="city" required value={city} onChange={e => setCity(e.target.value)} />
+                        <Label htmlFor="country">Country</Label>
+                        <select 
+                          id="country"
+                          required
+                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 appearance-none"
+                          value={country}
+                          onChange={(e) => {
+                            setCountry(e.target.value)
+                            setState("")
+                          }}
+                        >
+                          <option value="">Select a country</option>
+                          {countriesList.map(c => (
+                            <option key={c.isoCode} value={c.isoCode}>{c.name}</option>
+                          ))}
+                        </select>
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="state">State / Province</Label>
-                        <Input id="state" required value={state} onChange={e => setState(e.target.value)} />
+                        <select 
+                          id="state"
+                          required
+                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 appearance-none"
+                          value={state}
+                          onChange={(e) => setState(e.target.value)}
+                          disabled={!country || statesList.length === 0}
+                        >
+                          <option value="">{statesList.length === 0 && country ? "No states found" : "Select a state"}</option>
+                          {statesList.map(s => (
+                            <option key={s.isoCode} value={s.isoCode}>{s.name}</option>
+                          ))}
+                        </select>
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="zip">ZIP / Postal Code</Label>
-                        <Input id="zip" required value={zip} onChange={e => setZip(e.target.value)} />
+                        <Label htmlFor="city">City</Label>
+                        <Input id="city" required value={city} onChange={e => setCity(e.target.value)} />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="country">Country</Label>
-                        <Input id="country" required value={country} onChange={e => setCountry(e.target.value)} />
+                        <Label htmlFor="zip">ZIP / Postal Code</Label>
+                        <Input id="zip" required value={zip} onChange={e => setZip(e.target.value)} />
                       </div>
                     </div>
                     <Button type="submit" className="w-full mt-4" disabled={isSubmitting}>

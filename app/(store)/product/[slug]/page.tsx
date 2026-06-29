@@ -4,13 +4,18 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
-import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore'
+import { collection, doc, getDoc, getDocs, query, where, limit } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { useCartStore, generateCartItemId } from '@/lib/store/cart'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, Loader2, Minus, Plus, ShoppingCart, Star } from 'lucide-react'
+import { ArrowLeft, Loader2, Minus, Plus, ShoppingCart, Star, Heart, CreditCard, ChevronRight } from 'lucide-react'
 import { toast } from 'sonner'
 import { resolveImageUrl } from '@/lib/utils'
+import { ProductCard } from '@/components/product-card'
+import { useRouter } from 'next/navigation'
+import { useWishlist } from '@/lib/hooks/use-wishlist'
+import { ReviewList } from '@/components/reviews/review-list'
+import { ReviewForm } from '@/components/reviews/review-form'
 
 interface ProductData {
   id: string
@@ -23,6 +28,7 @@ interface ProductData {
   imageUrls: string[]
   specifications: Record<string, string>
   categoryId: string
+  subcategoryId?: string
   isFeatured: boolean
   rating: number
   numReviews: number
@@ -42,15 +48,24 @@ interface CategoryData {
 
 export default function ProductDetailPage() {
   const { slug } = useParams()
+  const router = useRouter()
   const [product, setProduct] = useState<ProductData | null>(null)
   const [category, setCategory] = useState<CategoryData | null>(null)
+  const [breadcrumbs, setBreadcrumbs] = useState<{name: string, slug: string}[]>([])
+  const [similarProducts, setSimilarProducts] = useState<ProductData[]>([])
   const [loading, setLoading] = useState(true)
   const [quantity, setQuantity] = useState(1)
   const [activeImage, setActiveImage] = useState(0)
   const [selectedColor, setSelectedColor] = useState<{ name: string; hex: string; priceModifier?: number } | null>(null)
   const [selectedChoices, setSelectedChoices] = useState<Record<string, string>>({})
   const [isAdding, setIsAdding] = useState(false)
+  const [refreshTrigger, setRefreshTrigger] = useState(0)
   const { items, addItem, updateQuantity, removeItem } = useCartStore()
+  const { toggleWishlist, wishlist, loadingItems } = useWishlist()
+  
+  const isWishlisted = product 
+    ? wishlist.some(id => id === product.id || id.startsWith(`${product.id}::`)) 
+    : false
 
   const currentCartItemId = product ? generateCartItemId({
     id: product.id,
@@ -76,26 +91,51 @@ export default function ProductDetailPage() {
           const prodData = { id: docSnap.id, ...docSnap.data() } as ProductData
           setProduct(prodData)
           
-          // Fetch Category
-          if (prodData.categoryId) {
-            const catRef = doc(db, 'categories', prodData.categoryId)
-            const catSnap = await getDoc(catRef)
-            if (catSnap.exists()) {
-              setCategory({ id: catSnap.id, ...catSnap.data() } as CategoryData)
+          // Fetch Category and Breadcrumbs
+          const startingCatId = prodData.subcategoryId || prodData.categoryId;
+          if (startingCatId) {
+            const crumbs: {name: string, slug: string}[] = []
+            let currentCatId = startingCatId
+            let currentCatSnap = null
+            
+            while (currentCatId) {
+              const catRef = doc(db, 'categories', currentCatId)
+              const catSnap = await getDoc(catRef)
+              if (catSnap.exists()) {
+                const data = catSnap.data() as CategoryData
+                crumbs.unshift({ name: data.name, slug: data.slug })
+                currentCatId = data.parentCategoryId || ''
+                if (!currentCatSnap) currentCatSnap = catSnap // store the main category
+              } else {
+                break
+              }
             }
+            if (currentCatSnap && currentCatSnap.exists()) {
+               setCategory({ id: currentCatSnap.id, ...currentCatSnap.data() } as CategoryData)
+            }
+            setBreadcrumbs(crumbs)
+
+            // Fetch Similar Items
+            const simQ = query(collection(db, 'products'), where('categoryId', '==', prodData.categoryId), limit(5))
+            const simSnap = await getDocs(simQ)
+            const sims: ProductData[] = []
+            simSnap.forEach(d => {
+              if (d.id !== prodData.id && sims.length < 4) {
+                sims.push({ id: d.id, ...d.data() } as ProductData)
+              }
+            })
+            setSimilarProducts(sims)
           }
         }
       } catch (error) {
-        console.error("Error fetching product:", error)
+        console.error('Error fetching product:', error)
       } finally {
         setLoading(false)
       }
     }
     
-    if (slug) {
-      fetchProduct()
-    }
-  }, [slug])
+    fetchProduct()
+  }, [slug, refreshTrigger])
 
   if (loading) {
     return (
@@ -172,6 +212,50 @@ export default function ProductDetailPage() {
     setIsAdding(false)
   }
 
+  const handleBuyItNow = async () => {
+    if (product?.variantGroups && product.variantGroups.length > 0) {
+      if (Object.keys(selectedChoices).length !== product.variantGroups.length) {
+        toast.error("Please select all options first")
+        return
+      }
+    }
+
+    if (product?.colors && product.colors.length > 0 && !selectedColor) {
+      toast.error("Please select a color first")
+      return
+    }
+    
+    const basePriceToUse = (product.discountPrice || product.price);
+    const colorModifier = selectedColor?.priceModifier || 0;
+    
+    let variantModifiers = 0;
+    if (product?.variantGroups) {
+      product.variantGroups.forEach(group => {
+        const choiceName = selectedChoices[group.groupName];
+        if (choiceName) {
+          const choice = group.choices.find(c => c.choiceName === choiceName);
+          if (choice) variantModifiers += choice.priceModifier || 0;
+        }
+      });
+    }
+
+    const finalPriceToUse = basePriceToUse + colorModifier + variantModifiers;
+
+    const directItem = {
+      id: product.id,
+      name: product.name,
+      price: finalPriceToUse,
+      image: resolveImageUrl(product.imageUrls?.[0]),
+      quantity,
+      slug: product.slug,
+      ...(selectedColor && { selectedColor }),
+      selectedVariants: Object.entries(selectedChoices).map(([groupName, choiceName]) => ({ groupName, choiceName }))
+    }
+    
+    sessionStorage.setItem('directCheckoutItem', JSON.stringify(directItem))
+    router.push('/checkout/direct')
+  }
+
   const handleMinus = () => {
     setQuantity(Math.max(1, quantity - 1))
   }
@@ -242,10 +326,17 @@ export default function ProductDetailPage() {
     <div className="min-h-screen bg-background pb-20 pt-8 lg:pt-12">
       <div className="mx-auto max-w-7xl px-4 lg:px-8">
         
-        <Link href={`/category/${category?.slug || ''}`} className="inline-flex items-center text-sm text-muted-foreground hover:text-primary mb-8 transition-colors">
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to {category ? category.name : 'Category'}
-        </Link>
+        <nav className="flex items-center text-sm text-muted-foreground mb-8">
+          <Link href="/" className="hover:text-primary transition-colors">Home</Link>
+          {breadcrumbs.map((crumb, idx) => (
+            <div key={idx} className="flex items-center">
+              <ChevronRight className="h-4 w-4 mx-1" />
+              <Link href={`/category/${crumb.slug}`} className="hover:text-primary transition-colors">
+                {crumb.name}
+              </Link>
+            </div>
+          ))}
+        </nav>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16">
           {/* Images Gallery */}
@@ -282,11 +373,13 @@ export default function ProductDetailPage() {
               <span className="text-sm font-medium text-primary px-3 py-1 bg-primary/10 rounded-full">
                 {product.brand}
               </span>
-              <div className="flex items-center gap-1 text-sm text-muted-foreground ml-auto">
-                <Star className="h-4 w-4 fill-primary text-primary" />
-                <span className="font-medium text-foreground">{product.rating}</span>
-                <span>({product.numReviews} reviews)</span>
-              </div>
+              {product.numReviews > 0 && (
+                <div className="flex items-center gap-1 text-sm text-muted-foreground ml-auto">
+                  <Star className="h-4 w-4 fill-primary text-primary" />
+                  <span className="font-medium text-foreground">{product.rating}</span>
+                  <span>({product.numReviews} reviews)</span>
+                </div>
+              )}
             </div>
 
             <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-foreground mb-4">
@@ -304,9 +397,13 @@ export default function ProductDetailPage() {
               )}
             </div>
 
-            <p className="text-muted-foreground text-base mb-8 leading-relaxed">
+            <p className="text-muted-foreground text-base mb-4 leading-relaxed">
               {product.description}
             </p>
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-secondary/50 border border-border mb-8 w-fit">
+              <span className="text-sm text-muted-foreground">Condition:</span>
+              <span className="text-sm font-semibold text-foreground capitalize">{product.condition || 'New'}</span>
+            </div>
 
             {/* Variant Groups */}
             {product.variantGroups && product.variantGroups.length > 0 && (
@@ -394,9 +491,18 @@ export default function ProductDetailPage() {
               </div>
               <div className="flex flex-col gap-3">
                 <Button 
+                  onClick={handleBuyItNow}
+                  disabled={product.stockQuantity === 0}
+                  className="w-full h-14 text-lg font-medium bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-600/20"
+                >
+                  <CreditCard className="mr-2 h-5 w-5" />
+                  Buy It Now
+                </Button>
+                <Button 
                   onClick={handleAddToCart}
                   disabled={product.stockQuantity === 0 || isAdding}
-                  className="w-full h-14 text-lg font-medium"
+                  variant="outline"
+                  className="w-full h-14 text-lg font-medium border-primary/20 hover:bg-primary/5 text-primary"
                 >
                   {isAdding ? (
                     <Loader2 className="mr-2 h-5 w-5 animate-spin" />
@@ -415,6 +521,15 @@ export default function ProductDetailPage() {
                     </Button>
                   </Link>
                 )}
+                <Button 
+                  onClick={(e) => toggleWishlist(e, product.id, selectedColor?.name)}
+                  disabled={loadingItems[product.id]}
+                  variant="ghost"
+                  className={`w-full h-12 font-medium mt-1 ${isWishlisted ? 'text-destructive hover:text-destructive hover:bg-destructive/10' : 'text-muted-foreground hover:text-foreground hover:bg-secondary'}`}
+                >
+                  {loadingItems[product.id] ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Heart className={`mr-2 h-5 w-5 ${isWishlisted ? 'fill-destructive text-destructive' : ''}`} />}
+                  {isWishlisted ? 'Remove from Wishlist' : 'Add to Wishlist'}
+                </Button>
               </div>
             </div>
 
@@ -442,6 +557,37 @@ export default function ProductDetailPage() {
             
           </div>
         </div>
+
+        {/* Reviews Section */}
+        <div className="mt-20 pt-10 border-t border-border">
+          <h2 className="text-2xl font-bold tracking-tight text-foreground mb-8">Customer Reviews</h2>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+            <div className="lg:col-span-1">
+              <ReviewForm 
+                productId={product.id} 
+                onReviewSubmitted={() => setRefreshTrigger(prev => prev + 1)} 
+              />
+            </div>
+            <div className="lg:col-span-2">
+              <ReviewList 
+                productId={product.id} 
+                refreshTrigger={refreshTrigger} 
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Similar Items */}
+        {similarProducts.length > 0 && (
+          <div className="mt-20 pt-10 border-t border-border">
+            <h2 className="text-2xl font-bold tracking-tight text-foreground mb-8">Similar Items</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {similarProducts.map(simProduct => (
+                <ProductCard key={simProduct.id} product={simProduct} priority={false} />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

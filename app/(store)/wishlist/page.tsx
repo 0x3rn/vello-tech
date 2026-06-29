@@ -44,16 +44,40 @@ export default function WishlistPage() {
       }
 
       try {
-        const productPromises = wishlistIds.map(id => getDoc(doc(db, "products", id)))
-        const docs = await Promise.all(productPromises)
+        // We might have duplicate productIds if a user wishlisted multiple colors of the same product.
+        // Or we might just have one. Let's parse the ids.
+        const parsedIds = wishlistIds.map(id => {
+          const [productId, colorName] = id.split('::');
+          return { originalId: id, productId, colorName };
+        });
         
-        const products = docs
-          .filter(d => d.exists())
-          .map(d => {
-            const data = d.data()
+        // Fetch unique products
+        const uniqueProductIds = Array.from(new Set(parsedIds.map(p => p.productId)));
+        const productPromises = uniqueProductIds.map(id => getDoc(doc(db, "products", id)));
+        const docs = await Promise.all(productPromises);
+        
+        // Map docs for easy lookup
+        const docsMap = new Map(docs.map(d => [d.id, d]));
+        
+        const products = parsedIds
+          .map(({ originalId, productId, colorName }) => {
+            const d = docsMap.get(productId);
+            if (!d || !d.exists()) return null;
+            
+            const data = d.data();
+            
+            let finalImage = resolveImageUrl(data.imageUrls?.[0]);
+            if (colorName && data.colors) {
+              const colorObj = data.colors.find((c: any) => c.name === colorName);
+              if (colorObj && colorObj.imageUrls && colorObj.imageUrls.length > 0) {
+                finalImage = resolveImageUrl(colorObj.imageUrls[0]);
+              }
+            }
+            
             return {
-              id: d.id,
-              name: data.name || "Unknown Product",
+              id: originalId, // Store the exact string to allow remove by exact string
+              baseProductId: d.id,
+              name: colorName ? `${data.name} (${colorName})` : data.name || "Unknown Product",
               category: data.brand || "Uncategorized", // Can use brand or categoryId
               price: data.discountPrice || data.price || 0,
               originalPrice: data.discountPrice ? data.price : null,
@@ -63,11 +87,14 @@ export default function WishlistPage() {
               color: "bg-secondary",
               inStock: data.stockQuantity > 0,
               stockQuantity: data.stockQuantity,
-              image: resolveImageUrl(data.imageUrls?.[0]),
+              image: finalImage,
               imageAlt: data.imageAlts?.[0] || data.name || "Product",
               slug: data.slug,
+              colors: data.colors,
+              variantGroups: data.variantGroups,
             }
           })
+          .filter(Boolean)
           
         setItems(products)
       } catch (error) {
@@ -119,7 +146,7 @@ export default function WishlistPage() {
     await new Promise(resolve => setTimeout(resolve, 600))
     
     addItem({
-      id: item.id,
+      id: item.baseProductId,
       name: item.name,
       price: item.price,
       image: item.image,

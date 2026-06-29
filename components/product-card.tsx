@@ -42,7 +42,7 @@ export function ProductCard({
   priority?: boolean 
 }) {
   const { toggleWishlist, loadingItems, wishlist } = useWishlist()
-  const isLiked = wishlist.includes(product.id)
+  const isLiked = wishlist.some(id => id === product.id || id.startsWith(`${product.id}::`))
   const isWishlistLoading = loadingItems[product.id]
   const [isHovered, setIsHovered] = useState(false)
   const [isAdding, setIsAdding] = useState(false)
@@ -157,23 +157,25 @@ export function ProductCard({
           </h3>
           
           {/* Rating */}
-          <div className="flex items-center gap-1.5 mt-2">
-            <div className="flex items-center">
-              {[...Array(5)].map((_, i) => (
-                <Star 
-                  key={i} 
-                  className={cn(
-                    'h-4 w-4 transition-colors duration-300',
-                    i < Math.floor(product.rating || 0) 
-                      ? 'fill-amber-400 text-amber-400' 
-                      : 'fill-muted text-muted'
-                  )} 
-                />
-              ))}
+          {(product.numReviews > 0) && (
+            <div className="flex items-center gap-1.5 mt-2">
+              <div className="flex items-center">
+                {[...Array(5)].map((_, i) => (
+                  <Star 
+                    key={i} 
+                    className={cn(
+                      'h-4 w-4 transition-colors duration-300',
+                      i < Math.floor(product.rating || 0) 
+                        ? 'fill-amber-400 text-amber-400' 
+                        : 'fill-muted text-muted'
+                    )} 
+                  />
+                ))}
+              </div>
+              <span className="text-sm font-bold text-foreground ml-1">{product.rating || 0}</span>
+              <span className="text-sm text-muted-foreground">({product.numReviews || 0})</span>
             </div>
-            <span className="text-sm font-bold text-foreground ml-1">{product.rating || 0}</span>
-            <span className="text-sm text-muted-foreground">({product.numReviews || 0})</span>
-          </div>
+          )}
 
           {/* Price */}
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2 mt-4">
