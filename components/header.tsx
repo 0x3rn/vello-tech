@@ -196,15 +196,7 @@ export function Header() {
                 </Button>
               </Link>
             )}
-            {isMounted && userData?.role === 'admin' && (
-              <Link href="/admin" className="mr-2 hidden sm:block">
-                <Button 
-                  className="bg-amber-500 hover:bg-amber-600 text-white font-bold transition-all duration-200 shadow-md hover:shadow-lg shadow-amber-500/20 rounded-full px-5 h-9"
-                >
-                  Admin Dashboard
-                </Button>
-              </Link>
-            )}
+
             <Link href={user ? "/account" : "/auth/login"}>
               <Button 
                 variant="ghost" 
