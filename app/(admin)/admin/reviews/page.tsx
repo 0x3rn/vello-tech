@@ -4,12 +4,14 @@ import { useState, useEffect } from "react"
 import { db } from "@/lib/firebase"
 import { collection, query, orderBy, limit, getDocs, doc, getDoc } from "firebase/firestore"
 import { deleteReview } from "@/lib/services/reviews"
+import { useAuth } from "@/lib/contexts/auth-context"
 import { toast } from "sonner"
 import { Loader2, Trash2, ShieldAlert } from "lucide-react"
 import { ReviewStars } from "@/components/reviews/review-stars"
 import { formatDistanceToNow } from "date-fns"
 
 export default function AdminReviewsPage() {
+  const { user } = useAuth()
   const [reviews, setReviews] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -62,7 +64,7 @@ export default function AdminReviewsPage() {
 
     setDeletingId(reviewId)
     try {
-      await deleteReview(reviewId, productId)
+      await deleteReview(reviewId, productId, user!.uid)
       toast.success("Review deleted and rating recalculated successfully!")
       setReviews(prev => prev.filter(r => r.id !== reviewId))
     } catch (error) {

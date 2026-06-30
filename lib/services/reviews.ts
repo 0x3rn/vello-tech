@@ -29,6 +29,17 @@ export async function submitReview(data: ReviewData) {
     console.error("Error checking verified purchase:", error)
   }
 
+  // Check for duplicate review (prevent rating manipulation)
+  const existingReviewQuery = query(
+    collection(db, "reviews"),
+    where("userId", "==", data.userId),
+    where("productId", "==", data.productId)
+  )
+  const existingReviewSnap = await getDocs(existingReviewQuery)
+  if (!existingReviewSnap.empty) {
+    throw new Error("You have already reviewed this product. Delete your existing review first.")
+  }
+
   // Transaction
   const newReviewRef = doc(collection(db, "reviews"))
   const productRef = doc(db, "products", data.productId)
@@ -64,7 +75,7 @@ export async function submitReview(data: ReviewData) {
   return { success: true, isVerifiedPurchase }
 }
 
-export async function deleteReview(reviewId: string, productId: string) {
+export async function deleteReview(reviewId: string, productId: string, callerUserId: string) {
   const reviewRef = doc(db, "reviews", reviewId)
   const productRef = doc(db, "products", productId)
 
@@ -74,6 +85,17 @@ export async function deleteReview(reviewId: string, productId: string) {
       throw new Error("Review does not exist!")
     }
     const rData = reviewDoc.data()
+
+    // Authorization: only the review author or an admin can delete
+    if (rData.userId !== callerUserId) {
+      // Check if caller is an admin
+      const callerRef = doc(db, "users", callerUserId)
+      const callerDoc = await transaction.get(callerRef)
+      if (!callerDoc.exists() || callerDoc.data()?.role !== "admin") {
+        throw new Error("You do not have permission to delete this review.")
+      }
+    }
+
     const deletedRating = rData.rating
 
     const productDoc = await transaction.get(productRef)

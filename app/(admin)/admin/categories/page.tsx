@@ -89,11 +89,20 @@ export default function AdminCategoriesPage() {
       }
 
       if (isEditing && formId) {
-        await updateDoc(doc(db, 'categories', formId), payload)
+        const res = await fetch(`/api/admin/collections/categories/${formId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        })
+        if (!res.ok) throw new Error("Failed to update category")
         toast.success("Category updated")
       } else {
-        const newRef = doc(collection(db, 'categories'))
-        await setDoc(newRef, payload)
+        const res = await fetch(`/api/admin/collections/categories`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        })
+        if (!res.ok) throw new Error("Failed to create category")
         toast.success("Category created")
       }
 
@@ -111,7 +120,8 @@ export default function AdminCategoriesPage() {
     if (!window.confirm("Are you sure you want to delete this category? Ensure no products are actively using it.")) return
 
     try {
-      await deleteDoc(doc(db, 'categories', id))
+      const res = await fetch(`/api/admin/collections/categories/${id}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error("Failed to delete category")
       toast.success("Category deleted")
       setCategories(categories.filter(c => c.id !== id))
     } catch (error) {

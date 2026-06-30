@@ -107,7 +107,7 @@ export function ReviewForm({ productId, onReviewSubmitted }: ReviewFormProps) {
     
     setIsDeleting(true)
     try {
-      await deleteReview(existingReview.id, productId)
+      await deleteReview(existingReview.id, productId, user!.uid)
       toast.success("Review deleted successfully")
       setExistingReview(null)
       setRating(0)

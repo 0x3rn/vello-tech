@@ -384,15 +384,23 @@ export function ProductForm({ initialData }: { initialData?: ProductData }) {
         }
       }
 
-      const productRef = finalFormData.id ? doc(db, 'products', finalFormData.id) : doc(collection(db, 'products'))
+      const payload = { ...finalFormData }
       
-      const payload = { ...finalFormData, updatedAt: serverTimestamp() }
       if (!finalFormData.id) {
-        (payload as any).createdAt = serverTimestamp()
-        await setDoc(productRef, payload)
+        const res = await fetch('/api/admin/products', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        })
+        if (!res.ok) throw new Error("Failed to create product")
         toast.success("Product created successfully")
       } else {
-        await updateDoc(productRef, payload as any)
+        const res = await fetch('/api/admin/products', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        })
+        if (!res.ok) throw new Error("Failed to update product")
         toast.success("Product updated successfully")
       }
       
