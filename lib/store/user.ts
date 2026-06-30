@@ -9,6 +9,9 @@ export interface UserData {
   wishlist?: string[]
   role?: 'admin' | 'user'
   createdAt?: string
+  ordersCount?: number
+  reviewsCount?: number
+  rewardsPoints?: number
 }
 
 interface UserState {

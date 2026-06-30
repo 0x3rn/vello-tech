@@ -117,7 +117,12 @@ export default function ShippingAdminPage() {
         amount: amount === "" ? null : Number(amount)
       }
       
-      await setDoc(docRef, payload, { merge: true })
+      const res = await fetch(`/api/admin/collections/shippingRates/${docId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+      if (!res.ok) throw new Error("Failed to save rate")
       toast.success("Shipping rate saved")
       fetchAllRates()
     } catch (error) {
@@ -131,7 +136,8 @@ export default function ShippingAdminPage() {
   const handleDeleteRate = async (id: string) => {
     if (!window.confirm("Are you sure you want to delete this rate?")) return
     try {
-      await deleteDoc(doc(db, "shippingRates", id))
+      const res = await fetch(`/api/admin/collections/shippingRates/${id}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error("Failed to delete rate")
       toast.success("Shipping rate deleted")
       // If we just deleted the currently selected rate, clear the input
       if (id === `${selectedCountry}_${selectedState}`) {

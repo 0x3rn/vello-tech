@@ -63,7 +63,8 @@ export default function AdminProductsPage() {
     
     setIsDeleting(id)
     try {
-      await deleteDoc(doc(db, 'products', id))
+      const res = await fetch(`/api/admin/products/${id}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error('Failed to delete product')
       toast.success('Product deleted successfully')
       setProducts(products.filter(p => p.id !== id))
     } catch (error) {

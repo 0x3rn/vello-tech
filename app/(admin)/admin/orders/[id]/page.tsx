@@ -45,7 +45,12 @@ export default function OrderDetailsPage() {
   const handleStatusChange = async (newStatus: string) => {
     setUpdating(true)
     try {
-      await updateDoc(doc(db, 'orders', id as string), { status: newStatus })
+      const res = await fetch(`/api/admin/orders/${id as string}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      })
+      if (!res.ok) throw new Error("Failed to update status")
       setOrder({ ...order, status: newStatus })
       toast.success(`Order status updated to ${newStatus}`)
     } catch (error) {

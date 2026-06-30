@@ -15,9 +15,12 @@ export async function sendOrderConfirmationEmail(
     return
   }
 
+  const escapeHtml = (str: string) =>
+    str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')
+
   const itemsHtml = items.map(item => `
     <tr>
-      <td style="padding: 10px; border-bottom: 1px solid #eaeaea;">${item.name} (x${item.quantity})</td>
+      <td style="padding: 10px; border-bottom: 1px solid #eaeaea;">${escapeHtml(item.name)} (x${item.quantity})</td>
       <td style="padding: 10px; border-bottom: 1px solid #eaeaea; text-align: right;">$${item.price.toLocaleString()}</td>
     </tr>
   `).join('')

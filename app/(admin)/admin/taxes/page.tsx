@@ -100,7 +100,12 @@ export default function TaxesAdminPage() {
         amount: amount === "" ? null : Number(amount)
       }
       
-      await setDoc(docRef, payload, { merge: true })
+      const res = await fetch(`/api/admin/collections/taxRates/${docId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+      if (!res.ok) throw new Error("Failed to save rate")
       toast.success("Tax rate saved")
       fetchAllRates()
     } catch (error) {
@@ -114,7 +119,8 @@ export default function TaxesAdminPage() {
   const handleDeleteRate = async (id: string) => {
     if (!window.confirm("Are you sure you want to delete this rate?")) return
     try {
-      await deleteDoc(doc(db, "taxRates", id))
+      const res = await fetch(`/api/admin/collections/taxRates/${id}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error("Failed to delete rate")
       toast.success("Tax rate deleted")
       if (id === `${selectedCountry}_${selectedState}`) {
         setPercentage("")

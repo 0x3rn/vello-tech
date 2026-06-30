@@ -16,7 +16,10 @@ export async function POST(req: Request) {
     const secret = process.env.PAYSTACK_SECRET_KEY || ""
     const hash = crypto.createHmac("sha512", secret).update(rawBody).digest("hex")
 
-    if (hash !== signature) {
+    const hashBuffer = Buffer.from(hash, "utf8")
+    const signatureBuffer = Buffer.from(signature, "utf8")
+
+    if (hashBuffer.length !== signatureBuffer.length || !crypto.timingSafeEqual(hashBuffer, signatureBuffer)) {
       console.error("Paystack Webhook Error: Invalid signature")
       return NextResponse.json({ error: "ERR-VLT-PAY-202" }, { status: 400 })
     }
@@ -25,9 +28,19 @@ export async function POST(req: Request) {
 
     if (event.event === "charge.success") {
       const data = event.data
+      const paymentReference = data.reference
       const uid = data.metadata?.uid
       const email = data.customer?.email || data.email
       const amount = data.amount // in cents
+
+      // Idempotency: skip if this event was already processed
+      if (paymentReference) {
+        const eventDoc = await adminDb.collection("processedEvents").doc(`paystack_${paymentReference}`).get()
+        if (eventDoc.exists) {
+          console.log(`Paystack webhook already processed: ${paymentReference}`)
+          return NextResponse.json({ received: true })
+        }
+      }
 
       if (uid) {
         // Fetch cart to get items outside of transaction (to know what to fetch inside)
@@ -56,6 +69,9 @@ export async function POST(req: Request) {
                 productDocs = await transaction.getAll(...productRefs)
               }
 
+              // Build enriched order items from server-side product data
+              const enrichedItems: any[] = []
+
               // Compute new stocks
               productDocs.forEach((pDoc, index) => {
                 if (pDoc.exists) {
@@ -65,6 +81,32 @@ export async function POST(req: Request) {
                   const currentStock = pData?.stockQuantity || 0
                   
                   const updates: any = { stockQuantity: Math.max(0, currentStock - quantityToBuy) }
+
+                  // Build enriched item from server-side product data
+                  let itemPrice = pData?.discountPrice || pData?.price || 0
+                  if (cartItem.selectedColor) {
+                    const color = pData?.colors?.find((c: any) => c.name === (cartItem.selectedColor.name || cartItem.selectedColor))
+                    if (color?.priceModifier) itemPrice += color.priceModifier
+                  }
+                  if (cartItem.selectedVariants) {
+                    const variants = Array.isArray(cartItem.selectedVariants) ? cartItem.selectedVariants : Object.entries(cartItem.selectedVariants).map(([groupName, choiceName]) => ({ groupName, choiceName }))
+                    variants.forEach((v: any) => {
+                      const group = pData?.variantGroups?.find((g: any) => g.groupName === v.groupName)
+                      const choice = group?.choices?.find((c: any) => c.choiceName === v.choiceName)
+                      if (choice?.priceModifier) itemPrice += choice.priceModifier
+                    })
+                  }
+
+                  enrichedItems.push({
+                    id: cartItem.id,
+                    name: pData?.name || cartItem.name,
+                    slug: pData?.slug || cartItem.slug,
+                    price: itemPrice,
+                    quantity: quantityToBuy,
+                    image: pData?.images?.[0] || cartItem.image,
+                    selectedColor: cartItem.selectedColor || null,
+                    selectedVariants: cartItem.selectedVariants || null,
+                  })
                   
                   // 1. Decrement specific color stock
                   if (cartItem.selectedColor && pData?.colors) {
@@ -98,22 +140,33 @@ export async function POST(req: Request) {
                 }
               })
 
-              // Create Order
+              // Create Order with enriched (server-verified) items
               const orderRef = adminDb.collection("orders").doc(orderId)
               transaction.set(orderRef, {
                 orderId,
                 uid,
                 email,
-                items: cart,
+                items: enrichedItems,
                 totalPaid: amount,
                 status: "pending",
                 paymentMethod: "paystack",
+                paymentReference: paymentReference || null,
                 createdAt: new Date().toISOString()
               })
 
               // Clear user cart
               const userRef = adminDb.collection("users").doc(uid)
               transaction.update(userRef, { cart: [] })
+
+              // Mark this event as processed (idempotency)
+              if (paymentReference) {
+                const eventRef = adminDb.collection("processedEvents").doc(`paystack_${paymentReference}`)
+                transaction.set(eventRef, {
+                  processedAt: new Date().toISOString(),
+                  orderId,
+                  source: "paystack"
+                })
+              }
             })
           } catch (error) {
             console.error("Firestore Transaction Error:", error)

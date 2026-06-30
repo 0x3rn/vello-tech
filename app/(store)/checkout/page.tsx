@@ -182,7 +182,7 @@ export default function CheckoutPage() {
               }
               if (defAddr.street) setAddress(defAddr.street)
               if (defAddr.city) setCity(defAddr.city)
-              if (defAddr.zip) setZip(defAddr.zip)
+              if (defAddr.zip) setZipCode(defAddr.zip)
               if (defAddr.country) setCountry(defAddr.country)
               if (defAddr.state) setStateCode(defAddr.state)
             } else if (userData?.address && !address) {
@@ -334,22 +334,11 @@ export default function CheckoutPage() {
       </div>
 
       {checkoutType === "login" && (
-        <div className="space-y-4 p-6 bg-secondary/50 rounded-2xl">
-          <div>
-            <label className="text-sm font-medium text-foreground mb-1 block">Email</label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} className="pl-10" />
-            </div>
-          </div>
-          <div>
-            <label className="text-sm font-medium text-foreground mb-1 block">Password</label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input type="password" placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)} className="pl-10" />
-            </div>
-          </div>
-          <Button className="w-full">Sign In & Continue</Button>
+        <div className="space-y-4 p-6 bg-secondary/50 rounded-2xl flex flex-col items-center text-center">
+          <p className="text-muted-foreground mb-4">Please sign in to access your saved addresses and order history.</p>
+          <Link href={`/auth/login?redirect=${encodeURIComponent('/checkout')}`} className="w-full sm:w-auto">
+            <Button className="w-full">Go to Sign In</Button>
+          </Link>
         </div>
       )}
     </div>

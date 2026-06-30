@@ -25,6 +25,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
         try {
+          const idToken = await currentUser.getIdToken(true)
+          await fetch('/api/auth/session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ idToken }),
+          })
+
           const userDoc = await getDoc(doc(db, 'users', currentUser.uid))
           if (userDoc.exists()) {
             const data = userDoc.data()
@@ -42,6 +49,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           console.error("Failed to fetch user data:", error)
         }
       } else {
+        try {
+          await fetch('/api/auth/session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ idToken: null }),
+          })
+        } catch (error) {
+          console.error("Failed to clear session:", error)
+        }
         useUserStore.getState().clearUserData()
       }
       

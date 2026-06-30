@@ -22,6 +22,7 @@ interface ProductData {
   description: string
   imageUrls: string[]
   categoryId: string
+  subcategoryId?: string
   isFeatured: boolean
   rating: number
   numReviews: number
