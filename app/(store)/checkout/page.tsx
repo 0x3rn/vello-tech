@@ -182,7 +182,7 @@ export default function CheckoutPage() {
               }
               if (defAddr.street) setAddress(defAddr.street)
               if (defAddr.city) setCity(defAddr.city)
-              if (defAddr.zip) setZip(defAddr.zip)
+              if (defAddr.zip) setZipCode(defAddr.zip)
               if (defAddr.country) setCountry(defAddr.country)
               if (defAddr.state) setStateCode(defAddr.state)
             } else if (userData?.address && !address) {
