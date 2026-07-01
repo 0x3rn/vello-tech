@@ -15,6 +15,7 @@ import {
   Eye,
   Loader2,
 } from "lucide-react"
+import { ProductGridSkeleton } from "@/components/ui/product-grid-skeleton"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useCartStore } from "@/lib/store/cart"
@@ -188,9 +189,7 @@ export default function WishlistPage() {
           </div>
 
           {loading ? (
-            <div className="flex justify-center py-20">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
+            <ProductGridSkeleton count={4} />
           ) : items.length === 0 ? (
             /* Empty State */
             <div className="text-center py-20">

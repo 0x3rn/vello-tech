@@ -9,6 +9,7 @@ import { db } from '@/lib/firebase'
 import { useCartStore } from '@/lib/store/cart'
 import { Button } from '@/components/ui/button'
 import { Loader2, ShoppingCart, Star, SlidersHorizontal, X } from 'lucide-react'
+import { ProductGridSkeleton } from '@/components/ui/product-grid-skeleton'
 import { toast } from 'sonner'
 import { cn, resolveImageUrl } from '@/lib/utils'
 
@@ -346,9 +347,7 @@ function UsedPageContent() {
           {/* Product Grid */}
           <div className="flex-1">
             {loading ? (
-              <div className="flex justify-center items-center py-20">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
+              <ProductGridSkeleton count={9} />
             ) : filteredAndSortedProducts.length === 0 ? (
               <div className="text-center py-20 bg-secondary/20 rounded-2xl border border-border">
                 <h2 className="text-2xl font-semibold mb-2">No Products Found</h2>
@@ -437,11 +436,7 @@ function UsedPageContent() {
 
 export default function UsedPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    }>
+    <Suspense fallback={<div className="min-h-screen py-32 max-w-7xl mx-auto px-4"><ProductGridSkeleton count={12} /></div>}>
       <UsedPageContent />
     </Suspense>
   )

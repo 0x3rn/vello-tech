@@ -12,6 +12,7 @@ import { ArrowLeft, Loader2, Minus, Plus, ShoppingCart, Star, Heart, CreditCard,
 import { toast } from 'sonner'
 import { resolveImageUrl } from '@/lib/utils'
 import { ProductCard } from '@/components/product-card'
+import { ProductDetailSkeleton } from '@/components/ui/product-detail-skeleton'
 import { useRouter } from 'next/navigation'
 import { useWishlist } from '@/lib/hooks/use-wishlist'
 import { ReviewList } from '@/components/reviews/review-list'
@@ -138,11 +139,7 @@ export default function ProductDetailPage() {
   }, [slug, refreshTrigger])
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    )
+    return <ProductDetailSkeleton />
   }
 
   if (!product) {
