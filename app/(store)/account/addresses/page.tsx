@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
 import { AuthGuard } from "@/components/auth-guard"
 import { Button } from "@/components/ui/button"
@@ -55,7 +55,7 @@ export default function AddressesPage() {
     }
   }, [country])
 
-  const fetchAddresses = async () => {
+  const fetchAddresses = useCallback(async () => {
     if (!user) return
     try {
       const q = query(collection(db, "users", user.uid, "addresses"))
@@ -68,7 +68,7 @@ export default function AddressesPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [user])
 
   useEffect(() => {
     if (user) {
@@ -76,7 +76,7 @@ export default function AddressesPage() {
     } else {
       setLoading(false)
     }
-  }, [user])
+  }, [user, fetchAddresses])
 
   const handleAddAddress = async (e: React.FormEvent) => {
     e.preventDefault()

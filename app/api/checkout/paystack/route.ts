@@ -112,7 +112,7 @@ export async function POST(req: Request) {
         }, { status: 400 })
       }
 
-      let baseItemPrice = product.discountPrice || product.price
+      const baseItemPrice = product.discountPrice || product.price
 
       let variantModifiers = 0
       if (item.selectedVariants && item.selectedVariants.length > 0) {

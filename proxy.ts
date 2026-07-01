@@ -6,11 +6,7 @@ export function proxy(request: NextRequest) {
   const session = request.cookies.get('__session')
 
   // Paths that require authentication
-  const protectedPaths = [
-    '/admin',
-    '/profile',
-    '/orders'
-  ]
+  const protectedPaths: string[] = []
 
   const isProtectedPath = protectedPaths.some(path => 
     request.nextUrl.pathname.startsWith(path)

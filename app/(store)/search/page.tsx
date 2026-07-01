@@ -146,7 +146,7 @@ function SearchResults() {
     
     if ((product.colors && product.colors.length > 0) || (product.variantGroups && product.variantGroups.length > 0)) {
       toast.info("Please select options for this product")
-      window.location.href = `/product/${product.slug}`
+      window.location.assign(`/product/${product.slug}`)
       return
     }
     

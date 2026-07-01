@@ -354,7 +354,7 @@ export function ProductForm({ initialData }: { initialData?: ProductData }) {
       }
 
       // Auto-commit any pending inputs that the user forgot to explicitly add
-      let finalFormData = { ...formData }
+      const finalFormData = { ...formData }
       
       if (vgName) {
         finalFormData.variantGroups = [

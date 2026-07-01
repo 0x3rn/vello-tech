@@ -85,7 +85,7 @@ export default function AdminProductsPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Products</h1>
-          <p className="text-muted-foreground mt-1">Manage your store's inventory, pricing, and descriptions.</p>
+          <p className="text-muted-foreground mt-1">Manage your store&apos;s inventory, pricing, and descriptions.</p>
         </div>
         <Link href="/admin/products/new">
           <Button className="shrink-0">

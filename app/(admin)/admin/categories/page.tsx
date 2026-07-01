@@ -156,7 +156,7 @@ export default function AdminCategoriesPage() {
     <div className="p-6 lg:p-10 max-w-7xl mx-auto space-y-8">
       <div>
         <h1 className="text-3xl font-bold tracking-tight text-foreground">Categories</h1>
-        <p className="text-muted-foreground mt-1">Manage your store's taxonomy and navigation structure.</p>
+        <p className="text-muted-foreground mt-1">Manage your store&apos;s taxonomy and navigation structure.</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

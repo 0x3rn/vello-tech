@@ -212,7 +212,7 @@ export default function CategoryPage() {
     }
 
     return result
-  }, [products, selectedBrands, selectedConditions, hideOutOfStock, sortBy])
+  }, [products, selectedSubcategories, selectedBrands, selectedConditions, hideOutOfStock, sortBy])
 
   const handleAddToCart = async (e: React.MouseEvent, product: ProductData) => {
     e.preventDefault()
