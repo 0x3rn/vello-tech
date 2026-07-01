@@ -8,7 +8,6 @@ export function proxy(request: NextRequest) {
   // Paths that require authentication
   const protectedPaths = [
     '/admin',
-    '/checkout',
     '/profile',
     '/orders'
   ]

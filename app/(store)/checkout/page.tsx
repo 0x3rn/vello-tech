@@ -203,25 +203,7 @@ export default function CheckoutPage() {
     }
   }, [user, userData, email, firstName, lastName, phone, address, city])
 
-  const handleGuestCheckout = async () => {
-    try {
-      const userCredential = await signInAnonymously(auth)
-      const anonymousUser = userCredential.user
-
-      // Initialize the user document with isAnonymous flag and current cart
-      await setDoc(doc(db, "users", anonymousUser.uid), {
-        isAnonymous: true,
-        cart: cartItems,
-        createdAt: new Date().toISOString()
-      }, { merge: true })
-
-      setCheckoutType("guest")
-      setStep("shipping")
-    } catch (error: any) {
-      console.error("Anonymous sign-in failed:", error)
-      toast.error("Failed to initialize guest checkout. Please try again.")
-    }
-  }
+  // Removed manual handleGuestCheckout since it's now automatic
 
   const handleContinue = async () => {
     if (step === "shipping") {
@@ -235,17 +217,45 @@ export default function CheckoutPage() {
         return
       }
 
-      if (user) {
+      let currentUser = user;
+      
+      if (!currentUser) {
         try {
-          await updateDoc(doc(db, "users", user.uid), {
+          const userCredential = await signInAnonymously(auth);
+          currentUser = userCredential.user;
+          await setDoc(doc(db, "users", currentUser.uid), {
+            isAnonymous: true,
+            cart: cartItems,
+            createdAt: new Date().toISOString()
+          }, { merge: true });
+        } catch (error) {
+          console.error("Failed to create guest session:", error);
+          toast.error("Failed to initialize guest session. Please try again.");
+          return;
+        }
+      }
+
+      try {
+        await updateDoc(doc(db, "users", currentUser.uid), {
+          name: `${firstName} ${lastName}`.trim(),
+          email,
+          address: `${address}, ${city}, ${zipCode}`,
+          phoneNumber: phone,
+          cart: cartItems
+        })
+      } catch (error) {
+        try {
+          await setDoc(doc(db, "users", currentUser.uid), {
             name: `${firstName} ${lastName}`.trim(),
             email,
             address: `${address}, ${city}, ${zipCode}`,
             phoneNumber: phone,
-            cart: cartItems
-          })
-        } catch (error) {
-          console.error("Error updating user info:", error)
+            cart: cartItems,
+            isAnonymous: true,
+            createdAt: new Date().toISOString()
+          }, { merge: true })
+        } catch (e) {
+          console.error("Error updating user info:", e)
         }
       }
 
@@ -302,51 +312,19 @@ export default function CheckoutPage() {
     }
   }
 
-  const renderLoginChoice = () => (
+  const renderShippingForm = () => (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-        <button
-          onClick={handleGuestCheckout}
-          className={cn(
-            "p-6 rounded-2xl text-left transition-all duration-200",
-            checkoutType === "guest"
-              ? "bg-primary text-primary-foreground ring-2 ring-primary ring-offset-2"
-              : "bg-secondary text-foreground hover:bg-secondary/80"
-          )}
-        >
-          <User className="h-8 w-8 mb-3" />
-          <h3 className="font-semibold text-lg mb-1">Guest Checkout</h3>
-          <p className="text-sm opacity-80">Quick checkout without creating an account</p>
-        </button>
-        <button
-          onClick={() => setCheckoutType("login")}
-          className={cn(
-            "p-6 rounded-2xl text-left transition-all duration-200",
-            checkoutType === "login"
-              ? "bg-primary text-primary-foreground ring-2 ring-primary ring-offset-2"
-              : "bg-secondary text-foreground hover:bg-secondary/80"
-          )}
-        >
-          <Lock className="h-8 w-8 mb-3" />
-          <h3 className="font-semibold text-lg mb-1">Sign In</h3>
-          <p className="text-sm opacity-80">Access your saved addresses and order history</p>
-        </button>
-      </div>
-
-      {checkoutType === "login" && (
-        <div className="space-y-4 p-6 bg-secondary/50 rounded-2xl flex flex-col items-center text-center">
-          <p className="text-muted-foreground mb-4">Please sign in to access your saved addresses and order history.</p>
-          <Link href={`/auth/login?redirect=${encodeURIComponent('/checkout')}`} className="w-full sm:w-auto">
-            <Button className="w-full">Go to Sign In</Button>
+      {!user && (
+        <div className="bg-secondary/30 p-4 rounded-xl flex items-center justify-between mb-4 border border-border">
+          <div>
+            <h3 className="font-medium text-sm">Guest Checkout</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">Already have an account?</p>
+          </div>
+          <Link href={`/auth/login?redirect=${encodeURIComponent('/checkout')}`}>
+            <Button variant="outline" size="sm" className="h-8">Sign In</Button>
           </Link>
         </div>
       )}
-    </div>
-  )
-
-  const renderShippingForm = () => (
-    <div className="space-y-4">
-      {step === "shipping" && !user && renderLoginChoice()}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="text-sm font-medium text-foreground mb-1 block">First Name</label>
