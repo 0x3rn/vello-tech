@@ -12,6 +12,7 @@ import { ArrowLeft, Loader2, Minus, Plus, ShoppingCart, Star, Heart, CreditCard,
 import { toast } from 'sonner'
 import { resolveImageUrl } from '@/lib/utils'
 import { ProductCard } from '@/components/product-card'
+import { ProductDetailSkeleton } from '@/components/ui/product-detail-skeleton'
 import { useRouter } from 'next/navigation'
 import { useWishlist } from '@/lib/hooks/use-wishlist'
 import { ReviewList } from '@/components/reviews/review-list'
@@ -138,11 +139,7 @@ export default function ProductDetailPage() {
   }, [slug, refreshTrigger])
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    )
+    return <ProductDetailSkeleton />
   }
 
   if (!product) {
@@ -342,12 +339,31 @@ export default function ProductDetailPage() {
           {/* Images Gallery */}
           <div className="flex flex-col gap-4">
             <div className="relative aspect-square w-full rounded-2xl bg-secondary/30 overflow-hidden border border-border">
+              {/* Preload the first image of all colors so switching is instant */}
+              {product.colors?.map(color => {
+                if (!color.imageUrls?.length) return null;
+                if (color.name === selectedColor?.name && activeImage === 0) return null;
+
+                return (
+                  <Image
+                    key={`preload-${color.name}`}
+                    src={resolveImageUrl(color.imageUrls[0])}
+                    alt="preload"
+                    fill
+                    sizes="(max-width: 1024px) 100vw, 50vw"
+                    className="object-contain p-8 opacity-0 pointer-events-none -z-10"
+                    priority
+                  />
+                );
+              })}
+
               <Image
                 src={resolveImageUrl(displayImages[activeImage])}
                 alt={displayAlts[activeImage] || product.name}
                 fill
                 sizes="(max-width: 1024px) 100vw, 50vw"
-                className="object-contain p-8"
+                className="object-contain p-8 z-10"
+                priority
               />
             </div>
             {displayImages.length > 1 && (
