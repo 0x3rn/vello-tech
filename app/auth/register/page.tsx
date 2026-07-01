@@ -62,9 +62,22 @@ export default function RegisterPage() {
     setLoading(true)
 
     try {
+      const previousUid = auth.currentUser?.uid
       const userCredential = await createUserWithEmailAndPassword(auth, email, password)
       await updateProfile(userCredential.user, { displayName: fullName })
-      await syncCartWithFirestore(userCredential.user)
+      
+      if (previousUid !== userCredential.user.uid) {
+        await syncCartWithFirestore(userCredential.user)
+      }
+      
+      // Explicitly set the session cookie
+      const idToken = await userCredential.user.getIdToken(true)
+      await fetch('/api/auth/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken }),
+      })
+
       await sendEmailVerification(userCredential.user)
       toast.success("Account created! Please check your email (and spam folder) for the verification link.")
     } catch (err: any) {
@@ -82,8 +95,21 @@ export default function RegisterPage() {
     const provider = new GoogleAuthProvider()
     
     try {
+      const previousUid = auth.currentUser?.uid
       const userCredential = await signInWithPopup(auth, provider)
-      await syncCartWithFirestore(userCredential.user)
+      
+      if (previousUid !== userCredential.user.uid) {
+        await syncCartWithFirestore(userCredential.user)
+      }
+
+      // Explicitly set the session cookie before redirecting
+      const idToken = await userCredential.user.getIdToken(true)
+      await fetch('/api/auth/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken }),
+      })
+
       router.push("/account")
       router.refresh()
     } catch (err: any) {
