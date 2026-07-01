@@ -339,12 +339,31 @@ export default function ProductDetailPage() {
           {/* Images Gallery */}
           <div className="flex flex-col gap-4">
             <div className="relative aspect-square w-full rounded-2xl bg-secondary/30 overflow-hidden border border-border">
+              {/* Preload the first image of all colors so switching is instant */}
+              {product.colors?.map(color => {
+                if (!color.imageUrls?.length) return null;
+                if (color.name === selectedColor?.name && activeImage === 0) return null;
+
+                return (
+                  <Image
+                    key={`preload-${color.name}`}
+                    src={resolveImageUrl(color.imageUrls[0])}
+                    alt="preload"
+                    fill
+                    sizes="(max-width: 1024px) 100vw, 50vw"
+                    className="object-contain p-8 opacity-0 pointer-events-none -z-10"
+                    priority
+                  />
+                );
+              })}
+
               <Image
                 src={resolveImageUrl(displayImages[activeImage])}
                 alt={displayAlts[activeImage] || product.name}
                 fill
                 sizes="(max-width: 1024px) 100vw, 50vw"
-                className="object-contain p-8"
+                className="object-contain p-8 z-10"
+                priority
               />
             </div>
             {displayImages.length > 1 && (
