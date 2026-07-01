@@ -35,6 +35,11 @@ export default function CartPage() {
   const [freeShippingThreshold, setFreeShippingThreshold] = useState<number | null>(null)
   const [fetchingRates, setFetchingRates] = useState(false)
   const [hasDefaultAddress, setHasDefaultAddress] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     const fetchThreshold = async () => {
@@ -124,6 +129,54 @@ export default function CartPage() {
   }
 
   const total = subtotal + shipping - discount + tax
+
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="pt-10 lg:pt-16 pb-20">
+          <div className="mx-auto max-w-7xl px-4 lg:px-8">
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <div className="h-4 w-32 bg-secondary rounded animate-pulse mb-4"></div>
+                <div className="h-8 w-48 bg-secondary rounded animate-pulse mb-2"></div>
+                <div className="h-4 w-24 bg-secondary rounded animate-pulse"></div>
+              </div>
+            </div>
+            <div className="lg:grid lg:grid-cols-12 lg:gap-x-12 lg:items-start">
+              <div className="lg:col-span-7 space-y-6">
+                {[1, 2].map((i) => (
+                  <div key={i} className="flex flex-col sm:flex-row gap-4 p-4 rounded-2xl bg-card border border-border animate-pulse">
+                    <div className="w-full sm:w-32 h-32 bg-secondary rounded-xl"></div>
+                    <div className="flex-1 space-y-4">
+                      <div className="h-5 w-3/4 bg-secondary rounded"></div>
+                      <div className="h-4 w-1/2 bg-secondary rounded"></div>
+                      <div className="flex justify-between items-center pt-2">
+                        <div className="h-8 w-24 bg-secondary rounded"></div>
+                        <div className="h-6 w-16 bg-secondary rounded"></div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-10 lg:mt-0 lg:col-span-5">
+                <div className="rounded-3xl border border-border bg-card p-6 shadow-sm animate-pulse">
+                  <div className="h-6 w-1/2 bg-secondary rounded mb-6"></div>
+                  <div className="space-y-4 mb-6">
+                    <div className="flex justify-between"><div className="h-4 w-16 bg-secondary rounded"></div><div className="h-4 w-12 bg-secondary rounded"></div></div>
+                    <div className="flex justify-between"><div className="h-4 w-20 bg-secondary rounded"></div><div className="h-4 w-12 bg-secondary rounded"></div></div>
+                    <div className="flex justify-between"><div className="h-4 w-12 bg-secondary rounded"></div><div className="h-4 w-12 bg-secondary rounded"></div></div>
+                  </div>
+                  <div className="h-px bg-border my-6"></div>
+                  <div className="flex justify-between mb-6"><div className="h-6 w-16 bg-secondary rounded"></div><div className="h-6 w-20 bg-secondary rounded"></div></div>
+                  <div className="h-12 w-full bg-secondary rounded-full"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-background">

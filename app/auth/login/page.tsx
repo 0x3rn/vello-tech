@@ -39,8 +39,20 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
+      const previousUid = auth.currentUser?.uid
       const userCredential = await signInWithEmailAndPassword(auth, email, password)
-      await syncCartWithFirestore(userCredential.user)
+      
+      if (previousUid !== userCredential.user.uid) {
+        await syncCartWithFirestore(userCredential.user)
+      }
+
+      // Explicitly set the session cookie before redirecting
+      const idToken = await userCredential.user.getIdToken(true)
+      await fetch('/api/auth/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken }),
+      })
     } catch (err: any) {
       setError(getAuthErrorMessage(err))
       setLoading(false)
@@ -57,8 +69,21 @@ export default function LoginPage() {
     const provider = new GoogleAuthProvider()
     
     try {
+      const previousUid = auth.currentUser?.uid
       const userCredential = await signInWithPopup(auth, provider)
-      await syncCartWithFirestore(userCredential.user)
+      
+      if (previousUid !== userCredential.user.uid) {
+        await syncCartWithFirestore(userCredential.user)
+      }
+
+      // Explicitly set the session cookie before redirecting
+      const idToken = await userCredential.user.getIdToken(true)
+      await fetch('/api/auth/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken }),
+      })
+
       router.push("/account")
       router.refresh()
     } catch (err: any) {
