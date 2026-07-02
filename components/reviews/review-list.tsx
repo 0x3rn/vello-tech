@@ -104,7 +104,7 @@ export function ReviewList({ productId, refreshTrigger }: ReviewListProps) {
           <div key={review.id} className="py-6 first:pt-0 last:pb-0">
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-3">
               <div>
-                <ReviewStars rating={review.rating} size={16} />
+                <ReviewStars rating={review.rating ?? 0} size={16} />
                 <h4 className="font-semibold text-foreground mt-2">{review.title}</h4>
               </div>
               <span className="text-sm text-muted-foreground whitespace-nowrap">
