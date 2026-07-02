@@ -87,7 +87,7 @@ export default function AdminReviewsPage() {
       <div className="bg-amber-500/10 border border-amber-500/20 text-amber-600 rounded-lg p-4 flex gap-3 text-sm">
         <ShieldAlert className="w-5 h-5 shrink-0" />
         <p>
-          <strong>Warning:</strong> Deleting a review uses a database transaction to mathematically subtract the rating and recalculate the product's average score. This action cannot be undone.
+          <strong>Warning:</strong> Deleting a review uses a database transaction to mathematically subtract the rating and recalculate the product&apos;s average score. This action cannot be undone.
         </p>
       </div>
 

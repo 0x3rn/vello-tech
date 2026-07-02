@@ -106,7 +106,7 @@ export default function WishlistPage() {
     }
 
     fetchWishlist()
-  }, [user, userData?.wishlist]) // Re-fetch if wishlist array changes
+  }, [user, userData, userData?.wishlist]) // Re-fetch if wishlist array changes
 
   const removeItem = async (productId: string) => {
     if (!user || !userData) return

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
 import { AuthGuard } from "@/components/auth-guard"
 import { Button } from "@/components/ui/button"
@@ -35,7 +35,7 @@ export default function PaymentMethodsPage() {
   const [name, setName] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const fetchMethods = async () => {
+  const fetchMethods = useCallback(async () => {
     if (!user) return
     try {
       const q = query(collection(db, "users", user.uid, "paymentMethods"))
@@ -48,7 +48,7 @@ export default function PaymentMethodsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [user])
 
   useEffect(() => {
     if (user) {
@@ -56,7 +56,7 @@ export default function PaymentMethodsPage() {
     } else {
       setLoading(false)
     }
-  }, [user])
+  }, [user, fetchMethods])
 
   const handleAddMethod = async (e: React.FormEvent) => {
     e.preventDefault()

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useAuth } from "@/lib/contexts/auth-context"
 import { useUserStore } from "@/lib/store/user"
 import { Button } from "@/components/ui/button"
@@ -33,7 +33,7 @@ export function ReviewForm({ productId, onReviewSubmitted }: ReviewFormProps) {
   const [existingReview, setExistingReview] = useState<any>(null)
   const [loadingExisting, setLoadingExisting] = useState(true)
 
-  const fetchExistingReview = async () => {
+  const fetchExistingReview = useCallback(async () => {
     if (!user) {
       setLoadingExisting(false)
       return
@@ -57,11 +57,11 @@ export function ReviewForm({ productId, onReviewSubmitted }: ReviewFormProps) {
     } finally {
       setLoadingExisting(false)
     }
-  }
+  }, [user, productId])
 
   useEffect(() => {
     fetchExistingReview()
-  }, [user, productId])
+  }, [fetchExistingReview])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

@@ -74,7 +74,7 @@ function UsedPageContent() {
         // Fetch used/refurbished products
         const prodQuery = query(collection(db, 'products'), where('condition', 'in', ['used', 'refurbished']))
         const prodSnap = await getDocs(prodQuery)
-        let fetchedProducts: ProductData[] = []
+        const fetchedProducts: ProductData[] = []
         
         prodSnap.forEach(doc => {
           fetchedProducts.push({ id: doc.id, ...doc.data() } as ProductData)
@@ -162,7 +162,7 @@ function UsedPageContent() {
     
     if ((product.colors && product.colors.length > 0) || (product.variantGroups && product.variantGroups.length > 0)) {
       toast.info("Please select options for this product")
-      window.location.href = `/product/${product.slug}`
+      window.location.assign(`/product/${product.slug}`)
       return
     }
     
