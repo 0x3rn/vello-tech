@@ -1,0 +1,537 @@
+'use client'
+
+import { useState, useMemo } from 'react'
+import Image from 'next/image'
+import Link from 'next/link'
+import { useCartStore, generateCartItemId } from '@/lib/store/cart'
+import { Button } from '@/components/ui/button'
+import { Loader2, Minus, Plus, ShoppingCart, Star, Heart, CreditCard, ChevronRight } from 'lucide-react'
+import { toast } from 'sonner'
+import { resolveImageUrl } from '@/lib/utils'
+import { ProductCard } from '@/components/product-card'
+import { useRouter } from 'next/navigation'
+import { useWishlist } from '@/lib/hooks/use-wishlist'
+import { ReviewList } from '@/components/reviews/review-list'
+import { ReviewForm } from '@/components/reviews/review-form'
+
+export interface ProductData {
+  id: string
+  name: string
+  brand: string
+  price: number
+  discountPrice: number | null
+  stockQuantity: number
+  description: string
+  imageUrls: string[]
+  specifications: Record<string, string>
+  categoryId: string
+  subcategoryId?: string
+  isFeatured: boolean
+  rating: number
+  numReviews: number
+  slug: string
+  condition?: 'new' | 'used' | 'refurbished'
+  imageAlts?: string[]
+  colors?: { name: string; hex: string; priceModifier?: number; stockQuantity: number; imageUrls?: string[] }[]
+  variantGroups?: { groupName: string; choices: { choiceName: string; priceModifier: number; stockQuantity: number }[] }[]
+}
+
+export interface CategoryData {
+  id: string
+  name: string
+  slug: string
+  parentCategoryId: string | null
+}
+
+export function ProductDetailClient({
+  product,
+  category,
+  breadcrumbs,
+  similarProducts
+}: {
+  product: ProductData
+  category: CategoryData | null
+  breadcrumbs: {name: string, slug: string}[]
+  similarProducts: ProductData[]
+}) {
+  const router = useRouter()
+  const [quantity, setQuantity] = useState(1)
+  const [activeImage, setActiveImage] = useState(0)
+  const [selectedColor, setSelectedColor] = useState<{ name: string; hex: string; priceModifier?: number } | null>(null)
+  const [selectedChoices, setSelectedChoices] = useState<Record<string, string>>({})
+  const [isAdding, setIsAdding] = useState(false)
+  const [refreshTrigger, setRefreshTrigger] = useState(0)
+  const { items, addItem, updateQuantity, removeItem } = useCartStore()
+  const { toggleWishlist, wishlist, loadingItems } = useWishlist()
+  
+  const allImages = useMemo(() => {
+    const urls = new Set<string>();
+    product?.imageUrls?.forEach(u => urls.add(u));
+    product?.colors?.forEach(c => c.imageUrls?.forEach(u => urls.add(u)));
+    return Array.from(urls);
+  }, [product]);
+  
+  const isWishlisted = product 
+    ? wishlist.some(id => id === product.id || id.startsWith(`${product.id}::`)) 
+    : false
+
+  const currentCartItemId = product ? generateCartItemId({
+    id: product.id,
+    slug: product.slug,
+    name: product.name,
+    price: 0,
+    image: '',
+    quantity: 0,
+    stockQuantity: 0,
+    ...(selectedColor && { selectedColor }),
+    selectedVariants: Object.entries(selectedChoices).map(([groupName, choiceName]) => ({ groupName, choiceName }))
+  }) : null;
+
+  const cartItem = currentCartItemId ? items.find((item) => (item.cartItemId || item.id) === currentCartItemId) : null;
+
+  const handleAddToCart = async () => {
+    if (product?.variantGroups && product.variantGroups.length > 0) {
+      if (Object.keys(selectedChoices).length !== product.variantGroups.length) {
+        toast.error("Please select all options first")
+        return
+      }
+    }
+
+    if (product?.colors && product.colors.length > 0 && !selectedColor) {
+      toast.error("Please select a color first")
+      return
+    }
+
+    setIsAdding(true)
+    
+    // Simulate short network delay for satisfying visual feedback
+    await new Promise(resolve => setTimeout(resolve, 600))
+    
+    const basePriceToUse = (product.discountPrice || product.price);
+    const colorModifier = selectedColor?.priceModifier || 0;
+    
+    let variantModifiers = 0;
+    if (product?.variantGroups) {
+      product.variantGroups.forEach(group => {
+        const choiceName = selectedChoices[group.groupName];
+        if (choiceName) {
+          const choice = group.choices.find(c => c.choiceName === choiceName);
+          if (choice) variantModifiers += choice.priceModifier || 0;
+        }
+      });
+    }
+
+    const finalPriceToUse = basePriceToUse + colorModifier + variantModifiers;
+    const activeStock = getActiveStock();
+
+    addItem({
+      id: product.id,
+      cartItemId: currentCartItemId || undefined,
+      name: product.name,
+      price: finalPriceToUse,
+      image: resolveImageUrl(product.imageUrls?.[0]),
+      quantity,
+      stockQuantity: activeStock,
+      slug: product.slug,
+      categoryId: product.categoryId,
+      ...(selectedColor && { selectedColor }),
+      selectedVariants: Object.entries(selectedChoices).map(([groupName, choiceName]) => ({ groupName, choiceName }))
+    })
+    
+    toast.success(`${quantity} ${product.name} added to cart`, {
+      description: "You can view your cart or continue shopping.",
+    })
+    setIsAdding(false)
+  }
+
+  const handleBuyItNow = async () => {
+    if (product?.variantGroups && product.variantGroups.length > 0) {
+      if (Object.keys(selectedChoices).length !== product.variantGroups.length) {
+        toast.error("Please select all options first")
+        return
+      }
+    }
+
+    if (product?.colors && product.colors.length > 0 && !selectedColor) {
+      toast.error("Please select a color first")
+      return
+    }
+    
+    const basePriceToUse = (product.discountPrice || product.price);
+    const colorModifier = selectedColor?.priceModifier || 0;
+    
+    let variantModifiers = 0;
+    if (product?.variantGroups) {
+      product.variantGroups.forEach(group => {
+        const choiceName = selectedChoices[group.groupName];
+        if (choiceName) {
+          const choice = group.choices.find(c => c.choiceName === choiceName);
+          if (choice) variantModifiers += choice.priceModifier || 0;
+        }
+      });
+    }
+
+    const finalPriceToUse = basePriceToUse + colorModifier + variantModifiers;
+
+    const directItem = {
+      id: product.id,
+      name: product.name,
+      price: finalPriceToUse,
+      image: resolveImageUrl(product.imageUrls?.[0]),
+      quantity,
+      slug: product.slug,
+      ...(selectedColor && { selectedColor }),
+      selectedVariants: Object.entries(selectedChoices).map(([groupName, choiceName]) => ({ groupName, choiceName }))
+    }
+    
+    sessionStorage.setItem('directCheckoutItem', JSON.stringify(directItem))
+    router.push('/checkout/direct')
+  }
+
+  const handleMinus = () => {
+    setQuantity(Math.max(1, quantity - 1))
+  }
+
+  const handlePlus = () => {
+    if (product) {
+      const activeStock = getActiveStock();
+      setQuantity(Math.min(activeStock, quantity + 1))
+    }
+  }
+
+  const getActiveStock = () => {
+    if (!product) return 0;
+    
+    const baseStock = product.stockQuantity || 0;
+    const colorStock = selectedColor && product.colors 
+      ? (product.colors.find(c => c.name === selectedColor.name)?.stockQuantity ?? Infinity)
+      : Infinity;
+
+    let variantsStock = Infinity;
+    if (selectedChoices && Object.keys(selectedChoices).length > 0 && product.variantGroups) {
+      const minVariantStock = Object.entries(selectedChoices).map(([gName, cName]) => {
+         const group = product.variantGroups?.find(g => g.groupName === gName);
+         const choice = group?.choices.find(c => c.choiceName === cName);
+         return choice?.stockQuantity ?? Infinity;
+      });
+      variantsStock = Math.min(...minVariantStock);
+    }
+
+    return Math.min(baseStock, colorStock, variantsStock);
+  };
+
+  const getActivePricing = () => {
+    if (!product) return { displayPrice: 0, originalPrice: 0, hasDiscount: false };
+    
+    const colorMod = selectedColor?.priceModifier || 0;
+    
+    let varMod = 0;
+    if (product.variantGroups) {
+      product.variantGroups.forEach(group => {
+        const choiceName = selectedChoices[group.groupName];
+        if (choiceName) {
+          const choice = group.choices.find(c => c.choiceName === choiceName);
+          if (choice) varMod += choice.priceModifier || 0;
+        }
+      });
+    }
+    
+    return {
+      displayPrice: (product.discountPrice || product.price) + colorMod + varMod,
+      originalPrice: product.price + colorMod + varMod,
+      hasDiscount: !!product.discountPrice
+    };
+  };
+
+  const { displayPrice, originalPrice, hasDiscount } = getActivePricing();
+  const displayStock = getActiveStock();
+
+  const specificColorObj = selectedColor && product?.colors?.find(c => c.name === selectedColor.name);
+  const displayImages = specificColorObj?.imageUrls?.length 
+    ? specificColorObj.imageUrls 
+    : product?.imageUrls || [];
+  const displayAlts = specificColorObj?.imageUrls?.length 
+    ? specificColorObj.imageUrls.map(() => product?.name || '')
+    : product?.imageAlts || [];
+
+  return (
+    <div className="min-h-screen bg-background pb-20 pt-8 lg:pt-12">
+      <div className="mx-auto max-w-7xl px-4 lg:px-8">
+        
+        <nav className="flex items-center text-sm text-muted-foreground mb-8">
+          <Link href="/" className="hover:text-primary transition-colors">Home</Link>
+          {breadcrumbs.map((crumb, idx) => (
+            <div key={idx} className="flex items-center">
+              <ChevronRight className="h-4 w-4 mx-1" />
+              <Link href={`/category/${crumb.slug}`} className="hover:text-primary transition-colors">
+                {crumb.name}
+              </Link>
+            </div>
+          ))}
+        </nav>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16">
+          {/* Images Gallery */}
+          <div className="flex flex-col gap-4">
+            <div className="relative aspect-square w-full rounded-2xl bg-secondary/30 overflow-hidden border border-border">
+              {allImages.map((url) => {
+                const isActive = resolveImageUrl(displayImages[activeImage]) === resolveImageUrl(url);
+                const isFirstImage = product.imageUrls?.[0] === url || product.colors?.some(c => c.imageUrls?.[0] === url);
+                
+                return (
+                  <Image
+                    key={url}
+                    src={resolveImageUrl(url)}
+                    alt={product.name}
+                    fill
+                    sizes="(max-width: 1024px) 100vw, 50vw"
+                    className={`object-contain p-8 transition-opacity duration-200 absolute inset-0 ${
+                      isActive ? 'opacity-100 z-20' : 'opacity-0 pointer-events-none z-0'
+                    }`}
+                    priority={isFirstImage || isActive}
+                  />
+                )
+              })}
+            </div>
+            {displayImages.length > 1 && (
+              <div className="grid grid-cols-4 gap-4">
+                {displayImages.map((url, idx) => (
+                  <button 
+                    key={`${url}-${idx}`}
+                    onClick={() => setActiveImage(idx)}
+                    className={`relative aspect-square rounded-lg border-2 overflow-hidden bg-secondary/30 transition-all ${
+                      activeImage === idx ? 'border-primary' : 'border-transparent hover:border-border'
+                    }`}
+                  >
+                    <Image src={resolveImageUrl(url)} alt={displayAlts[idx] || `${product.name} ${idx + 1}`} fill sizes="100px" className="object-contain p-2" />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Product Info */}
+          <div className="flex flex-col">
+            <div className="mb-2 flex items-center gap-2">
+              <span className="text-sm font-medium text-primary px-3 py-1 bg-primary/10 rounded-full">
+                {product.brand}
+              </span>
+              {product.numReviews > 0 && (
+                <div className="flex items-center gap-1 text-sm text-muted-foreground ml-auto">
+                  <Star className="h-4 w-4 fill-primary text-primary" />
+                  <span className="font-medium text-foreground">{product.rating}</span>
+                  <span>({product.numReviews} reviews)</span>
+                </div>
+              )}
+            </div>
+
+            <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-foreground mb-4">
+              {product.name}
+            </h1>
+            
+            <div className="flex items-center gap-3 mb-6">
+              <p className="text-xl font-bold text-foreground">
+                ${displayPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              </p>
+              {hasDiscount && (
+                <p className="text-lg font-medium text-muted-foreground line-through">
+                  ${originalPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                </p>
+              )}
+            </div>
+
+            <p className="text-muted-foreground text-base mb-4 leading-relaxed">
+              {product.description}
+            </p>
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-secondary/50 border border-border mb-8 w-fit">
+              <span className="text-sm text-muted-foreground">Condition:</span>
+              <span className="text-sm font-semibold text-foreground capitalize">{product.condition || 'New'}</span>
+            </div>
+
+            {/* Variant Groups */}
+            {product.variantGroups && product.variantGroups.length > 0 && (
+              <div className="mb-6 space-y-5">
+                {product.variantGroups.map((group, idx) => (
+                  <div key={idx}>
+                    <h3 className="text-sm font-medium text-foreground mb-3">
+                      {group.groupName}: <span className="text-muted-foreground font-normal">{selectedChoices[group.groupName] || 'Select an option'}</span>
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {group.choices.map((choice, cIdx) => {
+                        const isSelected = selectedChoices[group.groupName] === choice.choiceName;
+                        return (
+                          <button
+                            key={cIdx}
+                            onClick={() => {
+                              setSelectedChoices(prev => ({ ...prev, [group.groupName]: choice.choiceName }));
+                            }}
+                            className={`px-4 py-2 rounded-full border text-sm font-medium transition-all ${
+                              isSelected
+                                ? 'border-primary bg-primary text-primary-foreground'
+                                : 'border-border bg-background text-foreground hover:border-primary/50'
+                            }`}
+                          >
+                            {choice.choiceName}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Colors */}
+            {product.colors && product.colors.length > 0 && (
+              <div className="mb-8">
+                <h3 className="text-sm font-medium text-foreground mb-3">
+                  Color: <span className="text-muted-foreground font-normal">{selectedColor?.name || 'Select a color'}</span>
+                </h3>
+                <div className="flex flex-wrap gap-3">
+                  {product.colors.map((color, idx) => (
+                     <button
+                      key={idx}
+                      onClick={() => { setSelectedColor(color); setActiveImage(0); }}
+                      className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all ${
+                        selectedColor?.name === color.name ? 'border-primary ring-2 ring-primary ring-offset-2' : 'border-border hover:scale-110 shadow-sm'
+                      }`}
+                      style={{ backgroundColor: color.hex }}
+                      title={color.name}
+                    >
+                      <span className="sr-only">{color.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Cart Actions */}
+            <div className="p-6 bg-secondary/20 border border-border rounded-2xl mb-10">
+              <div className="flex items-center gap-6 mb-6">
+                <div className="flex items-center justify-between border border-border rounded-lg bg-background p-1 w-32">
+                  <button 
+                    onClick={handleMinus}
+                    className="p-2 hover:bg-secondary rounded-md transition-colors text-muted-foreground hover:text-foreground"
+                  >
+                    <Minus className="h-4 w-4" />
+                  </button>
+                  <span className="font-medium">{quantity}</span>
+                  <button 
+                    onClick={handlePlus}
+                    className="p-2 hover:bg-secondary rounded-md transition-colors text-muted-foreground hover:text-foreground"
+                    disabled={quantity >= displayStock}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </button>
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  {displayStock > 0 ? (
+                    <span className="text-green-600 font-medium">{displayStock} in stock</span>
+                  ) : (
+                    <span className="text-destructive font-medium">Out of stock</span>
+                  )}
+                </div>
+              </div>
+              <div className="flex flex-col gap-3">
+                <Button 
+                  onClick={handleBuyItNow}
+                  disabled={product.stockQuantity === 0}
+                  className="w-full h-14 text-lg font-medium bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-600/20"
+                >
+                  <CreditCard className="mr-2 h-5 w-5" />
+                  Buy It Now
+                </Button>
+                <Button 
+                  onClick={handleAddToCart}
+                  disabled={product.stockQuantity === 0 || isAdding}
+                  variant="outline"
+                  className="w-full h-14 text-lg font-medium border-primary/20 hover:bg-primary/5 text-primary"
+                >
+                  {isAdding ? (
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  ) : (
+                    <ShoppingCart className="mr-2 h-5 w-5" />
+                  )}
+                  {isAdding ? 'Adding...' : 'Add to Cart'}
+                </Button>
+                {cartItem && (
+                  <Link href="/cart" className="w-full">
+                    <Button 
+                      variant="outline"
+                      className="w-full h-12 font-medium border-primary/20 hover:bg-primary/5 text-primary"
+                    >
+                      View in Cart
+                    </Button>
+                  </Link>
+                )}
+                <Button 
+                  onClick={(e) => toggleWishlist(e, product.id, selectedColor?.name)}
+                  disabled={loadingItems[product.id]}
+                  variant="ghost"
+                  className={`w-full h-12 font-medium mt-1 ${isWishlisted ? 'text-destructive hover:text-destructive hover:bg-destructive/10' : 'text-muted-foreground hover:text-foreground hover:bg-secondary'}`}
+                >
+                  {loadingItems[product.id] ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Heart className={`mr-2 h-5 w-5 ${isWishlisted ? 'fill-destructive text-destructive' : ''}`} />}
+                  {isWishlisted ? 'Remove from Wishlist' : 'Add to Wishlist'}
+                </Button>
+              </div>
+            </div>
+
+            {/* Specifications Table */}
+            {product.specifications && Object.keys(product.specifications).length > 0 && (
+              <div>
+                <h3 className="text-xl font-semibold mb-4">Specifications</h3>
+                <div className="flex flex-col">
+                  {Object.entries(product.specifications).map(([key, value], index) => (
+                    <div 
+                      key={key} 
+                      className={`flex flex-col sm:flex-row py-4 ${index !== Object.keys(product.specifications).length - 1 ? 'border-b border-border' : ''}`}
+                    >
+                      <span className="sm:w-1/3 text-muted-foreground font-medium mb-1 sm:mb-0">
+                        {key}
+                      </span>
+                      <span className="sm:w-2/3 text-foreground">
+                        {value}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+          </div>
+        </div>
+
+        {/* Reviews Section */}
+        <div className="mt-20 pt-10 border-t border-border">
+          <h2 className="text-2xl font-bold tracking-tight text-foreground mb-8">Customer Reviews</h2>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+            <div className="lg:col-span-1">
+              <ReviewForm 
+                productId={product.id} 
+                onReviewSubmitted={() => setRefreshTrigger(prev => prev + 1)} 
+              />
+            </div>
+            <div className="lg:col-span-2">
+              <ReviewList 
+                productId={product.id} 
+                refreshTrigger={refreshTrigger} 
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Similar Items */}
+        {similarProducts.length > 0 && (
+          <div className="mt-20 pt-10 border-t border-border">
+            <h2 className="text-2xl font-bold tracking-tight text-foreground mb-8">Similar Items</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {similarProducts.map(simProduct => (
+                <ProductCard key={simProduct.id} product={simProduct} priority={false} />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}

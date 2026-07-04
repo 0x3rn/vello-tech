@@ -21,3 +21,28 @@ export function resolveImageUrl(url: string | undefined): string {
   
   return url;
 }
+
+export function cleanFirestoreData<T>(data: any): T {
+  if (!data || typeof data !== 'object') return data;
+  
+  if (Array.isArray(data)) {
+    return data.map((item: any) => cleanFirestoreData(item)) as any;
+  }
+  
+  const result = { ...data } as any;
+  
+  for (const key in result) {
+    if (result[key] && typeof result[key] === 'object') {
+      if ('toDate' in result[key] && typeof result[key].toDate === 'function') {
+        result[key] = result[key].toDate().toISOString();
+      } else if ('seconds' in result[key] && 'nanoseconds' in result[key]) {
+        result[key] = new Date(result[key].seconds * 1000).toISOString();
+      } else if (Array.isArray(result[key])) {
+        result[key] = result[key].map((item: any) => cleanFirestoreData(item));
+      } else {
+        result[key] = cleanFirestoreData(result[key]);
+      }
+    }
+  }
+  return result as T;
+}

@@ -1,477 +1,97 @@
-'use client'
-
-import { useEffect, useState, useMemo } from 'react'
-import { useParams, useRouter } from 'next/navigation'
-import Image from 'next/image'
-import Link from 'next/link'
 import { collection, getDocs, query, where, doc, getDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
-import { useCartStore } from '@/lib/store/cart'
+import { CategoryClient } from './category-client'
+import { notFound } from 'next/navigation'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { Loader2, ShoppingCart, Star, SlidersHorizontal, X, ArrowLeft } from 'lucide-react'
-import { ProductGridSkeleton } from '@/components/ui/product-grid-skeleton'
-import { toast } from 'sonner'
-import { cn, resolveImageUrl } from '@/lib/utils'
+import { cleanFirestoreData } from '@/lib/utils'
 
-interface ProductData {
-  id: string
-  name: string
-  brand: string
-  price: number
-  discountPrice: number | null
-  stockQuantity: number
-  description: string
-  imageUrls: string[]
-  categoryId: string
-  subcategoryId?: string
-  isFeatured: boolean
-  rating: number
-  numReviews: number
-  slug: string
-  condition?: 'new' | 'used' | 'refurbished'
-  imageAlts?: string[]
-  colors?: { name: string; hex: string; priceModifier?: number; stockQuantity: number; imageUrls?: string[] }[]
-  variantGroups?: { groupName: string; choices: { choiceName: string; priceModifier: number; stockQuantity: number }[] }[]
-}
+export const revalidate = 60
 
-interface CategoryData {
-  id: string
-  name: string
-  slug: string
-  parentCategoryId: string | null
-}
-
-export default function CategoryPage() {
-  const { slug } = useParams()
-  const router = useRouter()
+export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
   
-  const [categoryName, setCategoryName] = useState<string>('')
-  const [parentCategory, setParentCategory] = useState<{name: string, slug: string} | null>(null)
-  const [products, setProducts] = useState<ProductData[]>([])
-  const [subcategories, setSubcategories] = useState<CategoryData[]>([])
-  const [loading, setLoading] = useState(true)
-  
-  // Filter states
-  const [selectedBrands, setSelectedBrands] = useState<string[]>([])
-  const [selectedConditions, setSelectedConditions] = useState<string[]>([])
-  const [selectedSubcategories, setSelectedSubcategories] = useState<string[]>([])
-  const [hideOutOfStock, setHideOutOfStock] = useState(false)
-  const [sortBy, setSortBy] = useState<'featured' | 'price-asc' | 'price-desc'>('featured')
-  const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false)
-  const [addingProduct, setAddingProduct] = useState<string | null>(null)
+  let categoryName = ''
+  let parentCategory: {name: string, slug: string} | null = null
+  let products: any[] = []
+  let subcategories: any[] = []
 
-  const addItem = useCartStore((state) => state.addItem)
+  try {
+    // 1. Find the category by slug
+    const catQuery = query(collection(db, 'categories'), where('slug', '==', slug))
+    const catSnap = await getDocs(catQuery)
+    
+    if (catSnap.empty) {
+      return notFound()
+    }
 
-  useEffect(() => {
-    const fetchCategoryProducts = async () => {
-      setLoading(true)
-      try {
-        // 1. Find the category by slug
-        const catQuery = query(collection(db, 'categories'), where('slug', '==', slug))
-        const catSnap = await getDocs(catQuery)
-        
-        if (catSnap.empty) {
-          setProducts([])
-          setLoading(false)
-          return
-        }
+    const categoryDoc = cleanFirestoreData({ id: catSnap.docs[0].id, ...catSnap.docs[0].data() }) as any
+    categoryName = categoryDoc.name
+    const targetCategoryIds = [categoryDoc.id]
 
-        const categoryDoc = catSnap.docs[0]
-        setCategoryName(categoryDoc.data().name)
-        const targetCategoryIds = [categoryDoc.id]
-
-        // Fetch parent category for breadcrumb navigation
-        const parentId = categoryDoc.data().parentCategoryId
-        if (parentId) {
-          const parentRef = doc(db, 'categories', parentId)
-          const parentSnap = await getDoc(parentRef)
-          if (parentSnap.exists()) {
-            setParentCategory({ name: parentSnap.data().name, slug: parentSnap.data().slug })
-          }
-        } else {
-          setParentCategory(null)
-        }
-
-        // 2. Fetch subcategories
-        const subCatQuery = query(collection(db, 'categories'), where('parentCategoryId', '==', categoryDoc.id))
-        const subCatSnap = await getDocs(subCatQuery)
-        const ignoreNames = ['new', 'used', 'refurbished']
-        const subCats: CategoryData[] = []
-        
-        subCatSnap.forEach(doc => {
-          if (!ignoreNames.includes(doc.data().name.toLowerCase())) {
-            targetCategoryIds.push(doc.id)
-            subCats.push({ id: doc.id, ...doc.data() } as CategoryData)
-          }
-        })
-        setSubcategories(subCats)
-
-        // 3. Fetch products
-        const fetchedProducts: ProductData[] = []
-        const addedIds = new Set<string>()
-        
-        if (targetCategoryIds.length > 0) {
-          for (let i = 0; i < targetCategoryIds.length; i += 30) {
-            const chunk = targetCategoryIds.slice(i, i + 30)
-            
-            const prodQuery1 = query(collection(db, 'products'), where('categoryId', 'in', chunk))
-            const prodQuery2 = query(collection(db, 'products'), where('subcategoryId', 'in', chunk))
-            
-            const [snap1, snap2] = await Promise.all([getDocs(prodQuery1), getDocs(prodQuery2)])
-            
-            snap1.forEach(doc => {
-              if (!addedIds.has(doc.id)) {
-                addedIds.add(doc.id)
-                fetchedProducts.push({ id: doc.id, ...doc.data() } as ProductData)
-              }
-            })
-            
-            snap2.forEach(doc => {
-              if (!addedIds.has(doc.id)) {
-                addedIds.add(doc.id)
-                fetchedProducts.push({ id: doc.id, ...doc.data() } as ProductData)
-              }
-            })
-          }
-        }
-        
-        setProducts(fetchedProducts)
-      } catch (error) {
-        console.error("Error fetching products:", error)
-        toast.error("Failed to load products. Reference: ERR-VLT-DB-101")
-      } finally {
-        setLoading(false)
+    // Fetch parent category for breadcrumb navigation
+    const parentId = categoryDoc.parentCategoryId
+    if (parentId) {
+      const parentRef = doc(db, 'categories', parentId)
+      const parentSnap = await getDoc(parentRef)
+      if (parentSnap.exists()) {
+        const parentData = cleanFirestoreData(parentSnap.data()) as any
+        parentCategory = { name: parentData.name, slug: parentData.slug }
       }
     }
 
-    if (slug) {
-      fetchCategoryProducts()
-    }
-  }, [slug])
-
-  // Derived state for filters
-  const availableBrands = useMemo(() => {
-    const brands = new Set(products.map(p => p.brand))
-    return Array.from(brands).sort()
-  }, [products])
-
-  const toggleBrand = (brand: string) => {
-    setSelectedBrands(prev => 
-      prev.includes(brand) ? prev.filter(b => b !== brand) : [...prev, brand]
-    )
-  }
-
-  const toggleCondition = (condition: string) => {
-    setSelectedConditions(prev => 
-      prev.includes(condition) ? prev.filter(c => c !== condition) : [...prev, condition]
-    )
-  }
-
-  const toggleSubcategory = (subCatId: string) => {
-    setSelectedSubcategories(prev => 
-      prev.includes(subCatId) ? prev.filter(id => id !== subCatId) : [...prev, subCatId]
-    )
-  }
-
-  const filteredAndSortedProducts = useMemo(() => {
-    let result = [...products]
-
-    // Apply Subcategory Filter
-    if (selectedSubcategories.length > 0) {
-      result = result.filter(p => p.subcategoryId && selectedSubcategories.includes(p.subcategoryId))
-    }
-
-    // Apply Brand Filter
-    if (selectedBrands.length > 0) {
-      result = result.filter(p => selectedBrands.includes(p.brand))
-    }
-
-    // Apply Condition Filter
-    if (selectedConditions.length > 0) {
-      result = result.filter(p => selectedConditions.includes((p.condition || 'new').toLowerCase()))
-    }
-
-    // Apply Stock Filter
-    if (hideOutOfStock) {
-      result = result.filter(p => p.stockQuantity > 0)
-    }
-
-    // Apply Sorting
-    switch (sortBy) {
-      case 'price-asc':
-        result.sort((a, b) => (a.discountPrice || a.price) - (b.discountPrice || b.price))
-        break
-      case 'price-desc':
-        result.sort((a, b) => (b.discountPrice || b.price) - (a.discountPrice || a.price))
-        break
-      case 'featured':
-      default:
-        // By default we could sort by featured or rating, here we just prioritize featured
-        result.sort((a, b) => (b.isFeatured ? 1 : 0) - (a.isFeatured ? 1 : 0))
-        break
-    }
-
-    return result
-  }, [products, selectedSubcategories, selectedBrands, selectedConditions, hideOutOfStock, sortBy])
-
-  const handleAddToCart = async (e: React.MouseEvent, product: ProductData) => {
-    e.preventDefault()
-    e.stopPropagation()
-
-    if ((product.colors && product.colors.length > 0) || (product.variantGroups && product.variantGroups.length > 0)) {
-      toast.info("Please select options for this product")
-      router.push(`/product/${product.slug}`)
-      return
-    }
-
-    setAddingProduct(product.id)
+    // 2. Fetch subcategories
+    const subCatQuery = query(collection(db, 'categories'), where('parentCategoryId', '==', categoryDoc.id))
+    const subCatSnap = await getDocs(subCatQuery)
+    const ignoreNames = ['new', 'used', 'refurbished']
     
-    // Simulate short network delay for satisfying visual feedback
-    await new Promise(resolve => setTimeout(resolve, 600))
-    
-    addItem({
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      image: resolveImageUrl(product.imageUrls?.[0]),
-      quantity: 1,
-      stockQuantity: product.stockQuantity,
-      slug: product.slug,
-      categoryId: product.categoryId
+    subCatSnap.forEach(d => {
+      if (!ignoreNames.includes(d.data().name.toLowerCase())) {
+        targetCategoryIds.push(d.id)
+        subcategories.push({ id: d.id, ...d.data() })
+      }
     })
+
+    // 3. Fetch products
+    const fetchedProducts: any[] = []
+    const addedIds = new Set<string>()
     
-    toast.success(`${product.name} added to cart`, {
-      description: "You can view your cart or continue shopping.",
-    })
-    setAddingProduct(null)
+    if (targetCategoryIds.length > 0) {
+      for (let i = 0; i < targetCategoryIds.length; i += 30) {
+        const chunk = targetCategoryIds.slice(i, i + 30)
+        
+        const prodQuery1 = query(collection(db, 'products'), where('categoryId', 'in', chunk))
+        const prodQuery2 = query(collection(db, 'products'), where('subcategoryId', 'in', chunk))
+        
+        const [snap1, snap2] = await Promise.all([getDocs(prodQuery1), getDocs(prodQuery2)])
+        
+        snap1.forEach(d => {
+          if (!addedIds.has(d.id)) {
+            addedIds.add(d.id)
+            fetchedProducts.push({ id: d.id, ...d.data() })
+          }
+        })
+        
+        snap2.forEach(d => {
+          if (!addedIds.has(d.id)) {
+            addedIds.add(d.id)
+            fetchedProducts.push({ id: d.id, ...d.data() })
+          }
+        })
+      }
+    }
+    
+    products = fetchedProducts
+  } catch (error) {
+    console.error("Error fetching category products:", error)
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20 pt-8 lg:pt-12">
-      <div className="mx-auto max-w-7xl px-4 lg:px-8">
-        
-        {parentCategory && (
-          <Link href={`/category/${parentCategory.slug}`} className="inline-flex items-center text-sm text-muted-foreground hover:text-primary mb-6 transition-colors">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to {parentCategory.name}
-          </Link>
-        )}
-
-        {/* Header */}
-        <div className="mb-8 border-b border-border pb-8">
-          <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-foreground mb-4">
-            {categoryName || 'Loading...'}
-          </h1>
-          <p className="text-muted-foreground text-lg">
-            Explore our curated selection of top-tier {categoryName ? categoryName.toLowerCase() : 'products'}.
-          </p>
-        </div>
-
-        <div className="flex flex-col lg:flex-row gap-8">
-          
-          {/* Mobile Filter Toggle */}
-          <div className="lg:hidden flex items-center justify-between border border-border p-4 rounded-xl bg-card">
-            <span className="font-medium">{filteredAndSortedProducts.length} Products</span>
-            <Button variant="outline" size="sm" onClick={() => setIsMobileFiltersOpen(true)}>
-              <SlidersHorizontal className="w-4 h-4 mr-2" />
-              Filters
-            </Button>
-          </div>
-
-          {/* Sidebar Filters */}
-          <div className={cn(
-            "fixed inset-0 z-50 lg:z-0 bg-background lg:bg-transparent lg:static lg:block lg:w-64 lg:shrink-0 transition-transform duration-300 ease-in-out lg:translate-x-0 overflow-y-auto lg:overflow-visible",
-            isMobileFiltersOpen ? "translate-x-0" : "-translate-x-full"
-          )}>
-            <div className="p-6 lg:p-0">
-              <div className="flex items-center justify-between lg:hidden mb-6">
-                <h2 className="text-xl font-bold">Filters</h2>
-                <Button variant="ghost" size="icon" onClick={() => setIsMobileFiltersOpen(false)}>
-                  <X className="w-5 h-5" />
-                </Button>
-              </div>
-
-              {/* Sort Options */}
-              <div className="mb-8">
-                <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">Sort By</h3>
-                <div className="space-y-2">
-                  <label className="flex items-center gap-2 cursor-pointer group">
-                    <input type="radio" name="sort" checked={sortBy === 'featured'} onChange={() => setSortBy('featured')} className="accent-primary" />
-                    <span className="text-sm group-hover:text-primary transition-colors">Featured</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer group">
-                    <input type="radio" name="sort" checked={sortBy === 'price-asc'} onChange={() => setSortBy('price-asc')} className="accent-primary" />
-                    <span className="text-sm group-hover:text-primary transition-colors">Price: Low to High</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer group">
-                    <input type="radio" name="sort" checked={sortBy === 'price-desc'} onChange={() => setSortBy('price-desc')} className="accent-primary" />
-                    <span className="text-sm group-hover:text-primary transition-colors">Price: High to Low</span>
-                  </label>
-                </div>
-              </div>
-
-              {/* Subcategories */}
-              {subcategories.length > 0 && (
-                <div className="mb-8 border-t border-border pt-6">
-                  <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">Categories</h3>
-                  <div className="space-y-2">
-                    {subcategories.map(subCat => (
-                      <label key={subCat.id} className="flex items-center gap-2 cursor-pointer group">
-                        <input 
-                          type="checkbox" 
-                          checked={selectedSubcategories.includes(subCat.id)} 
-                          onChange={() => toggleSubcategory(subCat.id)} 
-                          className="rounded border-input text-primary accent-primary" 
-                        />
-                        <span className="text-sm group-hover:text-primary transition-colors">{subCat.name}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Stock Status */}
-              <div className="mb-8 border-t border-border pt-6">
-                <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">Availability</h3>
-                <label className="flex items-center gap-2 cursor-pointer group">
-                  <input type="checkbox" checked={hideOutOfStock} onChange={(e) => setHideOutOfStock(e.target.checked)} className="rounded border-input text-primary accent-primary" />
-                  <span className="text-sm group-hover:text-primary transition-colors">In Stock Only</span>
-                </label>
-              </div>
-
-              {/* Condition Filter */}
-              <div className="mb-8 border-t border-border pt-6">
-                <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">Condition</h3>
-                <div className="space-y-2">
-                  {['new', 'used', 'refurbished'].map(condition => (
-                    <label key={condition} className="flex items-center gap-2 cursor-pointer group">
-                      <input 
-                        type="checkbox" 
-                        checked={selectedConditions.includes(condition)} 
-                        onChange={() => toggleCondition(condition)} 
-                        className="rounded border-input text-primary accent-primary" 
-                      />
-                      <span className="text-sm group-hover:text-primary transition-colors capitalize">{condition}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              {/* Brands Filter */}
-              {availableBrands.length > 0 && (
-                <div className="border-t border-border pt-6">
-                  <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">Brands</h3>
-                  <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 scrollbar-thin">
-                    {availableBrands.map(brand => (
-                      <label key={brand} className="flex items-center gap-2 cursor-pointer group">
-                        <input 
-                          type="checkbox" 
-                          checked={selectedBrands.includes(brand)} 
-                          onChange={() => toggleBrand(brand)} 
-                          className="rounded border-input text-primary accent-primary" 
-                        />
-                        <span className="text-sm group-hover:text-primary transition-colors">{brand}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              {/* Mobile apply button */}
-              <div className="lg:hidden mt-8">
-                <Button className="w-full" onClick={() => setIsMobileFiltersOpen(false)}>
-                  Show {filteredAndSortedProducts.length} Results
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          {/* Product Grid */}
-          <div className="flex-1">
-            {loading ? (
-              <ProductGridSkeleton count={9} />
-            ) : filteredAndSortedProducts.length === 0 ? (
-              <div className="text-center py-20 bg-secondary/20 rounded-2xl border border-border">
-                <h2 className="text-2xl font-semibold mb-2">No Products Found</h2>
-                <p className="text-muted-foreground">Try adjusting your filters to see more results.</p>
-                {(selectedBrands.length > 0 || hideOutOfStock) && (
-                  <Button variant="outline" className="mt-6" onClick={() => { setSelectedBrands([]); setHideOutOfStock(false); }}>
-                    Clear Filters
-                  </Button>
-                )}
-              </div>
-            ) : (
-              <div>
-                <div className="hidden lg:block mb-4 text-sm text-muted-foreground">
-                  Showing {filteredAndSortedProducts.length} products
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-                  {filteredAndSortedProducts.map((product) => (
-                    <Link 
-                      key={product.id} 
-                      href={`/product/${product.slug}`}
-                      className="group flex flex-col bg-card rounded-2xl border border-border overflow-hidden hover:border-primary/50 transition-all hover:shadow-lg"
-                    >
-                      {/* Product Image */}
-                      <div className="relative aspect-square bg-secondary/30 p-6 overflow-hidden flex items-center justify-center">
-                        <Image
-                          src={resolveImageUrl(product.imageUrls?.[0])}
-                          alt={product.imageAlts?.[0] || product.name}
-                          fill
-                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-                          className="object-contain p-6 group-hover:scale-105 transition-transform duration-500"
-                        />
-                        <div className="absolute top-4 left-4 bg-background/80 backdrop-blur-md px-2 py-1 rounded text-xs font-medium border border-border">
-                          {product.brand}
-                        </div>
-                      </div>
-
-                      {/* Product Details */}
-                      <div className="p-5 flex flex-col flex-1">
-                        <div className="flex items-center gap-1 mb-2">
-                          <Star className="h-3.5 w-3.5 fill-primary text-primary" />
-                          <span className="text-sm font-medium">{product.rating}</span>
-                          <span className="text-sm text-muted-foreground ml-1">({product.numReviews})</span>
-                        </div>
-                        
-                        <h3 className="font-semibold text-foreground line-clamp-2 mb-1 group-hover:text-primary transition-colors">
-                          {product.name}
-                        </h3>
-                        
-                        <div className="mt-auto pt-4 flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <span className="text-lg font-bold">
-                              ${(product.discountPrice || product.price || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                            </span>
-                            {product.discountPrice && (
-                              <span className="text-sm text-muted-foreground line-through">
-                                ${(product.price || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                              </span>
-                            )}
-                          </div>
-                          <Button 
-                            size="sm" 
-                            onClick={(e) => handleAddToCart(e, product)}
-                            disabled={product.stockQuantity === 0 || addingProduct === product.id}
-                            className="rounded-full w-10 h-10 p-0 shadow-md"
-                          >
-                            {addingProduct === product.id ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <ShoppingCart className="h-4 w-4" />
-                            )}
-                            <span className="sr-only">Add to cart</span>
-                          </Button>
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
+    <CategoryClient 
+      categoryName={categoryName}
+      parentCategory={parentCategory}
+      initialProducts={products}
+      subcategories={subcategories}
+    />
   )
 }

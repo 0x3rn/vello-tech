@@ -9,6 +9,7 @@ import { Newsletter } from '@/components/newsletter'
 import { collection, getDocs, limit, query, where } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { ProductData } from '@/components/product-card'
+import { cleanFirestoreData } from '@/lib/utils'
 
 export const revalidate = 60
 
@@ -65,7 +66,7 @@ export default async function Home() {
   const featuredSnap = await getDocs(featuredQ)
   const featuredProducts: ProductData[] = []
   featuredSnap.forEach((doc) => {
-    featuredProducts.push({ id: doc.id, ...doc.data() } as ProductData)
+    featuredProducts.push({ id: doc.id, ...cleanFirestoreData<any>(doc.data()) } as ProductData)
   })
 
   // Fetch Used Products
@@ -73,7 +74,7 @@ export default async function Home() {
   const usedSnap = await getDocs(usedQ)
   const usedProducts: ProductData[] = []
   usedSnap.forEach((doc) => {
-    usedProducts.push({ id: doc.id, ...doc.data() } as ProductData)
+    usedProducts.push({ id: doc.id, ...cleanFirestoreData<any>(doc.data()) } as ProductData)
   })
 
   // Fetch Reviews for Testimonials
