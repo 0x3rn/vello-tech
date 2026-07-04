@@ -1,7 +1,7 @@
 import { collection, getDocs, query, where } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { ShopClient } from '../shop/shop-client'
-import { UsedProductsClient } from './used-client'
+
 import { cleanFirestoreData } from '@/lib/utils'
 
 export const revalidate = 60
