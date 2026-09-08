@@ -3,13 +3,8 @@
 import { useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { ArrowLeft, CreditCard, Plus, Trash2, Loader2, ShieldCheck } from "lucide-react"
+import { ArrowLeft, CreditCard, Trash2, ShieldCheck } from "lucide-react"
 import { useAuth } from "@/lib/contexts/auth-context"
-import { db } from "@/lib/firebase"
-import { collection, addDoc, deleteDoc, doc } from "firebase/firestore"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { toast } from "sonner"
 
 interface PaymentMethod {
@@ -24,51 +19,12 @@ interface PaymentMethod {
 export function PaymentClient({ initialMethods }: { initialMethods: PaymentMethod[] }) {
   const { user } = useAuth()
   const [methods, setMethods] = useState<PaymentMethod[]>(initialMethods)
-  const [isAddOpen, setIsAddOpen] = useState(false)
-  
-  // Form State
-  const [cardNumber, setCardNumber] = useState("")
-  const [expiry, setExpiry] = useState("")
-  const [cvc, setCvc] = useState("")
-  const [name, setName] = useState("")
-  const [isSubmitting, setIsSubmitting] = useState(false)
-
-  const handleAddMethod = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!user) return
-    setIsSubmitting(true)
-    
-    try {
-      const cleanCard = cardNumber.replace(/\D/g, '')
-      const last4 = cleanCard.length >= 4 ? cleanCard.slice(-4) : "0000"
-      let brand = "Visa"
-      if (cleanCard.startsWith("5")) brand = "Mastercard"
-      if (cleanCard.startsWith("3")) brand = "Amex"
-      if (cleanCard.startsWith("4")) brand = "Visa"
-
-      const [month, year] = expiry.split('/')
-      
-      const isDefault = methods.length === 0
-      const newMethod = { brand, last4, expiryMonth: month?.trim() || "12", expiryYear: year?.trim() || "28", isDefault }
-      
-      const docRef = await addDoc(collection(db, "users", user.uid, "paymentMethods"), newMethod)
-      setMethods([...methods, { id: docRef.id, ...newMethod }])
-      
-      toast.success("Payment method securely added")
-      setIsAddOpen(false)
-      // Reset form
-      setCardNumber(""); setExpiry(""); setCvc(""); setName("")
-    } catch (error) {
-      toast.error("Failed to add payment method")
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
 
   const handleDelete = async (id: string) => {
     if (!user) return
     try {
-      await deleteDoc(doc(db, "users", user.uid, "paymentMethods", id))
+      const response = await fetch('/api/me/resources', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'payment-methods', id }) })
+      if (!response.ok) throw new Error('Unable to remove payment method')
       setMethods(methods.filter(m => m.id !== id))
       toast.success("Payment method removed")
     } catch (error) {
@@ -91,60 +47,13 @@ export function PaymentClient({ initialMethods }: { initialMethods: PaymentMetho
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
             <div>
               <h1 className="text-3xl font-bold text-foreground">Payment Methods</h1>
-              <p className="text-muted-foreground mt-2">Manage your saved credit cards and payment options.</p>
+              <p className="text-muted-foreground mt-2">View saved payment references from your payment provider.</p>
             </div>
-            
-            <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-              <DialogTrigger asChild>
-                <Button className="shrink-0 transition-transform hover:scale-105">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Payment Method
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Add Payment Method</DialogTitle>
-                </DialogHeader>
-                <form onSubmit={handleAddMethod} className="space-y-4 pt-4">
-                  <div className="bg-secondary/50 p-3 rounded-lg flex items-start gap-2 mb-4">
-                    <ShieldCheck className="h-5 w-5 text-green-500 shrink-0 mt-0.5" />
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      For your security, your full card details are never saved on our servers. 
-                      We tokenize your card via our payment processor.
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Name on Card</Label>
-                    <Input id="name" required value={name} onChange={e => setName(e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="cardNumber">Card Number</Label>
-                    <Input 
-                      id="cardNumber" 
-                      required 
-                      value={cardNumber} 
-                      onChange={e => setCardNumber(e.target.value)} 
-                      placeholder="0000 0000 0000 0000"
-                      maxLength={19}
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="expiry">Expiry Date</Label>
-                      <Input id="expiry" required value={expiry} onChange={e => setExpiry(e.target.value)} placeholder="MM/YY" maxLength={5} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="cvc">CVC</Label>
-                      <Input id="cvc" required value={cvc} onChange={e => setCvc(e.target.value)} placeholder="123" maxLength={4} type="password" />
-                    </div>
-                  </div>
-                  <Button type="submit" className="w-full mt-4" disabled={isSubmitting}>
-                    {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                    Save Payment Method
-                  </Button>
-                </form>
-              </DialogContent>
-            </Dialog>
+          </div>
+
+          <div className="mb-6 bg-secondary/50 p-4 rounded-xl flex items-start gap-3 border border-border">
+            <ShieldCheck className="h-5 w-5 text-green-500 shrink-0 mt-0.5" />
+            <p className="text-sm text-muted-foreground">Card numbers and CVCs are entered only on the Paystack or Lemon Squeezy checkout page. VelloTech does not collect or store raw card details.</p>
           </div>
 
           <div className="space-y-4">
@@ -179,7 +88,7 @@ export function PaymentClient({ initialMethods }: { initialMethods: PaymentMetho
               <div className="text-center p-12 bg-secondary/30 rounded-xl border border-dashed border-border">
                 <CreditCard className="w-10 h-10 mx-auto text-muted-foreground mb-4" />
                 <h3 className="text-lg font-bold mb-2">No payment methods</h3>
-                <p className="text-muted-foreground">Add a card for faster checkout.</p>
+                <p className="text-muted-foreground">Payment details will be entered securely with the selected provider during checkout.</p>
               </div>
             )}
           </div>

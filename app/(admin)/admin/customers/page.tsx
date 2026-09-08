@@ -1,8 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { collection, getDocs, query, orderBy } from 'firebase/firestore'
-import { db } from '@/lib/firebase'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Loader2, Search, Mail, User as UserIcon, DollarSign, ShoppingBag, Eye } from 'lucide-react'
@@ -50,13 +48,18 @@ export default function AdminCustomersPage() {
     const fetchCustomersAndOrders = async () => {
       try {
         // Fetch Users
-        const usersSnap = await getDocs(collection(db, 'users'))
+        const [usersResponse, ordersResponse] = await Promise.all([
+          fetch('/api/admin/collections/users'),
+          fetch('/api/admin/collections/orders'),
+        ])
+        if (!usersResponse.ok || !ordersResponse.ok) throw new Error('Unable to load customer data')
+        const userRows = await usersResponse.json() as any[]
+        const orderRows = await ordersResponse.json() as any[]
         const usersMap = new Map<string, Partial<Customer>>()
         
-        usersSnap.forEach((doc) => {
-          const data = doc.data()
-          usersMap.set(data.email?.toLowerCase() || doc.id, {
-            id: doc.id,
+        userRows.forEach((data) => {
+          usersMap.set(data.email?.toLowerCase() || data.id, {
+            id: data.id,
             name: data.name || 'Anonymous User',
             email: data.email || '',
             phoneNumber: data.phoneNumber,
@@ -70,10 +73,7 @@ export default function AdminCustomersPage() {
         })
 
         // Fetch Orders
-        const ordersSnap = await getDocs(query(collection(db, 'orders'), orderBy('createdAt', 'desc')))
-        
-        ordersSnap.forEach((doc) => {
-          const order = { id: doc.id, ...doc.data() } as any
+        orderRows.forEach((order) => {
           const emailKey = order.email?.toLowerCase()
           
           if (!emailKey) return // Skip orders without email
@@ -86,7 +86,7 @@ export default function AdminCustomersPage() {
           } else {
             // Guest User
             usersMap.set(emailKey, {
-              id: `guest_${doc.id}`,
+              id: `guest_${order.id}`,
               name: order.shippingAddress?.name || 'Guest User',
               email: order.email,
               role: 'guest',

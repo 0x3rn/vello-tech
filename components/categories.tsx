@@ -4,8 +4,6 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Smartphone, Laptop, Headphones, Watch, Camera, Gamepad2, ArrowRight, HardDrive, Cpu, Wifi, Cable } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { collection, getDocs } from 'firebase/firestore'
-import { db } from '@/lib/firebase'
 
 const iconMap: Record<string, any> = {
   'smartphones': Smartphone,
@@ -40,14 +38,18 @@ export function Categories() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch valid categories
-        const catSnap = await getDocs(collection(db, 'categories'))
+        const [categoryResponse, productResponse] = await Promise.all([
+          fetch('/api/catalog?resource=categories'),
+          fetch('/api/catalog?resource=products'),
+        ])
+        if (!categoryResponse.ok || !productResponse.ok) throw new Error('Unable to load catalog')
+        const categoryRows = await categoryResponse.json() as Array<{ id: string; name: string; slug: string; parentCategoryId: string | null }>
+        const productRows = await productResponse.json() as Array<{ categoryId: string }>
         const fetchedCats: {id: string, name: string, slug: string}[] = []
         const ignoreNames = ['new', 'used', 'refurbished']
-        catSnap.forEach(doc => {
-          const data = doc.data()
-          if (!ignoreNames.includes((data.name || '').toLowerCase()) && !data.parentCategoryId) {
-            fetchedCats.push({ id: doc.id, name: data.name, slug: data.slug })
+        categoryRows.forEach(category => {
+          if (!ignoreNames.includes((category.name || '').toLowerCase()) && !category.parentCategoryId) {
+            fetchedCats.push({ id: category.id, name: category.name, slug: category.slug })
           }
         })
         
@@ -68,12 +70,9 @@ export function Categories() {
         
         setCategories(fetchedCats)
 
-        // Fetch products to compute counts per category
-        const prodSnap = await getDocs(collection(db, 'products'))
         const newCounts: Record<string, number> = {}
-        
-        prodSnap.forEach(doc => {
-          const catId = doc.data().categoryId
+        productRows.forEach(product => {
+          const catId = product.categoryId
           if (catId) {
             newCounts[catId] = (newCounts[catId] || 0) + 1
           }

@@ -21,8 +21,6 @@ import { useCartStore } from "@/lib/store/cart"
 import { useAuth } from "@/lib/contexts/auth-context"
 import { resolveImageUrl } from "@/lib/utils"
 import { toast } from "sonner"
-import { db } from "@/lib/firebase"
-import { collection, query, where, getDocs, doc, getDoc } from "firebase/firestore"
 
 export function CartClient({ initialFreeShippingThreshold }: { initialFreeShippingThreshold: number | null }) {
   const { items, updateQuantity, removeItem, totalPrice } = useCartStore()
@@ -50,20 +48,16 @@ export function CartClient({ initialFreeShippingThreshold }: { initialFreeShippi
       
       setFetchingRates(true)
       try {
-        const q = query(collection(db, "users", user.uid, "addresses"), where("isDefault", "==", true))
-        const snapshot = await getDocs(q)
-        
-        if (!snapshot.empty) {
-          const address = snapshot.docs[0].data()
+        const addressResponse = await fetch('/api/commerce?action=default-address')
+        const address = addressResponse.ok ? await addressResponse.json() : null
+        if (address) {
           setHasDefaultAddress(true)
           
           if (address.country && address.state) {
-            const docId = `${address.country}_${address.state}`
-            const taxSnap = await getDoc(doc(db, "taxRates", docId))
-            const shipSnap = await getDoc(doc(db, "shippingRates", docId))
-            
-            if (taxSnap.exists()) {
-              const td = taxSnap.data()
+            const ratesResponse = await fetch(`/api/commerce?action=rates&country=${encodeURIComponent(address.country)}&state=${encodeURIComponent(address.state)}`)
+            const rates = ratesResponse.ok ? await ratesResponse.json() : null
+            if (rates?.tax) {
+              const td = rates.tax
               setTaxRate({
                 percentage: typeof td.percentage === 'number' ? td.percentage : null,
                 amount: typeof td.amount === 'number' ? td.amount : null
@@ -72,8 +66,8 @@ export function CartClient({ initialFreeShippingThreshold }: { initialFreeShippi
               setTaxRate(null)
             }
             
-            if (shipSnap.exists() && typeof shipSnap.data().amount === 'number') {
-              setShippingRate(shipSnap.data().amount)
+            if (rates?.shipping && typeof rates.shipping.amount === 'number') {
+              setShippingRate(rates.shipping.amount)
             } else {
               setShippingRate(null)
             }

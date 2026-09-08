@@ -2,8 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { doc, getDoc, updateDoc } from 'firebase/firestore'
-import { db } from '@/lib/firebase'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -23,10 +21,10 @@ export default function OrderDetailsPage() {
   useEffect(() => {
     const fetchOrder = async () => {
       try {
-        const docRef = doc(db, 'orders', id as string)
-        const docSnap = await getDoc(docRef)
-        if (docSnap.exists()) {
-          setOrder({ id: docSnap.id, ...docSnap.data() })
+        const response = await fetch(`/api/admin/collections/orders/${id}`)
+        const found = response.ok ? await response.json() : null
+        if (found) {
+          setOrder(found)
         } else {
           toast.error("Order not found")
           router.push('/admin/orders')

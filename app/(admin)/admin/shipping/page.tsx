@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from "react"
 import { Country, State } from "country-state-city"
-import { doc, getDoc, setDoc, collection, getDocs, deleteDoc } from "firebase/firestore"
-import { db } from "@/lib/firebase"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
@@ -30,8 +28,9 @@ export default function ShippingAdminPage() {
   const fetchAllRates = async () => {
     setLoadingAllRates(true)
     try {
-      const snap = await getDocs(collection(db, "shippingRates"))
-      const rates = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      const response = await fetch('/api/admin/collections/shippingRates')
+      if (!response.ok) throw new Error('Unable to load rates')
+      const rates = await response.json()
       setAllRates(rates)
     } catch (error) {
       console.error("Error fetching all rates", error)
@@ -46,10 +45,9 @@ export default function ShippingAdminPage() {
     // Fetch global threshold
     const fetchThreshold = async () => {
       try {
-        const docRef = doc(db, "settings", "shipping")
-        const snap = await getDoc(docRef)
-        if (snap.exists()) {
-          const data = snap.data()
+        const response = await fetch('/api/admin/collections/settings/shipping')
+        const data = response.ok ? await response.json() : null
+        if (data) {
           if (data.threshold !== undefined) {
             setThreshold(data.threshold === null ? "" : String(data.threshold))
           }
@@ -80,11 +78,9 @@ export default function ShippingAdminPage() {
       setLoadingRate(true)
       try {
         const docId = `${selectedCountry}_${selectedState}`
-        const docRef = doc(db, "shippingRates", docId)
-        const snap = await getDoc(docRef)
-        
-        if (snap.exists()) {
-          const data = snap.data()
+        const response = await fetch(`/api/admin/collections/shippingRates/${docId}`)
+        const data = response.ok ? await response.json() : null
+        if (data) {
           setAmount(data.amount !== null && data.amount !== undefined ? String(data.amount) : "")
         } else {
           setAmount("")
@@ -109,8 +105,6 @@ export default function ShippingAdminPage() {
     setSavingRate(true)
     try {
       const docId = `${selectedCountry}_${selectedState}`
-      const docRef = doc(db, "shippingRates", docId)
-      
       const payload = {
         country: selectedCountry,
         state: selectedState,
@@ -162,11 +156,11 @@ export default function ShippingAdminPage() {
   const handleSaveThreshold = async () => {
     setSavingThreshold(true)
     try {
-      const docRef = doc(db, "settings", "shipping")
       const payload = {
         threshold: threshold === "" ? null : Number(threshold)
       }
-      await setDoc(docRef, payload, { merge: true })
+      const response = await fetch('/api/admin/collections/settings/shipping', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+      if (!response.ok) throw new Error('Unable to save threshold')
       toast.success("Free shipping threshold saved")
     } catch (error) {
       console.error("Error saving threshold:", error)

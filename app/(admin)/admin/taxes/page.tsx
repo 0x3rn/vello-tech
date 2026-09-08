@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from "react"
 import { Country, State } from "country-state-city"
-import { doc, getDoc, setDoc, collection, getDocs, deleteDoc } from "firebase/firestore"
-import { db } from "@/lib/firebase"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
@@ -28,8 +26,9 @@ export default function TaxesAdminPage() {
   const fetchAllRates = async () => {
     setLoadingAllRates(true)
     try {
-      const snap = await getDocs(collection(db, "taxRates"))
-      const rates = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      const response = await fetch('/api/admin/collections/taxRates')
+      if (!response.ok) throw new Error('Unable to load rates')
+      const rates = await response.json()
       setAllRates(rates)
     } catch (error) {
       console.error("Error fetching all rates", error)
@@ -60,11 +59,9 @@ export default function TaxesAdminPage() {
       setLoadingRate(true)
       try {
         const docId = `${selectedCountry}_${selectedState}`
-        const docRef = doc(db, "taxRates", docId)
-        const snap = await getDoc(docRef)
-        
-        if (snap.exists()) {
-          const data = snap.data()
+        const response = await fetch(`/api/admin/collections/taxRates/${docId}`)
+        const data = response.ok ? await response.json() : null
+        if (data) {
           setPercentage(data.percentage !== null && data.percentage !== undefined ? String(data.percentage) : "")
           setAmount(data.amount !== null && data.amount !== undefined ? String(data.amount) : "")
         } else {
@@ -91,8 +88,6 @@ export default function TaxesAdminPage() {
     setSavingRate(true)
     try {
       const docId = `${selectedCountry}_${selectedState}`
-      const docRef = doc(db, "taxRates", docId)
-      
       const payload = {
         country: selectedCountry,
         state: selectedState,

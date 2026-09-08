@@ -4,8 +4,6 @@ import { useEffect, useState, useMemo, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
-import { collection, getDocs } from 'firebase/firestore'
-import { db } from '@/lib/firebase'
 import { useCartStore } from '@/lib/store/cart'
 import { Button } from '@/components/ui/button'
 import { Loader2, ShoppingCart, Star, SlidersHorizontal, X } from 'lucide-react'
@@ -60,23 +58,9 @@ function SearchResults() {
 
       setLoading(true)
       try {
-        const querySnapshot = await getDocs(collection(db, 'products'))
-        const fetchedProducts: ProductData[] = []
-        
-        const lowercaseQuery = query.toLowerCase()
-
-        querySnapshot.forEach((doc) => {
-          const data = doc.data() as ProductData
-          if (
-            data.name?.toLowerCase().includes(lowercaseQuery) || 
-            data.description?.toLowerCase().includes(lowercaseQuery) ||
-            data.brand?.toLowerCase().includes(lowercaseQuery)
-          ) {
-            fetchedProducts.push({ id: doc.id, ...doc.data() } as ProductData)
-          }
-        })
-        
-        setProducts(fetchedProducts)
+        const response = await fetch(`/api/catalog?resource=products&q=${encodeURIComponent(query)}`)
+        if (!response.ok) throw new Error("Unable to load products")
+        setProducts(await response.json() as ProductData[])
       } catch (error) {
         console.error("Error fetching search results:", error)
       } finally {

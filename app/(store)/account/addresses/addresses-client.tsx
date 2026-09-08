@@ -7,8 +7,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ArrowLeft, MapPin, Plus, Trash2, Loader2 } from "lucide-react"
 import { useAuth } from "@/lib/contexts/auth-context"
-import { db } from "@/lib/firebase"
-import { collection, addDoc, deleteDoc, doc } from "firebase/firestore"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { toast } from "sonner"
 import { Country, State as CSCState } from "country-state-city"
@@ -61,8 +59,10 @@ export function AddressesClient({ initialAddresses }: { initialAddresses: Addres
     try {
       const isDefault = addresses.length === 0
       const newAddress = { name, street, city, state, zip, country, isDefault }
-      const docRef = await addDoc(collection(db, "users", user.uid, "addresses"), newAddress)
-      setAddresses([...addresses, { id: docRef.id, ...newAddress }])
+      const response = await fetch('/api/me/resources', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'addresses', data: newAddress }) })
+      if (!response.ok) throw new Error('Unable to save address')
+      const { id } = await response.json()
+      setAddresses([...addresses, { id, ...newAddress }])
       toast.success("Address added successfully")
       setIsAddOpen(false)
       // Reset form
@@ -77,7 +77,8 @@ export function AddressesClient({ initialAddresses }: { initialAddresses: Addres
   const handleDelete = async (id: string) => {
     if (!user) return
     try {
-      await deleteDoc(doc(db, "users", user.uid, "addresses", id))
+      const response = await fetch('/api/me/resources', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'addresses', id }) })
+      if (!response.ok) throw new Error('Unable to remove address')
       setAddresses(addresses.filter(a => a.id !== id))
       toast.success("Address removed")
     } catch (error) {

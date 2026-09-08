@@ -23,7 +23,6 @@ import {
   Map as MapIcon,
   Loader2,
 } from "lucide-react"
-import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs } from "firebase/firestore"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
@@ -33,7 +32,7 @@ import { useCartStore } from "@/lib/store/cart"
 import { useUserStore } from "@/lib/store/user"
 import { toast } from "sonner"
 import { signInAnonymously } from "firebase/auth"
-import { auth, db } from "@/lib/firebase"
+import { auth } from "@/lib/firebase"
 
 type CheckoutStep = "login" | "shipping" | "payment" | "review"
 
@@ -121,12 +120,10 @@ export function CheckoutClient({ initialFreeShippingThreshold }: { initialFreeSh
       
       setFetchingRates(true)
       try {
-        const docId = `${country}_${stateCode}`
-        const taxSnap = await getDoc(doc(db, "taxRates", docId))
-        const shipSnap = await getDoc(doc(db, "shippingRates", docId))
-        
-        if (taxSnap.exists()) {
-          const td = taxSnap.data()
+        const response = await fetch(`/api/commerce?action=rates&country=${encodeURIComponent(country)}&state=${encodeURIComponent(stateCode)}`)
+        const rates = response.ok ? await response.json() : null
+        if (rates?.tax) {
+          const td = rates.tax
           setTaxRate({
             percentage: typeof td.percentage === 'number' ? td.percentage : null,
             amount: typeof td.amount === 'number' ? td.amount : null
@@ -135,8 +132,8 @@ export function CheckoutClient({ initialFreeShippingThreshold }: { initialFreeSh
           setTaxRate(null)
         }
         
-        if (shipSnap.exists() && typeof shipSnap.data().amount === 'number') {
-          setShippingRate(shipSnap.data().amount)
+        if (rates?.shipping && typeof rates.shipping.amount === 'number') {
+          setShippingRate(rates.shipping.amount)
         } else {
           setShippingRate(null)
         }
@@ -160,10 +157,9 @@ export function CheckoutClient({ initialFreeShippingThreshold }: { initialFreeSh
       const fetchDefaultAddress = async () => {
         if (!address) {
           try {
-            const q = query(collection(db, "users", user.uid, "addresses"), where("isDefault", "==", true))
-            const snap = await getDocs(q)
-            if (!snap.empty) {
-              const defAddr = snap.docs[0].data()
+            const response = await fetch('/api/commerce?action=default-address')
+            const defAddr = response.ok ? await response.json() : null
+            if (defAddr) {
               if (!firstName && !lastName) {
                 const parts = defAddr.name.split(" ")
                 setFirstName(parts[0] || "")
@@ -209,11 +205,9 @@ export function CheckoutClient({ initialFreeShippingThreshold }: { initialFreeSh
         try {
           const userCredential = await signInAnonymously(auth);
           currentUser = userCredential.user;
-          await setDoc(doc(db, "users", currentUser.uid), {
-            isAnonymous: true,
-            cart: cartItems,
-            createdAt: new Date().toISOString()
-          }, { merge: true });
+          const idToken = await currentUser.getIdToken(true)
+          const sessionResponse = await fetch('/api/auth/session', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ idToken }) })
+          if (!sessionResponse.ok) throw new Error('Unable to create guest session')
         } catch (error) {
           console.error("Failed to create guest session:", error);
           toast.error("Failed to initialize guest session. Please try again.");
@@ -222,27 +216,15 @@ export function CheckoutClient({ initialFreeShippingThreshold }: { initialFreeSh
       }
 
       try {
-        await updateDoc(doc(db, "users", currentUser.uid), {
-          name: `${firstName} ${lastName}`.trim(),
-          email,
-          address: `${address}, ${city}, ${zipCode}`,
-          phoneNumber: phone,
-          cart: cartItems
-        })
+        const [profileResponse, cartResponse] = await Promise.all([
+          fetch('/api/me', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: `${firstName} ${lastName}`.trim(), phoneNumber: phone, address: `${address}, ${city}, ${zipCode}` }) }),
+          fetch('/api/me/cart', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cartItems) }),
+        ])
+        if (!profileResponse.ok || !cartResponse.ok) throw new Error('Unable to save checkout details')
       } catch (error) {
-        try {
-          await setDoc(doc(db, "users", currentUser.uid), {
-            name: `${firstName} ${lastName}`.trim(),
-            email,
-            address: `${address}, ${city}, ${zipCode}`,
-            phoneNumber: phone,
-            cart: cartItems,
-            isAnonymous: true,
-            createdAt: new Date().toISOString()
-          }, { merge: true })
-        } catch (e) {
-          console.error("Error updating user info:", e)
-        }
+        console.error("Error updating user info:", error)
+        toast.error("Unable to save checkout details")
+        return
       }
 
       setStep("payment")
@@ -252,12 +234,13 @@ export function CheckoutClient({ initialFreeShippingThreshold }: { initialFreeSh
   }
 
   const handlePlaceOrder = async () => {
-    if (!user) {
+    const checkoutUser = user ?? auth.currentUser
+    if (!checkoutUser) {
       toast.error("Please log in to complete your order")
       return
     }
 
-    if (!user.isAnonymous && !user.emailVerified) {
+    if (!checkoutUser.isAnonymous && !checkoutUser.emailVerified) {
       toast.error("Action restricted: Please verify your email address using the link we sent you before proceeding.")
       return
     }
@@ -278,8 +261,11 @@ export function CheckoutClient({ initialFreeShippingThreshold }: { initialFreeSh
           "Authorization": `Bearer ${idToken}`
         },
         body: JSON.stringify({
-          uid: user.uid,
-          email: user.email || email,
+          uid: checkoutUser.uid,
+          email: checkoutUser.email || email,
+          country,
+          state: stateCode,
+          shippingAddress: { name: `${firstName} ${lastName}`.trim(), email, phone, street: address, city, zip: zipCode, country, state: stateCode },
         }),
       })
 

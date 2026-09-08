@@ -5,7 +5,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { auth } from "@/lib/firebase"
 import { createUserWithEmailAndPassword, updateProfile, GoogleAuthProvider, signInWithPopup, sendEmailVerification } from "firebase/auth"
-import { syncCartWithFirestore } from "@/lib/store/cart-sync"
+import { syncCartWithNeon } from "@/lib/store/cart-sync"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -66,17 +66,15 @@ export default function RegisterPage() {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password)
       await updateProfile(userCredential.user, { displayName: fullName })
       
-      if (previousUid !== userCredential.user.uid) {
-        await syncCartWithFirestore(userCredential.user)
-      }
-      
       // Explicitly set the session cookie
       const idToken = await userCredential.user.getIdToken(true)
-      await fetch('/api/auth/session', {
+      const sessionResponse = await fetch('/api/auth/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ idToken }),
       })
+      if (!sessionResponse.ok) throw new Error('Unable to establish a server session')
+      if (previousUid !== userCredential.user.uid) await syncCartWithNeon(userCredential.user)
 
       await sendEmailVerification(userCredential.user)
       toast.success("Account created! Please check your email (and spam folder) for the verification link.")
@@ -98,17 +96,15 @@ export default function RegisterPage() {
       const previousUid = auth.currentUser?.uid
       const userCredential = await signInWithPopup(auth, provider)
       
-      if (previousUid !== userCredential.user.uid) {
-        await syncCartWithFirestore(userCredential.user)
-      }
-
       // Explicitly set the session cookie before redirecting
       const idToken = await userCredential.user.getIdToken(true)
-      await fetch('/api/auth/session', {
+      const sessionResponse = await fetch('/api/auth/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ idToken }),
       })
+      if (!sessionResponse.ok) throw new Error('Unable to establish a server session')
+      if (previousUid !== userCredential.user.uid) await syncCartWithNeon(userCredential.user)
 
       router.push("/account")
       router.refresh()

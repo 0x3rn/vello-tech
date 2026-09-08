@@ -1,8 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { db } from "@/lib/firebase"
-import { collection, query, orderBy, limit, getDocs, doc, getDoc } from "firebase/firestore"
 import { deleteReview } from "@/lib/services/reviews"
 import { useAuth } from "@/lib/contexts/auth-context"
 import { toast } from "sonner"
@@ -19,30 +17,9 @@ export default function AdminReviewsPage() {
   const fetchReviews = async () => {
     setLoading(true)
     try {
-      // Fetch latest 50 reviews across the site
-      const q = query(
-        collection(db, "reviews"),
-        orderBy("createdAt", "desc"),
-        limit(50)
-      )
-      const snap = await getDocs(q)
-      
-      const fetchedReviews = await Promise.all(snap.docs.map(async (rDoc) => {
-        const data = rDoc.data()
-        let productName = "Unknown Product"
-        try {
-          const pSnap = await getDoc(doc(db, "products", data.productId))
-          if (pSnap.exists()) {
-            productName = pSnap.data().name
-          }
-        } catch (e) {}
-
-        return {
-          id: rDoc.id,
-          ...data,
-          productName
-        }
-      }))
+      const response = await fetch('/api/reviews?admin=1&limit=50')
+      if (!response.ok) throw new Error('Unable to load reviews')
+      const fetchedReviews = await response.json()
       
       setReviews(fetchedReviews)
     } catch (error) {

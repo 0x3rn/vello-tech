@@ -1,8 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { collection, getDocs, query, orderBy, limit, where } from 'firebase/firestore'
-import { db } from '@/lib/firebase'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { DollarSign, ShoppingBag, Package, AlertTriangle, Loader2 } from 'lucide-react'
 import {
@@ -45,18 +43,20 @@ export default function AdminDashboard() {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        // Fetch all orders for metrics
-        // In a massive production app, you'd use Firebase Aggregation queries here
-        const ordersSnap = await getDocs(collection(db, 'orders'))
+        const [ordersResponse, productsResponse] = await Promise.all([
+          fetch('/api/admin/collections/orders'),
+          fetch('/api/admin/products'),
+        ])
+        if (!ordersResponse.ok || !productsResponse.ok) throw new Error('Unable to load dashboard data')
+        const orderRows = await ordersResponse.json() as Order[]
+        const productRows = await productsResponse.json() as Product[]
         let totalRevenue = 0
         let totalOrders = 0
-        const allOrders: Order[] = []
+        const allOrders: Order[] = orderRows
 
-        ordersSnap.forEach((doc) => {
-          const data = doc.data()
-          allOrders.push({ id: doc.id, ...data } as Order)
+        orderRows.forEach((data) => {
           if (data.status !== 'cancelled') {
-            totalRevenue += data.totalAmount || 0
+            totalRevenue += Number(data.totalAmount) || 0
             totalOrders += 1
           }
         })
@@ -71,12 +71,7 @@ export default function AdminDashboard() {
         setPendingOrders(allOrders.filter(o => o.status === 'pending'))
 
         // Fetch low stock products
-        const lowStockQuery = query(collection(db, 'products'), where('stockQuantity', '<', 5))
-        const lowStockSnap = await getDocs(lowStockQuery)
-        const lowStock: Product[] = []
-        lowStockSnap.forEach((doc) => {
-          lowStock.push({ id: doc.id, ...doc.data() } as Product)
-        })
+        const lowStock = productRows.filter((product) => product.stockQuantity < 5)
         setLowStockProducts(lowStock)
 
       } catch (error) {

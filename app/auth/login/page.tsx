@@ -5,7 +5,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { auth } from "@/lib/firebase"
 import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "firebase/auth"
-import { syncCartWithFirestore } from "@/lib/store/cart-sync"
+import { syncCartWithNeon } from "@/lib/store/cart-sync"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -42,17 +42,15 @@ export default function LoginPage() {
       const previousUid = auth.currentUser?.uid
       const userCredential = await signInWithEmailAndPassword(auth, email, password)
       
-      if (previousUid !== userCredential.user.uid) {
-        await syncCartWithFirestore(userCredential.user)
-      }
-
       // Explicitly set the session cookie before redirecting
       const idToken = await userCredential.user.getIdToken(true)
-      await fetch('/api/auth/session', {
+      const sessionResponse = await fetch('/api/auth/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ idToken }),
       })
+      if (!sessionResponse.ok) throw new Error('Unable to establish a server session')
+      if (previousUid !== userCredential.user.uid) await syncCartWithNeon(userCredential.user)
     } catch (err: any) {
       setError(getAuthErrorMessage(err))
       setLoading(false)
@@ -72,17 +70,15 @@ export default function LoginPage() {
       const previousUid = auth.currentUser?.uid
       const userCredential = await signInWithPopup(auth, provider)
       
-      if (previousUid !== userCredential.user.uid) {
-        await syncCartWithFirestore(userCredential.user)
-      }
-
       // Explicitly set the session cookie before redirecting
       const idToken = await userCredential.user.getIdToken(true)
-      await fetch('/api/auth/session', {
+      const sessionResponse = await fetch('/api/auth/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ idToken }),
       })
+      if (!sessionResponse.ok) throw new Error('Unable to establish a server session')
+      if (previousUid !== userCredential.user.uid) await syncCartWithNeon(userCredential.user)
 
       router.push("/account")
       router.refresh()

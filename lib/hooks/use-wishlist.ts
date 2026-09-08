@@ -1,7 +1,5 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore'
-import { db } from '@/lib/firebase'
 import { useUserStore } from '@/lib/store/user'
 import { useAuth } from '@/lib/contexts/auth-context'
 
@@ -36,31 +34,29 @@ export function useWishlist() {
     setLoadingItems(prev => ({ ...prev, [productId]: true }))
 
     try {
-      const userRef = doc(db, 'users', user.uid)
-      
       if (isLiked && idToRemove) {
-        await updateDoc(userRef, {
-          wishlist: arrayRemove(idToRemove)
-        })
+        const wishlist = currentWishlist.filter(id => id !== idToRemove)
+        const response = await fetch('/api/me/wishlist', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ wishlist }) })
+        if (!response.ok) throw new Error('Unable to update wishlist')
         
         // Update local state immediately
         if (userData) {
           setUserData({
             ...userData,
-            wishlist: currentWishlist.filter(id => id !== idToRemove)
+            wishlist
           })
         }
         toast.success("Removed from wishlist")
       } else {
-        await updateDoc(userRef, {
-          wishlist: arrayUnion(compositeId)
-        })
+        const wishlist = [...currentWishlist, compositeId]
+        const response = await fetch('/api/me/wishlist', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ wishlist }) })
+        if (!response.ok) throw new Error('Unable to update wishlist')
         
         // Update local state immediately
         if (userData) {
           setUserData({
             ...userData,
-            wishlist: [...currentWishlist, compositeId]
+            wishlist
           })
         }
         toast.success("Added to wishlist")

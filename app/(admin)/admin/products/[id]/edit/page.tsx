@@ -2,8 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
-import { doc, getDoc } from 'firebase/firestore'
-import { db } from '@/lib/firebase'
 import { ProductForm } from '@/components/admin/product-form'
 import { Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -16,10 +14,10 @@ export default function EditProductPage() {
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        const docRef = doc(db, 'products', id as string)
-        const docSnap = await getDoc(docRef)
-        if (docSnap.exists()) {
-          setInitialData({ id: docSnap.id, ...docSnap.data() })
+        const response = await fetch(`/api/admin/products/${id}`)
+        const product = response.ok ? await response.json() : null
+        if (product) {
+          setInitialData(product)
         } else {
           toast.error("Product not found")
         }

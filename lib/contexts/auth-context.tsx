@@ -2,10 +2,10 @@
 
 import { createContext, useContext, useEffect, useState } from 'react'
 import { User, onAuthStateChanged } from 'firebase/auth'
-import { doc, updateDoc, getDoc } from 'firebase/firestore'
-import { auth, db } from '@/lib/firebase'
-import { useCartStore, CartItem } from '@/lib/store/cart'
+import { auth } from '@/lib/firebase'
+import { useCartStore } from '@/lib/store/cart'
 import { useUserStore } from '@/lib/store/user'
+import { syncCartWithNeon } from '@/lib/store/cart-sync'
 
 interface AuthContextType {
   user: User | null
@@ -25,25 +25,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
         try {
-          const idToken = await currentUser.getIdToken(true)
-          await fetch('/api/auth/session', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ idToken }),
-          })
-
-          const userDoc = await getDoc(doc(db, 'users', currentUser.uid))
-          if (userDoc.exists()) {
-            const data = userDoc.data()
+          let profileResponse = await fetch('/api/me')
+          let data = profileResponse.ok ? await profileResponse.json() : null
+          if (!profileResponse.ok || data?.uid !== currentUser.uid) {
+            const idToken = await currentUser.getIdToken(true)
+            const sessionResponse = await fetch('/api/auth/session', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ idToken }),
+            })
+            if (!sessionResponse.ok) throw new Error('Unable to establish a server session')
+            profileResponse = await fetch('/api/me')
+            data = profileResponse.ok ? await profileResponse.json() : null
+          }
+          if (profileResponse.ok) {
             useUserStore.getState().setUserData({
               uid: currentUser.uid,
               ...data,
             } as any)
 
-            // Strict Sync: Firestore is the absolute source of truth for authenticated users.
-            // (Guest carts are merged explicitly during login via syncCartWithFirestore)
-            const cloudCart: CartItem[] = data.cart || []
-            useCartStore.getState().setItems(cloudCart)
+            await syncCartWithNeon(currentUser)
           }
         } catch (error) {
           console.error("Failed to fetch user data:", error)
@@ -68,19 +69,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => unsubscribe()
   }, [])
 
-  // Sync ongoing cart changes to Firestore
+  // Sync ongoing cart changes to Neon.
   useEffect(() => {
     if (!user) return
 
     const unsubscribe = useCartStore.subscribe((state, prevState) => {
       // Basic check to see if items changed reference
       if (state.items !== prevState?.items) {
-        const userRef = doc(db, 'users', user.uid)
-        
-        // Strip out any undefined values because Firestore throws on them
         const cleanCart = JSON.parse(JSON.stringify(state.items))
-        
-        updateDoc(userRef, { cart: cleanCart }).catch(console.error)
+        fetch('/api/me/cart', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cleanCart) }).catch(console.error)
       }
     })
 

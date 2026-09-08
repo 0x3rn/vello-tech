@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { doc, getDoc, updateDoc, arrayRemove } from "firebase/firestore"
-import { db } from "@/lib/firebase"
+import Image from "next/image"
 import { useAuth } from "@/lib/contexts/auth-context"
 import { useUserStore } from "@/lib/store/user"
 import {
@@ -52,20 +51,15 @@ export default function WishlistPage() {
           return { originalId: id, productId, colorName };
         });
         
-        // Fetch unique products
-        const uniqueProductIds = Array.from(new Set(parsedIds.map(p => p.productId)));
-        const productPromises = uniqueProductIds.map(id => getDoc(doc(db, "products", id)));
-        const docs = await Promise.all(productPromises);
-        
-        // Map docs for easy lookup
-        const docsMap = new Map(docs.map(d => [d.id, d]));
+        const response = await fetch('/api/catalog?resource=products')
+        if (!response.ok) throw new Error('Unable to load products')
+        const catalog = await response.json() as any[]
+        const productsById = new Map(catalog.map(product => [product.id, product]));
         
         const products = parsedIds
           .map(({ originalId, productId, colorName }) => {
-            const d = docsMap.get(productId);
-            if (!d || !d.exists()) return null;
-            
-            const data = d.data();
+            const data = productsById.get(productId);
+            if (!data) return null;
             
             let finalImage = resolveImageUrl(data.imageUrls?.[0]);
             if (colorName && data.colors) {
@@ -77,7 +71,7 @@ export default function WishlistPage() {
             
             return {
               id: originalId, // Store the exact string to allow remove by exact string
-              baseProductId: d.id,
+              baseProductId: data.id,
               name: colorName ? `${data.name} (${colorName})` : data.name || "Unknown Product",
               category: data.brand || "Uncategorized", // Can use brand or categoryId
               price: data.discountPrice || data.price || 0,
@@ -113,12 +107,9 @@ export default function WishlistPage() {
     
     setRemovingProduct(productId)
     try {
-      const userRef = doc(db, "users", user.uid)
-      await updateDoc(userRef, {
-        wishlist: arrayRemove(productId)
-      })
-      
       const updatedWishlist = (userData.wishlist || []).filter(id => id !== productId)
+      const response = await fetch('/api/me/wishlist', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ wishlist: updatedWishlist }) })
+      if (!response.ok) throw new Error('Unable to update wishlist')
       setUserData({
         ...(userData as any),
         wishlist: updatedWishlist
@@ -219,7 +210,7 @@ export default function WishlistPage() {
                     <Link href={`/product/${item.slug}`}>
                       <div className="w-full h-full relative flex items-center justify-center transition-transform duration-500 group-hover:scale-110">
                         {item.image ? (
-                          <img src={item.image} alt={item.imageAlt} className="object-contain max-h-full max-w-full mix-blend-multiply" />
+                          <Image src={item.image} alt={item.imageAlt} fill sizes="(min-width: 1024px) 25vw, 50vw" className="object-contain mix-blend-multiply" />
                         ) : (
                           <div className="w-20 h-20 sm:w-24 sm:h-24 bg-foreground/5 rounded-2xl transition-transform duration-300 group-hover:rotate-3" />
                         )}

@@ -1,8 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore'
-import { db } from '@/lib/firebase'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -40,12 +38,9 @@ export default function AdminProductsPage() {
 
   const fetchProducts = async () => {
     try {
-      const snap = await getDocs(collection(db, 'products'))
-      const fetched: Product[] = []
-      snap.forEach((doc) => {
-        fetched.push({ id: doc.id, ...doc.data() } as Product)
-      })
-      setProducts(fetched)
+      const response = await fetch('/api/admin/products')
+      if (!response.ok) throw new Error('Unable to load products')
+      setProducts(await response.json())
     } catch (error) {
       console.error("Error fetching products:", error)
       toast.error('Failed to load products. Reference: ERR-VLT-DB-101')

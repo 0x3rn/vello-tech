@@ -1,13 +1,10 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { db } from "@/lib/firebase"
-import { collection, query, where, orderBy, limit, getDocs, startAfter } from "firebase/firestore"
 import { ReviewStars } from "./review-stars"
 import { BadgeCheck, Loader2 } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 
-import type { DocumentData, QueryDocumentSnapshot } from "firebase/firestore"
 
 interface Review {
   id: string
@@ -33,33 +30,16 @@ export function ReviewList({ productId, refreshTrigger }: ReviewListProps) {
   const [reviews, setReviews] = useState<Review[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
-  const [lastVisible, setLastVisible] = useState<QueryDocumentSnapshot<DocumentData> | null>(null)
+  const [page, setPage] = useState(0)
   const [hasMore, setHasMore] = useState(false)
 
-  const fetchReviews = useCallback(async (isLoadMore = false, currentLastVisible: QueryDocumentSnapshot<DocumentData> | null = null) => {
+  const fetchReviews = useCallback(async (isLoadMore = false, currentPage = 0) => {
     try {
       if (!isLoadMore) setLoading(true)
 
-      let q = query(
-        collection(db, "reviews"),
-        where("productId", "==", productId),
-        orderBy("createdAt", "desc"),
-        limit(REVIEWS_PER_PAGE)
-      )
-
-      if (isLoadMore && currentLastVisible) {
-        q = query(
-          collection(db, "reviews"),
-          where("productId", "==", productId),
-          orderBy("createdAt", "desc"),
-          startAfter(currentLastVisible),
-          limit(REVIEWS_PER_PAGE)
-        )
-      }
-
-      const snap = await getDocs(q)
-      
-      const newReviews = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }) as Review)
+      const response = await fetch(`/api/reviews?productId=${encodeURIComponent(productId)}&limit=${REVIEWS_PER_PAGE}&page=${currentPage}`)
+      if (!response.ok) throw new Error('Unable to load reviews')
+      const newReviews = await response.json() as Review[]
       
       if (isLoadMore) {
         setReviews(prev => [...prev, ...newReviews])
@@ -67,8 +47,8 @@ export function ReviewList({ productId, refreshTrigger }: ReviewListProps) {
         setReviews(newReviews)
       }
 
-      setLastVisible(snap.docs[snap.docs.length - 1] || null)
-      setHasMore(snap.docs.length === REVIEWS_PER_PAGE)
+      setPage(currentPage)
+      setHasMore(newReviews.length === REVIEWS_PER_PAGE)
     } catch (error) {
       console.error("Error fetching reviews:", error)
     } finally {
@@ -78,7 +58,7 @@ export function ReviewList({ productId, refreshTrigger }: ReviewListProps) {
   }, [productId])
 
   useEffect(() => {
-    fetchReviews(false, null)
+    fetchReviews(false, 0)
   }, [fetchReviews, refreshTrigger])
 
   if (loading) {
@@ -138,7 +118,7 @@ export function ReviewList({ productId, refreshTrigger }: ReviewListProps) {
           <button
             onClick={() => {
               setLoadingMore(true)
-              fetchReviews(true, lastVisible)
+              fetchReviews(true, page + 1)
             }}
             disabled={loadingMore}
             className="text-sm font-medium text-primary hover:text-primary/80 transition-colors flex items-center"

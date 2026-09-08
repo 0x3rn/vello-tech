@@ -10,8 +10,6 @@ import { ReviewStars } from "./review-stars"
 import { submitReview, deleteReview } from "@/lib/services/reviews"
 import { toast } from "sonner"
 import { Loader2, Trash2 } from "lucide-react"
-import { db } from "@/lib/firebase"
-import { collection, query, where, getDocs } from "firebase/firestore"
 import Link from "next/link"
 
 interface ReviewFormProps {
@@ -41,14 +39,10 @@ export function ReviewForm({ productId, onReviewSubmitted }: ReviewFormProps) {
     
     setLoadingExisting(true)
     try {
-      const q = query(
-        collection(db, "reviews"),
-        where("productId", "==", productId),
-        where("userId", "==", user.uid)
-      )
-      const snap = await getDocs(q)
-      if (!snap.empty) {
-        setExistingReview({ id: snap.docs[0].id, ...snap.docs[0].data() })
+      const response = await fetch(`/api/reviews?productId=${encodeURIComponent(productId)}&mine=1&limit=1`)
+      const rows = response.ok ? await response.json() : []
+      if (rows.length) {
+        setExistingReview(rows[0])
       } else {
         setExistingReview(null)
       }

@@ -3,8 +3,6 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { doc, updateDoc } from "firebase/firestore"
-import { db } from "@/lib/firebase"
 import { useAuth } from "@/lib/contexts/auth-context"
 import { useUserStore } from "@/lib/store/user"
 import { Button } from "@/components/ui/button"
@@ -45,15 +43,14 @@ export function SettingsClient({ initialUserData }: { initialUserData: any }) {
 
     setSaving(true)
     try {
-      const userRef = doc(db, "users", user.uid)
-      
       const updates = {
         name,
         phoneNumber,
         address,
       }
       
-      await updateDoc(userRef, updates)
+      const response = await fetch('/api/me', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updates) })
+      if (!response.ok) throw new Error('Unable to update profile')
       
       // Update local Zustand store
       setUserData({

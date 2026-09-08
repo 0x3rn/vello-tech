@@ -1,8 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { collection, getDocs, query, orderBy, doc, updateDoc } from 'firebase/firestore'
-import { db } from '@/lib/firebase'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -37,11 +35,9 @@ export default function AdminOrdersPage() {
 
   const fetchOrders = async () => {
     try {
-      const snap = await getDocs(collection(db, 'orders'))
-      const fetched: Order[] = []
-      snap.forEach((doc) => {
-        fetched.push({ id: doc.id, ...doc.data() } as Order)
-      })
+      const response = await fetch('/api/admin/collections/orders')
+      if (!response.ok) throw new Error('Unable to load orders')
+      const fetched = await response.json() as Order[]
       // Sort manually since we didn't use an index yet
       fetched.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
       setOrders(fetched)
@@ -59,7 +55,8 @@ export default function AdminOrdersPage() {
 
   const handleStatusChange = async (id: string, newStatus: string) => {
     try {
-      await updateDoc(doc(db, 'orders', id), { status: newStatus })
+      const response = await fetch(`/api/admin/orders/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: newStatus }) })
+      if (!response.ok) throw new Error('Unable to update order')
       setOrders(orders.map(o => o.id === id ? { ...o, status: newStatus } : o))
       toast.success(`Order status updated to ${newStatus}`)
     } catch (error) {

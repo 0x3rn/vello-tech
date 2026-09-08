@@ -2,9 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { db, storage } from '@/lib/firebase'
-import { collection, doc, setDoc, updateDoc, getDocs, serverTimestamp } from 'firebase/firestore'
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -98,22 +95,14 @@ export function ProductForm({ initialData }: { initialData?: ProductData }) {
 
   useEffect(() => {
     const fetchCategories = async () => {
-      const snap = await getDocs(collection(db, 'categories'))
-      const fetched: Category[] = []
+      const response = await fetch('/api/admin/collections/categories')
+      if (!response.ok) throw new Error('Unable to load categories')
+      const rows = await response.json() as Category[]
       const ignoreNames = ['new', 'used', 'refurbished']
-      snap.forEach(doc => {
-        const name = doc.data().name
-        if (!ignoreNames.includes(name.toLowerCase())) {
-          fetched.push({ 
-            id: doc.id, 
-            name: name,
-            parentCategoryId: doc.data().parentCategoryId || null
-          })
-        }
-      })
+      const fetched = rows.filter((category) => !ignoreNames.includes(category.name.toLowerCase()))
       setCategories(fetched)
     }
-    fetchCategories()
+    fetchCategories().catch((error) => { console.error(error); toast.error('Failed to load categories') })
   }, [])
 
   const handleTextChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -257,10 +246,15 @@ export function ProductForm({ initialData }: { initialData?: ProductData }) {
 
     setUploadingImage(true)
     try {
-      const filename = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '')}`
-      const storageRef = ref(storage, `products/${filename}`)
-      await uploadBytes(storageRef, file)
-      const downloadURL = await getDownloadURL(storageRef)
+      if (!formData.categoryId || !formData.slug) throw new Error('Select a category and enter a product slug before uploading')
+      const upload = new FormData()
+      upload.set('file', file)
+      upload.set('categoryId', formData.categoryId)
+      upload.set('productSlug', formData.slug)
+      const response = await fetch('/api/admin/storage/upload', { method: 'POST', body: upload })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error || 'Upload failed')
+      const downloadURL = result.url as string
       
       setFormData(prev => ({
         ...prev,
@@ -282,10 +276,18 @@ export function ProductForm({ initialData }: { initialData?: ProductData }) {
 
     setUploadingColorImageIndex(index)
     try {
-      const filename = `${Date.now()}_color_${file.name.replace(/[^a-zA-Z0-9.]/g, '')}`
-      const storageRef = ref(storage, `products/colors/${filename}`)
-      await uploadBytes(storageRef, file)
-      const downloadURL = await getDownloadURL(storageRef)
+      if (!formData.categoryId || !formData.slug) throw new Error('Select a category and enter a product slug before uploading')
+      const color = formData.colors?.[index]
+      if (!color) throw new Error('Color not found')
+      const upload = new FormData()
+      upload.set('file', file)
+      upload.set('categoryId', formData.categoryId)
+      upload.set('productSlug', formData.slug)
+      upload.set('colorName', color.name)
+      const response = await fetch('/api/admin/storage/upload', { method: 'POST', body: upload })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error || 'Upload failed')
+      const downloadURL = result.url as string
       
       setFormData(prev => {
         const newColors = [...(prev.colors || [])];

@@ -15,7 +15,6 @@ export function Toaster() {
 
   return (
     <ToastProvider>
-      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
       {toasts.map(function ({ id, title, description, action, ...props }: any) {
         return (
           <Toast key={id} {...props}>

@@ -1,8 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { collection, getDocs, setDoc, deleteDoc, doc, updateDoc } from 'firebase/firestore'
-import { db } from '@/lib/firebase'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -41,15 +39,11 @@ export default function AdminCategoriesPage() {
 
   const fetchCategories = async () => {
     try {
-      const snap = await getDocs(collection(db, 'categories'))
-      const fetched: Category[] = []
+      const response = await fetch('/api/admin/collections/categories')
+      if (!response.ok) throw new Error('Unable to load categories')
+      const rows = await response.json() as Category[]
       const ignoreNames = ['new', 'used', 'refurbished']
-      snap.forEach(doc => {
-        const data = doc.data()
-        if (!ignoreNames.includes(data.name.toLowerCase())) {
-          fetched.push({ id: doc.id, ...data } as Category)
-        }
-      })
+      const fetched = rows.filter((category) => !ignoreNames.includes(category.name.toLowerCase()))
       setCategories(fetched)
     } catch (error) {
       console.error("Error fetching categories:", error)
