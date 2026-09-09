@@ -72,7 +72,11 @@ async function main() {
   const neonProductKeys = neonFiles.filter((key) => key.startsWith("products/"));
   const retainedSourceKeys = neonProductKeys.filter((key) => firebaseReferencedKeys.has(key) && !mappedKeys.has(key));
   const unknownNeonProductKeys = neonProductKeys.filter((key) => !firebaseReferencedKeys.has(key) && !mappedKeys.has(key));
-  const missingFirebaseSourceKeys = [...firebaseReferencedKeys].filter((key) => !neonProductKeys.includes(key));
+  const missingActiveStorageKeys = imageRows.flatMap(({ storageKey, sourceUrl }) => {
+    if (storageKey) return neonProductKeys.includes(storageKey) ? [] : [storageKey];
+    const firebaseKey = firebaseStorageKey(sourceUrl);
+    return firebaseKey && !neonProductKeys.includes(firebaseKey) ? [firebaseKey] : [];
+  });
   const productRows = await db
     .select({ productId: products.id, categoryId: products.categoryId, categoryName: categories.name })
     .from(products)
@@ -97,7 +101,7 @@ async function main() {
     checks: {
       categoryCountMatches: categoryCount.count === firebaseCategories.data().count,
       productCountMatches: productCount.count === firebaseProducts.data().count,
-      allFirebaseReferencedObjectsCopied: missingFirebaseSourceKeys.length === 0,
+      allActiveProductStorageObjectsPresent: missingActiveStorageKeys.length === 0,
       productImagesMissingStorageKey: missingStorageKey,
       productImagesStillOnFirebase: firebaseImageUrlCount.count,
       externalImageUrls,
@@ -109,7 +113,7 @@ async function main() {
     },
     samples: {
       unreferencedNeonProductObjects: unknownNeonProductKeys.slice(0, 10),
-      missingFirebaseReferencedObjects: missingFirebaseSourceKeys.slice(0, 10),
+      missingActiveStorageObjects: missingActiveStorageKeys.slice(0, 10),
       productsWithMissingCategory: productsWithoutCategory.slice(0, 10),
     },
   };
@@ -117,7 +121,7 @@ async function main() {
   console.log(JSON.stringify(report, null, 2));
   const failed = !report.checks.categoryCountMatches
     || !report.checks.productCountMatches
-    || !report.checks.allFirebaseReferencedObjectsCopied
+    || !report.checks.allActiveProductStorageObjectsPresent
     || report.checks.productImagesMissingStorageKey > report.checks.externalImageUrls
     || report.checks.productImagesStillOnFirebase > 0
     || report.checks.productsWithMissingCategory > 0;

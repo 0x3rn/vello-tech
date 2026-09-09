@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getProduct, saveProduct } from "@/lib/neon/admin";
-import { listStoreProducts } from "@/lib/neon/catalog";
+import { invalidateCatalogCache, listStoreProducts } from "@/lib/neon/catalog";
 import { requireAdmin, requireSameOrigin } from "@/lib/neon/auth";
 
 export async function GET(request: Request) {
@@ -16,6 +16,7 @@ export async function POST(request: Request) {
     requireSameOrigin(request);
     await requireAdmin();
     const id = await saveProduct(await request.json());
+    invalidateCatalogCache();
     return NextResponse.json({ success: true, id }, { status: 201 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to create product";
@@ -30,6 +31,7 @@ export async function PUT(request: Request) {
     const body = await request.json();
     if (typeof body.id !== "string") return NextResponse.json({ error: "Product ID is required" }, { status: 400 });
     const id = await saveProduct(body, body.id);
+    invalidateCatalogCache();
     return NextResponse.json({ success: true, id });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to update product";

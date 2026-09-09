@@ -45,7 +45,7 @@ export default async function Home() {
   return <div>
     <Hero initialSlides={slides} />
     <Features />
-    <Categories />
+    <Categories initialCategories={categoryRows} initialProducts={allProducts} />
     <FeaturedProducts initialProducts={allProducts.filter((product) => product.isFeatured).slice(0, 8)} categories={categoryList} />
     <PromoSection />
     <UsedProducts initialProducts={allProducts.filter((product) => product.condition === "used" || product.condition === "refurbished").slice(0, 8)} categories={categoryList} />

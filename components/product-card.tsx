@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { cn, resolveImageUrl } from '@/lib/utils'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useCartStore } from '@/lib/store/cart'
 import { useWishlist } from '@/lib/hooks/use-wishlist'
 import { toast } from 'sonner'
@@ -41,6 +42,7 @@ export function ProductCard({
   product: ProductData
   priority?: boolean 
 }) {
+  const router = useRouter()
   const { toggleWishlist, loadingItems, wishlist } = useWishlist()
   const isLiked = wishlist.some(id => id === product.id || id.startsWith(`${product.id}::`))
   const isWishlistLoading = loadingItems[product.id]
@@ -53,7 +55,7 @@ export function ProductCard({
     
     if ((product.colors && product.colors.length > 0) || (product.variantGroups && product.variantGroups.length > 0)) {
       toast.info("Please select options for this product")
-      window.location.href = `/product/${product.slug}`
+      router.push(`/product/${product.slug}`)
       return
     }
     

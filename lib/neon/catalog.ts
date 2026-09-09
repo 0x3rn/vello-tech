@@ -68,7 +68,11 @@ export async function getCategoryBySlug(slug: string) {
   return category ?? null;
 }
 
-export async function listStoreProducts() {
+const catalogCacheTtlMs = 30_000;
+let catalogCache: { expiresAt: number; products: StoreProduct[] } | null = null;
+let catalogInFlight: Promise<StoreProduct[]> | null = null;
+
+async function queryStoreProducts() {
   const db = createDatabase();
   const productRows = await db.select().from(products).orderBy(asc(products.name));
   if (!productRows.length) return [] as StoreProduct[];
@@ -147,6 +151,27 @@ export async function listStoreProducts() {
     };
   });
 }
+export async function listStoreProducts() {
+  const now = Date.now();
+  if (catalogCache && catalogCache.expiresAt > now) return catalogCache.products;
+  if (catalogInFlight) return catalogInFlight;
+
+  catalogInFlight = queryStoreProducts()
+    .then((productRows) => {
+      catalogCache = { products: productRows, expiresAt: Date.now() + catalogCacheTtlMs };
+      return productRows;
+    })
+    .finally(() => {
+      catalogInFlight = null;
+    });
+
+  return catalogInFlight;
+}
+
+export function invalidateCatalogCache() {
+  catalogCache = null;
+}
+
 
 export async function getStoreProductBySlug(slug: string) {
   return (await listStoreProducts()).find((product) => product.slug === slug) ?? null;

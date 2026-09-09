@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
+import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/contexts/auth-context"
 import { useUserStore } from "@/lib/store/user"
 import {
@@ -23,6 +24,7 @@ import { AuthGuard } from "@/components/auth-guard"
 import { cn, resolveImageUrl } from "@/lib/utils"
 
 export default function WishlistPage() {
+  const router = useRouter()
   const { user } = useAuth()
   const { userData, setUserData } = useUserStore()
   const [items, setItems] = useState<any[]>([])
@@ -128,7 +130,7 @@ export default function WishlistPage() {
   const handleAddToCart = async (item: any) => {
     if ((item.colors && item.colors.length > 0) || (item.variantGroups && item.variantGroups.length > 0)) {
       toast.info("Please select options for this product")
-      window.location.href = `/product/${item.slug}`
+      router.push(`/product/${item.slug}`)
       return
     }
 

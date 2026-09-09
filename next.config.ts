@@ -10,6 +10,9 @@ const neonStoragePattern = neonStorageUrl
 
 const nextConfig: NextConfig = {
   images: {
+    // Neon Object Storage is already the image CDN. Bypassing the Next image
+    // proxy avoids failed optimizer requests across local, Vercel, and Workers.
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: 'https',

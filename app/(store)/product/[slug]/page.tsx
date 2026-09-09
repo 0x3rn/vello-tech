@@ -1,13 +1,16 @@
 import { ProductDetailClient } from "./product-detail-client";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { getStoreProductBySlug, listCategories, listStoreProducts } from "@/lib/neon/catalog";
+import { listCategories, listStoreProducts } from "@/lib/neon/catalog";
 
 export const revalidate = 60;
 
 export default async function ProductDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const [product, categoryRows, allProducts] = await Promise.all([getStoreProductBySlug(slug), listCategories(), listStoreProducts()]);
+  // Load the catalog once. The old implementation loaded the complete
+  // catalog a second time just to locate this product.
+  const [categoryRows, allProducts] = await Promise.all([listCategories(), listStoreProducts()]);
+  const product = allProducts.find((candidate) => candidate.slug === slug) ?? null;
   if (!product) return <div className="min-h-screen bg-background flex flex-col items-center justify-center p-8 text-center">
     <h1 className="text-3xl font-bold mb-4">Product Not Found</h1>
     <p className="text-muted-foreground mb-8">We couldn&apos;t find the product you were looking for.</p>

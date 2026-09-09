@@ -35,7 +35,7 @@ export async function initializePaystack(request: Request) {
   const response = await fetch("https://api.paystack.co/transaction/initialize", {
     method: "POST",
     headers: { Authorization: `Bearer ${secret}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ email: checkout.email, amount: checkout.totalInCents, reference: checkout.orderId, metadata: { order_id: checkout.orderId }, callback_url: `${siteUrl(request)}/checkout/success` }),
+    body: JSON.stringify({ email: checkout.email, amount: checkout.totalInCents, reference: checkout.orderId, metadata: { order_id: checkout.orderId }, callback_url: `${siteUrl(request)}/checkout/success?order=${encodeURIComponent(checkout.orderId)}` }),
   });
   const data = await response.json() as { status?: boolean; message?: string; data?: { authorization_url?: string } };
   if (!response.ok || !data.status || !data.data?.authorization_url) throw new Error(data.message || "Paystack initialization failed");
@@ -51,7 +51,7 @@ export async function initializeLemonSqueezy(request: Request) {
   const response = await fetch("https://api.lemonsqueezy.com/v1/checkouts", {
     method: "POST",
     headers: { Accept: "application/vnd.api+json", "Content-Type": "application/vnd.api+json", Authorization: `Bearer ${apiKey}` },
-    body: JSON.stringify({ data: { type: "checkouts", attributes: { checkout_data: { email: checkout.email, custom: { order_id: checkout.orderId } }, checkout_options: { button_color: "#000000" }, product_options: { redirect_url: `${siteUrl(request)}/checkout/success` }, custom_price: checkout.totalInCents }, relationships: { store: { data: { type: "stores", id: storeId } }, variant: { data: { type: "variants", id: variantId } } } } }),
+    body: JSON.stringify({ data: { type: "checkouts", attributes: { checkout_data: { email: checkout.email, custom: { order_id: checkout.orderId } }, checkout_options: { button_color: "#000000" }, product_options: { redirect_url: `${siteUrl(request)}/checkout/success?order=${encodeURIComponent(checkout.orderId)}` }, custom_price: checkout.totalInCents }, relationships: { store: { data: { type: "stores", id: storeId } }, variant: { data: { type: "variants", id: variantId } } } } }),
   });
   const data = await response.json() as { errors?: Array<{ detail?: string }>; data?: { attributes?: { url?: string } } };
   const url = data.data?.attributes?.url;

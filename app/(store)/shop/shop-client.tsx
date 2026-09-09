@@ -20,6 +20,7 @@ interface ProductData {
   description: string
   imageUrls: string[]
   categoryId: string
+  subcategoryId?: string
   isFeatured: boolean
   rating: number
   numReviews: number
@@ -84,7 +85,18 @@ export function ShopClient({
 
     // Apply Category Filter
     if (selectedCategories.length > 0) {
-      result = result.filter(p => selectedCategories.includes(p.categoryId))
+      // A product may be assigned to a subcategory. Selecting its parent
+      // must include that complete subtree, not only direct assignments.
+      const selectedCategoryIds = new Set(selectedCategories)
+      for (const categoryId of selectedCategories) {
+        categories
+          .filter((category) => category.parentCategoryId === categoryId)
+          .forEach((category) => selectedCategoryIds.add(category.id))
+      }
+      result = result.filter((product) =>
+        selectedCategoryIds.has(product.categoryId) ||
+        (product.subcategoryId !== undefined && selectedCategoryIds.has(product.subcategoryId)),
+      )
     }
 
     // Apply Brand Filter
@@ -118,7 +130,7 @@ export function ShopClient({
     }
 
     return result
-  }, [products, selectedCategories, selectedBrands, selectedConditions, hideOutOfStock, sortBy])
+  }, [products, categories, selectedCategories, selectedBrands, selectedConditions, hideOutOfStock, sortBy])
 
   const handleAddToCart = async (e: React.MouseEvent, product: ProductData) => {
     e.preventDefault()

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useMemo, Suspense } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useCartStore } from '@/lib/store/cart'
@@ -33,6 +33,7 @@ interface ProductData {
 
 function SearchResults() {
   const searchParams = useSearchParams()
+  const router = useRouter()
   const query = searchParams.get('q') || ''
   
   const [products, setProducts] = useState<ProductData[]>([])
@@ -130,7 +131,7 @@ function SearchResults() {
     
     if ((product.colors && product.colors.length > 0) || (product.variantGroups && product.variantGroups.length > 0)) {
       toast.info("Please select options for this product")
-      window.location.assign(`/product/${product.slug}`)
+      router.push(`/product/${product.slug}`)
       return
     }
     

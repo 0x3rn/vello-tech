@@ -489,7 +489,7 @@ export function ProductForm({ initialData }: { initialData?: ProductData }) {
                 {formData.imageUrls.map((url, index) => (
                   <div key={index} className="flex gap-4 items-start">
                     <div className="relative w-24 h-24 bg-secondary rounded-md border border-border flex items-center justify-center shrink-0">
-                      <Image src={resolveImageUrl(url)} alt="Product" fill className="object-contain p-2" />
+                      <Image src={resolveImageUrl(url)} alt="Product" fill sizes="96px" className="object-contain p-2" />
                       <button 
                         type="button" 
                         onClick={() => removeImage(index)}

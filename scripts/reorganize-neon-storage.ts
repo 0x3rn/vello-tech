@@ -1,5 +1,5 @@
 import { config } from "dotenv";
-import { CopyObjectCommand, HeadObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { CopyObjectCommand, DeleteObjectCommand, HeadObjectCommand, ListObjectsV2Command, S3Client } from "@aws-sdk/client-s3";
 import { eq } from "drizzle-orm";
 import { createDatabase } from "../db/client";
 import { categories, productColors, productImages, products } from "../db/schema";
@@ -8,6 +8,8 @@ import { firebaseStorageKey, isFirebaseStorageUrl } from "./storage-keys";
 config({ path: ".env.local" });
 
 const apply = process.argv.includes("--apply");
+const deleteRetained = process.argv.includes("--delete-retained");
+const deleteUnreferenced = process.argv.includes("--delete-unreferenced");
 
 function required(name: string) {
   const value = process.env[name];
@@ -56,6 +58,17 @@ async function exists(s3: S3Client, bucket: string, key: string) {
   }
 }
 
+async function listProductObjectKeys(s3: S3Client, bucket: string) {
+  const keys: string[] = [];
+  let continuationToken: string | undefined;
+  do {
+    const page = await s3.send(new ListObjectsV2Command({ Bucket: bucket, Prefix: "products/", ContinuationToken: continuationToken }));
+    keys.push(...(page.Contents ?? []).flatMap((item) => item.Key ? [item.Key] : []));
+    continuationToken = page.NextContinuationToken;
+  } while (continuationToken);
+  return keys;
+}
+
 function copySource(bucket: string, key: string) {
   return `${encodeURIComponent(bucket)}/${key.split("/").map(encodeURIComponent).join("/")}`;
 }
@@ -100,6 +113,13 @@ async function main() {
   }
   const duplicateDestinations = [...conflicts].filter(([, count]) => count > 1).map(([key]) => key);
   const changes = plan.filter((item) => item.destinationKey && item.sourceKey !== item.destinationKey);
+  const canonicalKeys = new Set(imageRows.flatMap((image) => image.currentKey ? [image.currentKey] : []));
+  const retainedSourceKeys = new Set(imageRows.flatMap((image) => {
+    const sourceKey = firebaseStorageKey(image.sourceUrl);
+    return sourceKey && sourceKey !== image.currentKey && !canonicalKeys.has(sourceKey) ? [sourceKey] : [];
+  }));
+  const objectKeys = deleteUnreferenced ? await listProductObjectKeys(s3, bucket) : [];
+  const unreferencedKeys = objectKeys.filter((key) => !canonicalKeys.has(key) && !retainedSourceKeys.has(key));
 
   console.log(JSON.stringify({
     mode: apply ? "apply" : "dry-run",
@@ -112,6 +132,9 @@ async function main() {
     sampleChanges: changes.slice(0, 10).map(({ sourceKey, destinationKey }) => ({ sourceKey, destinationKey })),
     sampleUnresolved: unresolved.slice(0, 10).map(({ imageId, sourceUrl }) => ({ imageId, sourceUrl })),
     sampleExternalImageUrls: external.slice(0, 10).map(({ imageId, sourceUrl }) => ({ imageId, sourceUrl })),
+    retainedSourceObjectsEligibleForDeletion: retainedSourceKeys.size,
+    unreferencedObjectsEligibleForDeletion: unreferencedKeys.length,
+    sampleUnreferencedObjects: unreferencedKeys.slice(0, 10),
   }, null, 2));
 
   if (unresolved.length || duplicateDestinations.length) {
@@ -137,7 +160,19 @@ async function main() {
   }));
   const copied = results.filter((result) => result?.copied).length;
   const databaseUpdates = results.filter((result) => result?.databaseUpdated).length;
-  console.log(JSON.stringify({ copied, databaseUpdates, oldObjectsRetained: true }, null, 2));
+  const objectsToDelete = [
+    ...(deleteRetained ? retainedSourceKeys : []),
+    ...(deleteUnreferenced ? unreferencedKeys : []),
+  ];
+  for (const key of new Set(objectsToDelete)) {
+    await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
+  }
+  console.log(JSON.stringify({
+    copied,
+    databaseUpdates,
+    retainedSourceObjectsDeleted: deleteRetained ? retainedSourceKeys.size : 0,
+    unreferencedObjectsDeleted: deleteUnreferenced ? unreferencedKeys.length : 0,
+  }, null, 2));
 }
 
 main().catch((error: unknown) => {

@@ -1,134 +1,92 @@
 import Link from "next/link"
-import {
-  CheckCircle,
-  Package,
-  ArrowRight,
-  ArrowLeft,
-  Download,
-  Mail,
-} from "lucide-react"
+import { ArrowLeft, CheckCircle, Package } from "lucide-react"
+
 import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
+import { requireFirebaseUser } from "@/lib/neon/auth"
+import { getOrderForUser } from "@/lib/neon/commerce"
 
-const orderDetails = {
-  id: "VT-2026-NEW",
-  date: new Date().toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  }),
-  total: 1548.00,
-  items: [
-    { name: "ProMax Smartphone X1", quantity: 1, price: 1299 },
-    { name: "WirelessBuds Pro", quantity: 2, price: 498 },
-  ],
-  shipping: { name: "John Doe", address: "123 Main Street, San Francisco, CA 94105", method: "Express (2-3 business days)" },
-  payment: { method: "Credit Card", last4: "3456" },
-}
+export const dynamic = "force-dynamic"
 
-export default function SuccessPage() {
+export default async function SuccessPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ order?: string }>
+}) {
+  const { order: orderId } = await searchParams
+  let order: Awaited<ReturnType<typeof getOrderForUser>> = null
+
+  if (orderId) {
+    try {
+      const identity = await requireFirebaseUser()
+      order = await getOrderForUser(orderId, identity.uid)
+    } catch {
+      // A callback URL is not proof of payment. Only show data belonging to
+      // the authenticated user after the signed payment webhook updates it.
+      order = null
+    }
+  }
+
+  const paymentState = !order
+    ? "missing"
+    : order.status === "pending"
+      ? "pending"
+      : order.status === "cancelled"
+        ? "cancelled"
+        : "paid"
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="max-w-2xl w-full">
-        {/* Success Animation */}
-        <div className="text-center mb-8">
-          <div className="w-20 h-20 rounded-full bg-accent/10 flex items-center justify-center mx-auto mb-6 animate-[fade-in-up_0.5s_ease-out]">
-            <CheckCircle className="h-12 w-12 text-accent" />
-          </div>
-          <h1 className="text-2xl lg:text-3xl font-bold text-foreground tracking-tight mb-2">
-            Payment Successful!
-          </h1>
-          <p className="text-muted-foreground text-lg">
-            Thank you for your purchase. Your order has been confirmed.
-          </p>
+      <div className="max-w-2xl w-full text-center">
+        <div className="w-20 h-20 rounded-full bg-accent/10 flex items-center justify-center mx-auto mb-6">
+          <CheckCircle className="h-12 w-12 text-accent" />
         </div>
+        <h1 className="text-2xl lg:text-3xl font-bold text-foreground tracking-tight mb-2">
+          {paymentState === "paid"
+            ? "Payment Successful!"
+            : paymentState === "pending"
+              ? "Payment Confirmation Pending"
+              : paymentState === "cancelled"
+                ? "Payment Not Completed"
+                : "Payment Confirmation"}
+        </h1>
+        <p className="text-muted-foreground text-lg mb-6">
+          {paymentState === "paid"
+            ? "Your verified order has been confirmed."
+            : paymentState === "pending"
+              ? "Your payment provider is still confirming this order. Refresh this page shortly."
+              : paymentState === "cancelled"
+                ? "This order was cancelled before payment completed."
+                : "We could not find a verified order for this confirmation link."}
+        </p>
 
-        {/* Order Details Card */}
-        <div className="bg-card rounded-2xl border border-border/50 shadow-sm p-6 lg:p-8 mb-6">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <p className="text-sm text-muted-foreground">Order Number</p>
-              <p className="text-xl font-bold text-foreground">{orderDetails.id}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-sm text-muted-foreground">Date</p>
-              <p className="font-medium text-foreground">{orderDetails.date}</p>
-            </div>
-          </div>
-
-          <Separator className="mb-6" />
-
-          {/* Items */}
-          <div className="space-y-3 mb-6">
-            {orderDetails.items.map((item, i) => (
-              <div key={i} className="flex items-center justify-between py-2">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center">
-                    <Package className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-foreground text-sm">{item.name}</p>
-                    <p className="text-xs text-muted-foreground">Qty: {item.quantity}</p>
-                  </div>
-                </div>
-                <span className="font-medium text-foreground">${item.price.toLocaleString()}</span>
-              </div>
-            ))}
-          </div>
-
-          <Separator className="mb-4" />
-
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between text-muted-foreground">
-              <span>Subtotal</span>
-              <span>${orderDetails.items.reduce((s, i) => s + i.price, 0).toLocaleString()}</span>
-            </div>
-            <div className="flex justify-between text-muted-foreground">
-              <span>Shipping</span>
-              <span className="text-accent">Free</span>
-            </div>
-            <div className="flex justify-between text-muted-foreground">
-              <span>Tax</span>
-              <span>${(orderDetails.total - orderDetails.items.reduce((s, i) => s + i.price, 0)).toLocaleString()}</span>
+        {order && (
+          <div className="bg-card rounded-2xl border border-border/50 p-6 mb-6 text-left">
+            <p className="text-sm text-muted-foreground">Order Number</p>
+            <p className="font-bold text-foreground mb-4">{order.id}</p>
+            <p className="font-semibold text-foreground mb-3">
+              Total: ${order.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+            </p>
+            <div className="space-y-2">
+              {order.items.map((item) => (
+                <p key={`${item.name}-${item.quantity}`} className="text-sm text-muted-foreground">
+                  {item.name} × {item.quantity}
+                </p>
+              ))}
             </div>
           </div>
+        )}
 
-          <Separator className="my-3" />
-
-          <div className="flex justify-between">
-            <span className="font-bold text-foreground text-lg">Total</span>
-            <span className="text-2xl font-bold text-foreground">${orderDetails.total.toLocaleString()}</span>
-          </div>
-        </div>
-
-        {/* Shipping & Payment Info */}
-        <div className="grid sm:grid-cols-2 gap-4 mb-8">
-          <div className="bg-card rounded-2xl border border-border/50 shadow-sm p-5">
-            <h3 className="font-semibold text-foreground mb-3">Shipping Address</h3>
-            <p className="text-sm text-muted-foreground leading-relaxed">{orderDetails.shipping.name}<br />{orderDetails.shipping.address}</p>
-            <p className="text-xs text-muted-foreground mt-2">{orderDetails.shipping.method}</p>
-          </div>
-          <div className="bg-card rounded-2xl border border-border/50 shadow-sm p-5">
-            <h3 className="font-semibold text-foreground mb-3">Payment Method</h3>
-            <p className="text-sm text-muted-foreground">{orderDetails.payment.method} ····{orderDetails.payment.last4}</p>
-            <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
-              <Mail className="h-3.5 w-3.5" />
-              Confirmation sent to your email
-            </div>
-          </div>
-        </div>
-
-        {/* Actions */}
-        <div className="flex flex-col sm:flex-row items-center gap-4">
-          <Link href="/account/orders">
-            <Button size="lg" className="transition-all duration-200 hover:scale-105 w-full sm:w-auto">
-              <Package className="h-4 w-4 mr-2" />
-              Track Your Order
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </Link>
-          <Link href="/#products">
-            <Button variant="outline" size="lg" className="transition-all duration-200 hover:scale-105 w-full sm:w-auto">
+        <div className="flex flex-col sm:flex-row justify-center gap-4">
+          {order && (
+            <Link href="/account/orders">
+              <Button>
+                <Package className="h-4 w-4 mr-2" />
+                View Order
+              </Button>
+            </Link>
+          )}
+          <Link href="/shop">
+            <Button variant="outline">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Continue Shopping
             </Button>

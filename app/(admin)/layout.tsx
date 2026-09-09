@@ -16,13 +16,13 @@ export default function AdminLayout({
   children: React.ReactNode
 }) {
   const router = useRouter()
-  const { loading } = useAuth()
+  const { loading, profileLoading } = useAuth()
   const userData = useUserStore((state) => state.userData)
   const [isAuthorized, setIsAuthorized] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   useEffect(() => {
-    if (!loading) {
+    if (!loading && !profileLoading) {
       if (!userData || userData.role !== 'admin') {
         toast.error('Access Denied', {
           description: 'You do not have permission to view the Admin Dashboard.',
@@ -32,10 +32,10 @@ export default function AdminLayout({
         setIsAuthorized(true)
       }
     }
-  }, [loading, userData, router])
+  }, [loading, profileLoading, userData, router])
 
   // While checking auth state or if not authorized (to prevent flash of content)
-  if (loading || !isAuthorized) {
+  if (loading || profileLoading || !isAuthorized) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />

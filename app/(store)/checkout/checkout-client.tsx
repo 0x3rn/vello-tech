@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Country, State } from "country-state-city"
 import {
   ArrowLeft,
@@ -37,6 +38,7 @@ import { auth } from "@/lib/firebase"
 type CheckoutStep = "login" | "shipping" | "payment" | "review"
 
 export function CheckoutClient({ initialFreeShippingThreshold }: { initialFreeShippingThreshold: number | null }) {
+  const router = useRouter()
   const { items: cartItems } = useCartStore()
   const [step, setStep] = useState<CheckoutStep>("shipping")
   const [checkoutType, setCheckoutType] = useState<"guest" | "login">("guest")
@@ -545,7 +547,7 @@ export function CheckoutClient({ initialFreeShippingThreshold }: { initialFreeSh
                   variant="outline"
                   className="w-full sm:w-auto"
                   onClick={() => {
-                    if (step === "shipping") window.location.href = "/cart"
+                    if (step === "shipping") router.push("/cart")
                     else if (step === "payment") setStep("shipping")
                     else setStep("payment")
                   }}

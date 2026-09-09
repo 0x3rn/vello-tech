@@ -10,19 +10,29 @@ import { syncCartWithNeon } from '@/lib/store/cart-sync'
 interface AuthContextType {
   user: User | null
   loading: boolean
+  profileLoading: boolean
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
+  profileLoading: true,
 })
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const [profileLoading, setProfileLoading] = useState(true)
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      // Firebase has resolved the identity at this point. Do not keep the
+      // application in an unauthenticated-looking state while the separate
+      // Neon profile and server-session work completes.
+      setUser(currentUser)
+      setLoading(false)
+      setProfileLoading(Boolean(currentUser))
+
       if (currentUser) {
         try {
           let profileResponse = await fetch('/api/me')
@@ -48,6 +58,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         } catch (error) {
           console.error("Failed to fetch user data:", error)
+        } finally {
+          setProfileLoading(false)
         }
       } else {
         try {
@@ -61,9 +73,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
         useUserStore.getState().clearUserData()
       }
-      
-      setUser(currentUser)
-      setLoading(false)
+        setProfileLoading(false)
     })
 
     return () => unsubscribe()
@@ -85,7 +95,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [user])
 
   return (
-    <AuthContext.Provider value={{ user, loading }}>
+    <AuthContext.Provider value={{ user, loading, profileLoading }}>
       {children}
     </AuthContext.Provider>
   )

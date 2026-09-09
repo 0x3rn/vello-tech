@@ -228,6 +228,20 @@ export async function getOrderReceipt(orderId: string) {
   } : null;
 }
 
+export async function getOrderForUser(orderId: string, uid: string) {
+  const db = createDatabase();
+  const [order] = await db.select().from(orders)
+    .where(and(eq(orders.id, orderId), eq(orders.userId, uid)))
+    .limit(1);
+  if (!order) return null;
+
+  const items = await db.select().from(orderItems).where(eq(orderItems.orderId, orderId));
+  return {
+    ...order,
+    totalAmount: Number(order.totalAmount),
+    items: items.map((item) => ({ name: item.name, quantity: item.quantity, price: Number(item.unitPrice) })),
+  };
+}
 export async function listAdminData(resource: string) {
   const db = createDatabase();
   if (resource === "categories") return db.select().from((await import("@/db/schema")).categories);
