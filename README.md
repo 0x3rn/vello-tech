@@ -208,10 +208,19 @@ npm run deploy:cloudflare
 ```
 
 Before deployment, add every variable listed in `wrangler.jsonc` under
-`secrets.required` to the Cloudflare Workers project. Set the `NEXT_PUBLIC_*`
-variables for the build as well, because browser-visible values are embedded at
-build time. Keep secret values out of `wrangler.jsonc`; local preview reads them
-from the generated, ignored `dist/server/.dev.vars` file.
+`secrets.required` to the Cloudflare Workers project as encrypted secrets. In
+Cloudflare Workers Builds, set `NEXT_PUBLIC_SITE_URL` and every
+`NEXT_PUBLIC_FIREBASE_*` value as plaintext **build variables** for Production
+and Preview. They are browser configuration, not private credentials, and are
+embedded into the client bundle at build time.
+
+Payment-provider keys, `RESEND_API_KEY`, and the Upstash Redis variables are
+optional at deployment time. Add the keys for each payment provider you enable.
+Checkout deliberately remains unavailable until both Upstash Redis rate-limit
+variables are set, so a missing optional integration cannot leave payment
+endpoints without abuse protection. Keep secret values out of `wrangler.jsonc`;
+local preview reads them from the generated, ignored `dist/server/.dev.vars`
+file.
 
 At minimum, Firebase session authentication requires `FIREBASE_PROJECT_ID`,
 `FIREBASE_CLIENT_EMAIL`, and `FIREBASE_PRIVATE_KEY` as Workers secrets. The

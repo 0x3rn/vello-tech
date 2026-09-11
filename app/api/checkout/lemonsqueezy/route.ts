@@ -4,7 +4,8 @@ import { initializeLemonSqueezy } from "@/lib/neon/payments";
 
 export async function POST(request: Request) {
   try {
-    if (checkoutLimiter && !(await checkoutLimiter.limit(`checkout_${getClientIp(request)}`)).success) return NextResponse.json({ error: "Too many checkout attempts. Please try again later." }, { status: 429 });
+    if (!checkoutLimiter) return NextResponse.json({ error: "Checkout is temporarily unavailable while rate limiting is configured." }, { status: 503 });
+    if (!(await checkoutLimiter.limit(`checkout_${getClientIp(request)}`)).success) return NextResponse.json({ error: "Too many checkout attempts. Please try again later." }, { status: 429 });
     return NextResponse.json(await initializeLemonSqueezy(request));
   } catch (error) {
     const message = error instanceof Error ? error.message : "Checkout failed";
