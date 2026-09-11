@@ -229,4 +229,4 @@ request reaches the deployed Worker.
 
 ## License
 
-MIT - Vello Tech
+MIT - Vello Tech.
