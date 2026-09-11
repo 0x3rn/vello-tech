@@ -85,8 +85,17 @@ function createNodeAuth(): ServerAuth {
   return getAuth() as ServerAuth;
 }
 
-const adminAuth = process.env.DEPLOYMENT_PLATFORM === "cloudflare"
-  ? createWorkersAuth()
-  : createNodeAuth();
+let adminAuth: ServerAuth | undefined;
 
-export { adminAuth };
+// Route modules are evaluated while Next collects build metadata. Creating the
+// Firebase client at module scope made a Cloudflare build require production
+// secrets even though no authentication code was being executed. Initialize
+// only when an auth request actually reaches the deployed application.
+export function getAdminAuth(): ServerAuth {
+  if (!adminAuth) {
+    adminAuth = process.env.DEPLOYMENT_PLATFORM === "cloudflare"
+      ? createWorkersAuth()
+      : createNodeAuth();
+  }
+  return adminAuth;
+}

@@ -2,7 +2,7 @@ import "server-only";
 
 import { cookies } from "next/headers";
 import { eq, sql } from "drizzle-orm";
-import { adminAuth } from "@/lib/firebase-admin";
+import { getAdminAuth } from "@/lib/firebase-admin";
 import { createDatabase } from "@/db/client";
 import { users } from "@/db/schema";
 
@@ -14,7 +14,7 @@ export function requireSameOrigin(request: Request) {
 export async function requireFirebaseUser() {
   const session = (await cookies()).get("__session")?.value;
   if (!session) throw new Error("Unauthorized");
-  return adminAuth.verifySessionCookie(session, true);
+  return getAdminAuth().verifySessionCookie(session, true);
 }
 
 export async function requireBearerUser(request: Request) {
@@ -22,7 +22,7 @@ export async function requireBearerUser(request: Request) {
   if (!authorization?.startsWith("Bearer ")) throw new Error("Unauthorized");
   const token = authorization.slice(7).trim();
   if (!token) throw new Error("Unauthorized");
-  return adminAuth.verifyIdToken(token, true);
+  return getAdminAuth().verifyIdToken(token, true);
 }
 
 export async function requireAdmin() {

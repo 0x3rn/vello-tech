@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { adminAuth } from "@/lib/firebase-admin";
+import { getAdminAuth } from "@/lib/firebase-admin";
 import { ensureNeonUser } from "@/lib/neon/auth";
 
 export async function POST(req: NextRequest) {
@@ -20,6 +20,7 @@ export async function POST(req: NextRequest) {
     if (typeof idToken !== "string" || idToken.length > 10000) {
       return NextResponse.json({ error: "Invalid token" }, { status: 400 });
     }
+    const adminAuth = getAdminAuth();
     const decoded = await adminAuth.verifyIdToken(idToken, true);
     const issuedAtSeconds = Number(decoded.auth_time ?? 0);
     if (!issuedAtSeconds || Date.now() / 1000 - issuedAtSeconds > 5 * 60) {

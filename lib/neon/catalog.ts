@@ -57,15 +57,33 @@ export type StoreProduct = {
 const decimal = (value: string | null) => value === null ? null : Number(value);
 const numeric = (value: string) => Number(value);
 
+async function withCatalogFallback<T>(resource: string, fallback: T, query: () => Promise<T>) {
+  try {
+    return await query();
+  } catch (error) {
+    // Keep the storefront renderable when Neon is unavailable, while retaining
+    // a concise diagnostic in the server logs without exposing connection data.
+    console.warn(
+      `[catalog] ${resource} unavailable; using an empty fallback.`,
+      error instanceof Error ? error.name : "UnknownError",
+    );
+    return fallback;
+  }
+}
+
 export async function listCategories() {
-  const db = createDatabase();
-  return db.select().from(categories).orderBy(asc(categories.name)) satisfies Promise<StoreCategory[]>;
+  return withCatalogFallback("categories", [] as StoreCategory[], async () => {
+    const db = createDatabase();
+    return db.select().from(categories).orderBy(asc(categories.name)) satisfies Promise<StoreCategory[]>;
+  });
 }
 
 export async function getCategoryBySlug(slug: string) {
-  const db = createDatabase();
-  const [category] = await db.select().from(categories).where(eq(categories.slug, slug)).limit(1);
-  return category ?? null;
+  return withCatalogFallback("category", null, async () => {
+    const db = createDatabase();
+    const [category] = await db.select().from(categories).where(eq(categories.slug, slug)).limit(1);
+    return category ?? null;
+  });
 }
 
 const catalogCacheTtlMs = 30_000;
@@ -161,6 +179,14 @@ export async function listStoreProducts() {
       catalogCache = { products: productRows, expiresAt: Date.now() + catalogCacheTtlMs };
       return productRows;
     })
+    .catch((error) => {
+      console.warn(
+        "[catalog] products unavailable; using an empty fallback.",
+        error instanceof Error ? error.name : "UnknownError",
+      );
+      catalogCache = { products: [], expiresAt: Date.now() + catalogCacheTtlMs };
+      return [] as StoreProduct[];
+    })
     .finally(() => {
       catalogInFlight = null;
     });
@@ -182,13 +208,15 @@ export async function listProductsForCategory(categoryId: string) {
 }
 
 export async function listFiveStarTestimonials(limit = 6) {
-  const db = createDatabase();
-  const rows = await db.select().from(reviews).where(eq(reviews.rating, 5)).limit(limit);
-  return rows.map((review) => ({
-    name: review.userName || "Verified Buyer",
-    role: "Customer",
-    content: review.title ? `${review.title} - ${review.comment ?? ""}` : review.comment ?? "",
-    rating: review.rating,
-    avatar: review.userName ? review.userName.substring(0, 2).toUpperCase() : "VB",
-  }));
+  return withCatalogFallback("testimonials", [], async () => {
+    const db = createDatabase();
+    const rows = await db.select().from(reviews).where(eq(reviews.rating, 5)).limit(limit);
+    return rows.map((review) => ({
+      name: review.userName || "Verified Buyer",
+      role: "Customer",
+      content: review.title ? `${review.title} - ${review.comment ?? ""}` : review.comment ?? "",
+      rating: review.rating,
+      avatar: review.userName ? review.userName.substring(0, 2).toUpperCase() : "VB",
+    }));
+  });
 }

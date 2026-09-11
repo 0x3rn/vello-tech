@@ -194,6 +194,11 @@ the unchanged native scripts: `npm run build` and `npm run start`.
 Cloudflare uses the separate vinext/Vite adapter path and does not replace the
 native Next.js/Vercel build.
 
+For a Git-integrated **Cloudflare Workers** deployment, configure the build
+command as `npm run build:cloudflare` and the deploy command as
+`npm run deploy:cloudflare`. Do not use `npm run build` there: that is the
+native Next.js build retained for Vercel and expects the Node/Vercel runtime.
+
 ```bash
 npx wrangler login
 npm run cloudflare:check
@@ -207,6 +212,11 @@ Before deployment, add every variable listed in `wrangler.jsonc` under
 variables for the build as well, because browser-visible values are embedded at
 build time. Keep secret values out of `wrangler.jsonc`; local preview reads them
 from the generated, ignored `dist/server/.dev.vars` file.
+
+At minimum, Firebase session authentication requires `FIREBASE_PROJECT_ID`,
+`FIREBASE_CLIENT_EMAIL`, and `FIREBASE_PRIVATE_KEY` as Workers secrets. The
+build deliberately does not read these values; they are required when an auth
+request reaches the deployed Worker.
 
 ## License
 
