@@ -1,4 +1,5 @@
 import Link from "next/link"
+import Image from "next/image"
 import {
   ArrowRight,
   Cable,
@@ -15,7 +16,7 @@ import {
 } from "lucide-react"
 
 import type { StoreCategory, StoreProduct } from "@/lib/neon/catalog"
-import { cn } from "@/lib/utils"
+import { resolveImageUrl } from "@/lib/utils"
 
 const iconMap: Record<string, LucideIcon> = {
   smartphones: Smartphone,
@@ -29,18 +30,6 @@ const iconMap: Record<string, LucideIcon> = {
   networking: Wifi,
   accessories: Cable,
 }
-
-const colors = [
-  { color: "bg-blue-500/10 text-blue-600 dark:text-blue-400", hoverColor: "hover:bg-blue-500/20 hover:border-blue-500/30 hover:shadow-blue-500/10" },
-  { color: "bg-purple-500/10 text-purple-600 dark:text-purple-400", hoverColor: "hover:bg-purple-500/20 hover:border-purple-500/30 hover:shadow-purple-500/10" },
-  { color: "bg-orange-500/10 text-orange-600 dark:text-orange-400", hoverColor: "hover:bg-orange-500/20 hover:border-orange-500/30 hover:shadow-orange-500/10" },
-  { color: "bg-teal-500/10 text-teal-600 dark:text-teal-400", hoverColor: "hover:bg-teal-500/20 hover:border-teal-500/30 hover:shadow-teal-500/10" },
-  { color: "bg-red-500/10 text-red-600 dark:text-red-400", hoverColor: "hover:bg-red-500/20 hover:border-red-500/30 hover:shadow-red-500/10" },
-  { color: "bg-green-500/10 text-green-600 dark:text-green-400", hoverColor: "hover:bg-green-500/20 hover:border-green-500/30 hover:shadow-green-500/10" },
-  { color: "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400", hoverColor: "hover:bg-yellow-500/20 hover:border-yellow-500/30 hover:shadow-yellow-500/10" },
-  { color: "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400", hoverColor: "hover:bg-cyan-500/20 hover:border-cyan-500/30 hover:shadow-cyan-500/10" },
-  { color: "bg-pink-500/10 text-pink-600 dark:text-pink-400", hoverColor: "hover:bg-pink-500/20 hover:border-pink-500/30 hover:shadow-pink-500/10" },
-]
 
 const commonOrder = [
   "smartphones", "laptops", "audio", "wearables", "cameras",
@@ -83,46 +72,58 @@ export function Categories({
   initialCategories: StoreCategory[]
   initialProducts: StoreProduct[]
 }) {
-  const categories = categorySummaries(initialCategories, initialProducts)
+  const summaries = categorySummaries(initialCategories, initialProducts)
+  const preferred = ["laptops", "smartphones", "gaming", "wearables"]
+  const categories = [
+    ...preferred.map((slug) => summaries.find((category) => category.slug === slug)),
+    ...summaries.filter((category) => !preferred.includes(category.slug)),
+  ].filter((category): category is (typeof summaries)[number] => Boolean(category)).slice(0, 4)
+  const categoryById = new Map(initialCategories.map((category) => [category.id, category]))
+
+  function belongsToCategory(product: StoreProduct, categoryId: string) {
+    let current = categoryById.get(product.subcategoryId || product.categoryId)
+    while (current?.parentCategoryId) current = categoryById.get(current.parentCategoryId)
+    return current?.id === categoryId || product.categoryId === categoryId
+  }
 
   return (
-    <section id="categories" className="py-16 lg:py-20 bg-secondary/30 relative overflow-hidden">
-      <div className="absolute top-0 inset-x-0 h-px bg-primary/20" />
-      <div className="mx-auto max-w-7xl px-4 lg:px-8 relative z-10">
-        <div className="text-center mb-16">
-          <h2 className="text-2xl lg:text-3xl font-extrabold text-foreground tracking-tight">
-            Shop by <span className="text-primary">Category</span>
-          </h2>
-          <p className="mt-6 text-muted-foreground max-w-2xl mx-auto text-base">
-            Browse our extensive collection organized by category for easy navigation and discovering exactly what you need.
-          </p>
+    <section id="categories" className="py-20 lg:py-28">
+      <div className="mx-auto max-w-[1440px] px-4 lg:px-8">
+        <div className="mb-9 flex items-end justify-between gap-4">
+          <div>
+            <h2 className="text-3xl font-semibold tracking-tight text-foreground md:text-4xl">Shop by category</h2>
+          </div>
+          <Link href="/categories" className="hidden items-center gap-2 text-sm font-medium text-foreground hover:text-primary sm:flex">
+            All categories <ArrowRight className="h-4 w-4" />
+          </Link>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-5 gap-6">
+        <div className="grid grid-cols-2 gap-3 md:gap-5 lg:grid-cols-4 lg:grid-rows-2">
           {categories.map((category, index) => {
             const Icon = iconMap[category.slug] ?? Smartphone
-            const colorTheme = colors[index % colors.length]
+            const product = initialProducts.find((item) => belongsToCategory(item, category.id) && item.imageUrls?.[0] && !item.imageUrls[0].includes('via.placeholder.com'))
             return (
               <Link
                 key={category.id}
                 href={`/category/${category.slug}`}
-                className={cn(
-                  "group relative block bg-card/80 backdrop-blur-sm rounded-3xl sm:rounded-[2rem] p-4 sm:p-6 border border-white/10 dark:border-white/5 transition-colors transform duration-300",
-                  "hover:shadow-lg",
-                  colorTheme.hoverColor,
-                )}
+                className={`group relative min-h-[210px] overflow-hidden rounded-[20px] bg-[#F0F1F3] p-5 md:min-h-[250px] md:p-7 lg:min-h-[260px] ${index === 0 ? "col-span-2 min-h-[310px] lg:row-span-2 lg:min-h-[540px]" : ""} ${index === 1 ? "lg:col-span-2" : ""}`}
               >
-                <div className={cn("w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl flex items-center justify-center mb-4 sm:mb-6 transition-colors duration-300 shadow-inner", colorTheme.color)}>
-                  <Icon className="h-6 w-6 sm:h-8 sm:w-8" />
+                <div className="relative z-10">
+                  <h3 className="text-xl font-semibold tracking-tight text-[#111214] md:text-2xl">{category.name}</h3>
+                  <p className="mt-1 text-xs text-[#656A73] md:text-sm">{category.count} products</p>
                 </div>
-                <h3 className="font-bold text-foreground mb-1 sm:mb-1.5 transition-colors duration-200 group-hover:text-primary text-base sm:text-lg">{category.name}</h3>
-                <p className="text-sm font-medium text-muted-foreground">{category.count} Products</p>
-                <div className="absolute bottom-6 right-6 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center opacity-0 -translate-x-4 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0">
-                  <ArrowRight className="h-4 w-4 text-primary" />
+                <div className={`absolute inset-x-[16%] bottom-[-9%] top-[40%] transition-transform duration-[220ms] ease-out group-hover:scale-[1.025] lg:top-[34%] ${index === 0 ? 'lg:top-[25%]' : ''}`}>
+                  {product ? (
+                    <Image src={resolveImageUrl(product.imageUrls[0])} alt="" fill sizes={index === 0 ? "(max-width: 1024px) 100vw, 50vw" : "(max-width: 1024px) 50vw, 25vw"} className="object-contain" />
+                  ) : (
+                    <Icon className="mx-auto h-full w-1/3 text-[#C1C7D0]" strokeWidth={1} />
+                  )}
                 </div>
+                <ArrowRight className="absolute bottom-5 right-5 h-5 w-5 text-[#111214] transition-transform duration-[220ms] group-hover:translate-x-1" />
               </Link>
             )
           })}
         </div>
+        <Link href="/categories" className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-foreground hover:text-primary sm:hidden">All categories <ArrowRight className="h-4 w-4" /></Link>
       </div>
     </section>
   )

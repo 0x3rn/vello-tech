@@ -1,7 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { Mail, Phone, MapPin } from 'lucide-react'
+import { usePathname } from 'next/navigation'
+import { Mail } from 'lucide-react'
 import { toast } from 'sonner'
 
 const footerLinks = {
@@ -10,14 +11,13 @@ const footerLinks = {
     { name: 'New Arrivals', href: '/new-arrivals' },
     { name: 'Best Sellers', href: '/best-sellers' },
     { name: 'Deals', href: '/shop?sale=true' },
-    { name: 'Gift Cards', href: '#' },
   ],
   support: [
     { name: 'Help Center', href: '#' },
-    { name: 'Track Order', href: '#' },
+    { name: 'Track Order', href: '/account/orders' },
     { name: 'Returns', href: '#' },
     { name: 'Shipping Info', href: '#' },
-    { name: 'Contact Us', href: 'mailto:support@vellotech.com' },
+    { name: 'Contact Us', href: 'mailto:support@vellotech.store' },
   ],
   company: [
     { name: 'About Us', href: '#' },
@@ -34,39 +34,33 @@ const footerLinks = {
 }
 
 export function Footer() {
+  const pathname = usePathname()
+  if (pathname.startsWith('/checkout')) return null
+
   return (
-    <footer id="support" className="bg-background border-t border-border relative overflow-hidden">
-      <div className="absolute inset-0 bg-primary/5" />
-      <div className="mx-auto max-w-7xl px-4 lg:px-8 pt-12 lg:pt-16 pb-8 relative z-10">
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-8 lg:gap-12">
+    <footer id="support" className="border-t border-[#E7E9ED] bg-[#F5F6F8]">
+      <div className="mx-auto max-w-[1440px] px-4 pb-7 pt-12 lg:px-8 lg:pt-14">
+        <div className="grid grid-cols-2 gap-x-6 gap-y-9 md:grid-cols-4 lg:grid-cols-6 lg:gap-10">
           {/* Brand */}
           <div className="col-span-2">
             <Link href="/" className="flex items-center gap-2 group">
-              <div className="flex items-center justify-center w-10 h-10 bg-primary rounded-lg transition-transform duration-300 group-hover:scale-105">
+              <div className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-primary">
                 <span className="text-primary-foreground font-bold text-xl">V</span>
               </div>
               <span className="text-xl font-bold tracking-tight text-foreground">
                 Vello<span className="text-primary">Tech</span>
               </span>
             </Link>
-            <p className="mt-4 text-muted-foreground text-sm leading-relaxed max-w-xs">
-              Your trusted destination for premium tech gadgets and electronics. Quality products, competitive prices, exceptional service.
+            <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted-foreground">
+              Considered technology for everyday life.
             </p>
 
             {/* Contact Info */}
-            <div className="mt-6 space-y-3">
-              <a href="mailto:support@vellotech.com" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors duration-200">
+            <div className="mt-5">
+              <a href="mailto:support@vellotech.store" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors duration-200">
                 <Mail className="h-4 w-4" />
                 support@vellotech.store
               </a>
-              <a href="tel:+1-800-VELLO" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors duration-200">
-                <Phone className="h-4 w-4" />
-                (555)-555-5555
-              </a>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <MapPin className="h-4 w-4" />
-                San Francisco, California
-              </div>
             </div>
           </div>
 
@@ -156,10 +150,11 @@ export function Footer() {
         </div>
 
         {/* Bottom */}
-        <div className="mt-16 pt-8 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-6">
+        <div className="mt-10 flex flex-col items-center justify-between gap-3 border-t border-[#E0E3E8] pt-6 md:flex-row">
           <p className="text-sm text-muted-foreground">
             &copy; {new Date().getFullYear()} Vello Tech. All rights reserved.
           </p>
+          <p className="text-xs text-muted-foreground">Secure payments · Quality checked products</p>
         </div>
       </div>
     </footer>

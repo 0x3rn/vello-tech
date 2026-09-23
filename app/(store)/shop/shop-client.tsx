@@ -1,35 +1,10 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { useRouter } from 'next/navigation'
-import Image from 'next/image'
-import Link from 'next/link'
-import { useCartStore } from '@/lib/store/cart'
 import { Button } from '@/components/ui/button'
-import { Loader2, ShoppingCart, Star, SlidersHorizontal, X } from 'lucide-react'
-import { toast } from 'sonner'
-import { cn, resolveImageUrl } from '@/lib/utils'
-
-interface ProductData {
-  id: string
-  name: string
-  brand: string
-  price: number
-  discountPrice: number | null
-  stockQuantity: number
-  description: string
-  imageUrls: string[]
-  categoryId: string
-  subcategoryId?: string
-  isFeatured: boolean
-  rating: number
-  numReviews: number
-  slug: string
-  condition?: 'new' | 'used' | 'refurbished'
-  imageAlts?: string[]
-  colors?: { name: string; hex: string; priceModifier?: number; stockQuantity: number; imageUrls?: string[] }[]
-  variantGroups?: { groupName: string; choices: { choiceName: string; priceModifier: number; stockQuantity: number }[] }[]
-}
+import { SlidersHorizontal, X } from 'lucide-react'
+import { ProductCard, type ProductData } from '@/components/product-card'
+import { cn } from '@/lib/utils'
 
 export function ShopClient({
   initialProducts,
@@ -42,7 +17,6 @@ export function ShopClient({
   title?: string
   description?: string
 }) {
-  const router = useRouter()
   const [products] = useState<ProductData[]>(initialProducts)
   
   // Filter states
@@ -50,11 +24,10 @@ export function ShopClient({
   const [selectedBrands, setSelectedBrands] = useState<string[]>([])
   const [selectedConditions, setSelectedConditions] = useState<string[]>([])
   const [hideOutOfStock, setHideOutOfStock] = useState(false)
+  const [minPrice, setMinPrice] = useState('')
+  const [maxPrice, setMaxPrice] = useState('')
   const [sortBy, setSortBy] = useState<'featured' | 'price-asc' | 'price-desc'>('featured')
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false)
-  const [addingProduct, setAddingProduct] = useState<string | null>(null)
-
-  const addItem = useCartStore((state) => state.addItem)
 
   // Derived state for filters
   const availableBrands = useMemo(() => {
@@ -113,6 +86,8 @@ export function ShopClient({
     if (hideOutOfStock) {
       result = result.filter(p => p.stockQuantity > 0)
     }
+    if (minPrice !== '') result = result.filter(p => (p.discountPrice ?? p.price) >= Number(minPrice))
+    if (maxPrice !== '') result = result.filter(p => (p.discountPrice ?? p.price) <= Number(maxPrice))
 
     // Apply Sorting
     switch (sortBy) {
@@ -130,50 +105,18 @@ export function ShopClient({
     }
 
     return result
-  }, [products, categories, selectedCategories, selectedBrands, selectedConditions, hideOutOfStock, sortBy])
-
-  const handleAddToCart = async (e: React.MouseEvent, product: ProductData) => {
-    e.preventDefault()
-    e.stopPropagation()
-
-    if ((product.colors && product.colors.length > 0) || (product.variantGroups && product.variantGroups.length > 0)) {
-      toast.info("Please select options for this product")
-      router.push(`/product/${product.slug}`)
-      return
-    }
-
-    setAddingProduct(product.id)
-    
-    // Simulate short network delay for satisfying visual feedback
-    await new Promise(resolve => setTimeout(resolve, 600))
-    
-    addItem({
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      image: resolveImageUrl(product.imageUrls?.[0]),
-      quantity: 1,
-      stockQuantity: product.stockQuantity,
-      slug: product.slug,
-      categoryId: product.categoryId
-    })
-    
-    toast.success(`${product.name} added to cart`, {
-      description: "You can view your cart or continue shopping.",
-    })
-    setAddingProduct(null)
-  }
+  }, [products, categories, selectedCategories, selectedBrands, selectedConditions, hideOutOfStock, minPrice, maxPrice, sortBy])
 
   return (
     <div className="min-h-screen bg-background pb-20 pt-8 lg:pt-12">
-      <div className="mx-auto max-w-7xl px-4 lg:px-8">
+      <div className="mx-auto max-w-[1440px] px-4 lg:px-8">
         
         {/* Header */}
-        <div className="mb-8 border-b border-border pb-8">
-          <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-foreground mb-4">
+        <div className="mb-10">
+          <h1 className="mb-3 text-4xl font-semibold tracking-tight text-foreground lg:text-5xl">
             {title}
           </h1>
-          <p className="text-muted-foreground text-lg">
+          <p className="text-muted-foreground">
             {description}
           </p>
         </div>
@@ -201,9 +144,12 @@ export function ShopClient({
                   <X className="w-5 h-5" />
                 </Button>
               </div>
+              {(selectedCategories.length > 0 || selectedBrands.length > 0 || selectedConditions.length > 0 || hideOutOfStock || minPrice || maxPrice) && (
+                <button type="button" onClick={() => { setSelectedCategories([]); setSelectedBrands([]); setSelectedConditions([]); setHideOutOfStock(false); setMinPrice(''); setMaxPrice('') }} className="mb-5 text-sm font-medium text-primary hover:underline">Clear all filters</button>
+              )}
 
               {/* Sort Options */}
-              <div className="mb-8">
+              <div className="mb-8 lg:hidden">
                 <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">Sort By</h3>
                 <div className="space-y-2">
                   <label className="flex items-center gap-2 cursor-pointer group">
@@ -222,19 +168,19 @@ export function ShopClient({
               </div>
 
               {/* Stock Status */}
-              <div className="mb-8 border-t border-border pt-6">
-                <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">Availability</h3>
-                <label className="flex items-center gap-2 cursor-pointer group">
+              <details className="border-t border-border py-5">
+                <summary className="cursor-pointer text-sm font-semibold text-foreground">Availability</summary>
+                <label className="mt-4 flex cursor-pointer items-center gap-2 group">
                   <input type="checkbox" checked={hideOutOfStock} onChange={(e) => setHideOutOfStock(e.target.checked)} className="rounded border-input text-primary accent-primary" />
                   <span className="text-sm group-hover:text-primary transition-colors">In Stock Only</span>
                 </label>
-              </div>
+              </details>
 
               {/* Category Filter */}
               {categories.length > 0 && (
-                <div className="mb-8 border-t border-border pt-6">
-                  <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">Categories</h3>
-                  <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 scrollbar-thin">
+                <details open className="border-t border-border py-5">
+                  <summary className="cursor-pointer text-sm font-semibold text-foreground">Category</summary>
+                  <div className="mt-4 max-h-[300px] space-y-3 overflow-y-auto pr-2 scrollbar-thin">
                     {categories.filter(c => !c.parentCategoryId).map(mainCat => {
                       const isSelected = selectedCategories.includes(mainCat.id)
                       const subCats = categories.filter(c => c.parentCategoryId === mainCat.id)
@@ -270,13 +216,13 @@ export function ShopClient({
                       )
                     })}
                   </div>
-                </div>
+                </details>
               )}
 
               {/* Condition Filter */}
-              <div className="mb-8 border-t border-border pt-6">
-                <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">Condition</h3>
-                <div className="space-y-2">
+              <details className="border-t border-border py-5">
+                <summary className="cursor-pointer text-sm font-semibold text-foreground">Condition</summary>
+                <div className="mt-4 space-y-2">
                   {['new', 'used', 'refurbished'].map(condition => (
                     <label key={condition} className="flex items-center gap-2 cursor-pointer group">
                       <input 
@@ -289,13 +235,13 @@ export function ShopClient({
                     </label>
                   ))}
                 </div>
-              </div>
+              </details>
 
               {/* Brands Filter */}
               {availableBrands.length > 0 && (
-                <div className="border-t border-border pt-6">
-                  <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">Brands</h3>
-                  <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 scrollbar-thin">
+                <details className="border-t border-border py-5">
+                  <summary className="cursor-pointer text-sm font-semibold text-foreground">Brand</summary>
+                  <div className="mt-4 max-h-[300px] space-y-2 overflow-y-auto pr-2 scrollbar-thin">
                     {availableBrands.map(brand => (
                       <label key={brand} className="flex items-center gap-2 cursor-pointer group">
                         <input 
@@ -308,8 +254,16 @@ export function ShopClient({
                       </label>
                     ))}
                   </div>
-                </div>
+                </details>
               )}
+              <details className="border-t border-border py-5">
+                <summary className="cursor-pointer text-sm font-semibold text-foreground">Price</summary>
+                <div className="mt-4 flex items-center gap-2">
+                  <input aria-label="Minimum price" type="number" min="0" inputMode="decimal" placeholder="Min $" value={minPrice} onChange={(event) => setMinPrice(event.target.value)} className="min-w-0 w-1/2 rounded-lg border border-[#E7E9ED] bg-white px-3 py-2 text-sm outline-none focus:border-primary" />
+                  <span className="text-muted-foreground">–</span>
+                  <input aria-label="Maximum price" type="number" min="0" inputMode="decimal" placeholder="Max $" value={maxPrice} onChange={(event) => setMaxPrice(event.target.value)} className="min-w-0 w-1/2 rounded-lg border border-[#E7E9ED] bg-white px-3 py-2 text-sm outline-none focus:border-primary" />
+                </div>
+              </details>
               
               {/* Mobile apply button */}
               <div className="lg:hidden mt-8">
@@ -323,80 +277,31 @@ export function ShopClient({
           {/* Product Grid */}
           <div className="flex-1">
             {filteredAndSortedProducts.length === 0 ? (
-              <div className="text-center py-20 bg-secondary/20 rounded-2xl border border-border">
+              <div className="py-20 text-center">
                 <h2 className="text-2xl font-semibold mb-2">No Products Found</h2>
                 <p className="text-muted-foreground">Try adjusting your filters to see more results.</p>
-                {(selectedBrands.length > 0 || hideOutOfStock) && (
-                  <Button variant="outline" className="mt-6" onClick={() => { setSelectedBrands([]); setHideOutOfStock(false); }}>
+                {(selectedCategories.length > 0 || selectedBrands.length > 0 || selectedConditions.length > 0 || hideOutOfStock || minPrice || maxPrice) && (
+                  <Button variant="outline" className="mt-6" onClick={() => { setSelectedCategories([]); setSelectedBrands([]); setSelectedConditions([]); setHideOutOfStock(false); setMinPrice(''); setMaxPrice('') }}>
                     Clear Filters
                   </Button>
                 )}
               </div>
             ) : (
               <div>
-                <div className="hidden lg:block mb-4 text-sm text-muted-foreground">
-                  Showing {filteredAndSortedProducts.length} products
+                <div className="mb-6 flex items-center justify-between border-b border-[#E7E9ED] pb-4 text-sm text-muted-foreground">
+                  <span>{filteredAndSortedProducts.length} products</span>
+                  <label className="hidden items-center gap-2 lg:flex">
+                    Sort:
+                    <select value={sortBy} onChange={(event) => setSortBy(event.target.value as typeof sortBy)} className="bg-transparent font-medium text-foreground outline-none">
+                      <option value="featured">Featured</option>
+                      <option value="price-asc">Price: low to high</option>
+                      <option value="price-desc">Price: high to low</option>
+                    </select>
+                  </label>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                <div className="grid grid-cols-2 gap-x-4 gap-y-10 md:gap-x-6 xl:grid-cols-3">
                   {filteredAndSortedProducts.map((product) => (
-                    <Link 
-                      key={product.id} 
-                      href={`/product/${product.slug}`}
-                      className="group flex flex-col bg-card rounded-2xl border border-border overflow-hidden hover:border-primary/50 transition-all hover:shadow-lg"
-                    >
-                      {/* Product Image */}
-                      <div className="relative aspect-square bg-secondary/30 p-6 overflow-hidden flex items-center justify-center">
-                        <Image
-                          src={resolveImageUrl(product.imageUrls?.[0])}
-                          alt={product.imageAlts?.[0] || product.name}
-                          fill
-                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-                          className="object-contain p-6 group-hover:scale-105 transition-transform duration-500"
-                        />
-                        <div className="absolute top-4 left-4 bg-background/80 backdrop-blur-md px-2 py-1 rounded text-xs font-medium border border-border">
-                          {product.brand}
-                        </div>
-                      </div>
-
-                      {/* Product Details */}
-                      <div className="p-5 flex flex-col flex-1">
-                        <div className="flex items-center gap-1 mb-2">
-                          <Star className="h-3.5 w-3.5 fill-primary text-primary" />
-                          <span className="text-sm font-medium">{product.rating}</span>
-                          <span className="text-sm text-muted-foreground ml-1">({product.numReviews})</span>
-                        </div>
-                        
-                        <h3 className="font-semibold text-foreground line-clamp-2 mb-1 group-hover:text-primary transition-colors">
-                          {product.name}
-                        </h3>
-                        
-                        <div className="mt-auto pt-4 flex flex-wrap items-center justify-between gap-y-3 gap-x-2">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="text-lg font-bold">
-                              ${(product.discountPrice || product.price || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                            </span>
-                            {product.discountPrice && (
-                              <span className="text-sm text-muted-foreground line-through">
-                                ${(product.price || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                              </span>
-                            )}
-                          </div>
-                          <Button 
-                            size="sm" 
-                            onClick={(e) => handleAddToCart(e, product)}
-                            disabled={product.stockQuantity === 0 || addingProduct === product.id}
-                            className="rounded-full w-10 h-10 p-0 shadow-md"
-                          >
-                            {addingProduct === product.id ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <ShoppingCart className="h-4 w-4" />
-                            )}
-                            <span className="sr-only">Add to cart</span>
-                          </Button>
-                        </div>
-                      </div>
-                    </Link>
+                    <ProductCard key={product.id} product={product} />
                   ))}
                 </div>
               </div>

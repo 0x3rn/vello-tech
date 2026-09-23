@@ -72,7 +72,7 @@ export function Hero({ initialSlides = [] }: { initialSlides?: SlideData[] }) {
 
   return (
     <section 
-      className="relative w-full overflow-hidden bg-zinc-950 text-white min-h-[80vh] flex items-center transition-colors duration-1000"
+      className="relative flex min-h-[620px] w-full items-center overflow-hidden bg-[#101114] text-white lg:min-h-[680px]"
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
@@ -82,19 +82,19 @@ export function Hero({ initialSlides = [] }: { initialSlides?: SlideData[] }) {
       {/* Subtle radial glow */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.03)_0%,transparent_50%)] pointer-events-none z-0" />
 
-      <div className="relative h-full w-full mx-auto max-w-7xl px-6 sm:px-12 md:px-16 lg:px-24 pt-12 lg:pt-0 pb-20 lg:pb-0 z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center w-full min-h-[600px]">
+      <div className="relative z-10 mx-auto h-full w-full max-w-[1440px] px-6 pb-20 pt-12 sm:px-8 lg:px-16 lg:py-14">
+        <div className="grid min-h-[540px] w-full grid-cols-1 items-center gap-6 lg:grid-cols-[0.92fr_1.08fr] lg:gap-10">
           
           {/* Mobile Image Block (Shows above text on mobile) */}
           <div className="block lg:hidden w-full z-20 mb-8">
             <AnimatePresence mode="wait">
               <motion.div
                 key={`mobile-img-${currentSlide}`}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, x: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
-                className="relative w-full aspect-square max-h-[400px] flex items-center justify-center"
+                exit={{ opacity: 0, x: -12 }}
+                transition={{ duration: 0.22, ease: 'easeOut' }}
+                className="relative flex aspect-square max-h-[340px] w-full items-center justify-center"
               >
                 <Link href={current.slug === 'shop' ? '/shop' : `/product/${current.slug}`} className="absolute inset-0 z-10 flex items-center justify-center">
                   <Image 
@@ -102,7 +102,7 @@ export function Hero({ initialSlides = [] }: { initialSlides?: SlideData[] }) {
                     alt={current.title} 
                     fill 
                     sizes="(max-width: 768px) 100vw, 50vw"
-                    className="object-contain p-4 hover:scale-105 transition-transform duration-700 drop-shadow-2xl" 
+                    className="object-contain p-4"
                     priority={currentSlide === 0}
                   />
                 </Link>
@@ -114,39 +114,40 @@ export function Hero({ initialSlides = [] }: { initialSlides?: SlideData[] }) {
           <AnimatePresence mode="wait">
             <motion.div
               key={`text-${currentSlide}`}
-              initial={{ opacity: 0, x: -30 }}
+              initial={{ opacity: 0, x: -12 }}
               animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 30 }}
-              transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
-              className="flex flex-col items-center lg:items-start text-center lg:text-left z-20"
+              exit={{ opacity: 0, x: 12 }}
+              transition={{ duration: 0.22, ease: 'easeOut' }}
+              className="z-20 flex flex-col items-center text-center lg:items-start lg:text-left"
             >
               {/* Badge */}
-              <div className="inline-block px-4 py-1.5 bg-white/10 text-white backdrop-blur-md border border-white/20 text-xs font-bold uppercase tracking-widest rounded-full mb-8">
-                {current.badge}
-              </div>
+              <p className="mb-6 text-xs font-semibold uppercase tracking-[0.2em] text-white/65">{current.badge} / {current.subtitle}</p>
 
               {/* Title */}
-              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-white tracking-tight leading-[1.1] mb-6 line-clamp-3">
+              <h1 className="mb-6 max-w-[650px] text-4xl font-semibold leading-[0.98] tracking-[-0.045em] text-white sm:text-5xl lg:text-[clamp(3.75rem,5vw,4.5rem)]">
                 {current.title}
               </h1>
 
               {/* Description */}
-              <p className="text-base md:text-xl text-zinc-400 max-w-lg mb-10 leading-relaxed font-light line-clamp-3">
+              <p className="mb-7 max-w-md text-base leading-relaxed text-zinc-400 md:text-lg line-clamp-3">
                 {current.description}
               </p>
+              {current.price > 0 && (
+                <p className="mb-7 text-xl font-semibold tracking-tight text-white">
+                  ${current.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                </p>
+              )}
 
               {/* Price and CTA */}
-              <div className="flex flex-col sm:flex-row items-center lg:items-center gap-6 w-full lg:w-auto">
+              <div className="flex w-full flex-col items-center gap-4 sm:w-auto sm:flex-row lg:items-center">
                 <Link href={current.slug === 'shop' ? '/shop' : `/product/${current.slug}`} className="w-full sm:w-auto">
-                  <Button size="lg" className="w-full sm:w-auto h-14 px-8 text-base bg-primary text-primary-foreground hover:bg-primary/90 rounded-full font-bold transition-all duration-300">
-                    Shop Now
+                  <Button size="lg" className="h-12 w-full rounded-[11px] bg-primary px-7 text-sm font-semibold text-primary-foreground hover:bg-primary/90 sm:w-auto">
+                    Shop now <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </Link>
-                {current.price > 0 && (
-                  <p className="text-lg lg:text-xl font-medium text-white/90">
-                    ${current.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                  </p>
-                )}
+                <Link href={current.slug === 'shop' ? '/categories' : `/product/${current.slug}`} className="px-3 py-3 text-sm font-medium text-white/75 transition-colors hover:text-white">
+                  {current.slug === 'shop' ? 'Explore categories' : 'View details'}
+                </Link>
               </div>
             </motion.div>
           </AnimatePresence>
@@ -156,19 +157,19 @@ export function Hero({ initialSlides = [] }: { initialSlides?: SlideData[] }) {
             <AnimatePresence mode="wait">
               <motion.div
                 key={`desktop-img-${currentSlide}`}
-                initial={{ opacity: 0, scale: 0.9, x: 30 }}
+                initial={{ opacity: 0, x: 12 }}
                 animate={{ opacity: 1, scale: 1, x: 0 }}
-                exit={{ opacity: 0, scale: 1.05, x: -30 }}
-                transition={{ duration: 0.7, ease: [0.25, 0.1, 0.25, 1] }}
-                className="absolute inset-0 flex items-center justify-center group"
+                exit={{ opacity: 0, x: -12 }}
+                transition={{ duration: 0.22, ease: 'easeOut' }}
+                className="absolute inset-0 flex items-center justify-center"
               >
-                <Link href={current.slug === 'shop' ? '/shop' : `/product/${current.slug}`} className="relative w-full h-full max-h-[600px] flex items-center justify-center">
+                <Link href={current.slug === 'shop' ? '/shop' : `/product/${current.slug}`} className="relative flex h-full max-h-[620px] w-full items-center justify-center">
                   <Image 
                     src={resolveImageUrl(current.image)} 
                     alt={current.title} 
                     fill 
                     sizes="(max-width: 768px) 100vw, 50vw"
-                    className="object-contain p-8 group-hover:scale-105 transition-transform duration-700 drop-shadow-2xl" 
+                    className="object-contain p-[5%]"
                     priority={currentSlide === 0}
                   />
                 </Link>
@@ -180,16 +181,16 @@ export function Hero({ initialSlides = [] }: { initialSlides?: SlideData[] }) {
 
       {/* Slide Indicators */}
       {initialSlides.length > 1 && (
-        <div className="absolute bottom-6 lg:bottom-12 left-1/2 -translate-x-1/2 flex items-center gap-3 z-30">
+        <div className="absolute bottom-6 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2.5 lg:bottom-10">
             {initialSlides.map((_, index) => (
               <button
                 key={index}
                 onClick={() => setCurrentSlide(index)}
                 className={cn(
-                  'h-1.5 rounded-full transition-all duration-500',
+                  'h-1 rounded-full transition-all duration-[220ms]',
                   index === currentSlide 
-                    ? 'w-10 bg-foreground' 
-                    : 'w-3 bg-muted hover:bg-muted-foreground'
+                    ? 'w-8 bg-white'
+                    : 'w-2 bg-white/30 hover:bg-white/60'
                 )}
                 aria-label={`Go to slide ${index + 1}`}
               />

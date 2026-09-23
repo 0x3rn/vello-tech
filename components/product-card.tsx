@@ -1,16 +1,14 @@
 'use client'
 
-import { useState } from 'react'
-import { Star, Heart, ShoppingCart, Eye, Loader2 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { cn, resolveImageUrl } from '@/lib/utils'
+import { useState, type MouseEvent } from 'react'
+import { Heart, Loader2, ShoppingCart, Star } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useCartStore } from '@/lib/store/cart'
-import { useWishlist } from '@/lib/hooks/use-wishlist'
 import { toast } from 'sonner'
+import { useWishlist } from '@/lib/hooks/use-wishlist'
+import { useCartStore } from '@/lib/store/cart'
+import { cn, resolveImageUrl } from '@/lib/utils'
 
 export interface ProductData {
   id: string
@@ -22,6 +20,7 @@ export interface ProductData {
   description: string
   imageUrls: string[]
   categoryId: string
+  subcategoryId?: string
   isFeatured: boolean
   rating: number
   numReviews: number
@@ -33,170 +32,102 @@ export interface ProductData {
   variantGroups?: { groupName: string; choices: { choiceName: string; priceModifier: number; stockQuantity: number }[] }[]
 }
 
-const BLUR_DATA_URL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mO88OjRfwwAI6wDeamL1nAAAAAASUVORK5CYII="
+const BLUR_DATA_URL = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mO88OjRfwwAI6wDeamL1nAAAAAASUVORK5CYII='
 
-export function ProductCard({ 
-  product,
-  priority = false
-}: { 
-  product: ProductData
-  priority?: boolean 
-}) {
+export function ProductCard({ product, priority = false }: { product: ProductData; priority?: boolean }) {
   const router = useRouter()
   const { toggleWishlist, loadingItems, wishlist } = useWishlist()
-  const isLiked = wishlist.some(id => id === product.id || id.startsWith(`${product.id}::`))
-  const isWishlistLoading = loadingItems[product.id]
-  const [isHovered, setIsHovered] = useState(false)
-  const [isAdding, setIsAdding] = useState(false)
   const addItem = useCartStore((state) => state.addItem)
+  const [isAdding, setIsAdding] = useState(false)
+  const isLiked = wishlist.some((id) => id === product.id || id.startsWith(`${product.id}::`))
+  const salePrice = product.discountPrice !== null && product.discountPrice < product.price ? product.discountPrice : null
+  const href = `/product/${product.slug}`
 
-  const handleAddToCart = async (e: React.MouseEvent) => {
-    e.preventDefault()
-    
-    if ((product.colors && product.colors.length > 0) || (product.variantGroups && product.variantGroups.length > 0)) {
-      toast.info("Please select options for this product")
-      router.push(`/product/${product.slug}`)
+  const handleAddToCart = (event: MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault()
+    if (isAdding || product.stockQuantity <= 0) return
+    if (product.colors?.length || product.variantGroups?.length) {
+      toast.info('Choose your options before adding this product')
+      router.push(href)
       return
     }
-    
     setIsAdding(true)
-    
-    // Simulate short network delay for satisfying visual feedback
-    await new Promise(resolve => setTimeout(resolve, 600))
-    
-    addItem({
-      id: product.id,
-      name: product.name,
-      price: product.discountPrice || product.price,
-      image: resolveImageUrl(product.imageUrls?.[0]),
-      quantity: 1,
-      stockQuantity: product.stockQuantity,
-      slug: product.slug,
-      categoryId: product.categoryId,
-    })
-    
-    toast.success(`${product.name} added to cart`, {
-      description: "You can view your cart or continue shopping.",
-    })
-    setIsAdding(false)
+    try {
+      addItem({
+        id: product.id,
+        name: product.name,
+        price: salePrice ?? product.price,
+        image: resolveImageUrl(product.imageUrls?.[0]),
+        quantity: 1,
+        stockQuantity: product.stockQuantity,
+        slug: product.slug,
+        categoryId: product.categoryId,
+      })
+      toast.success(`${product.name} added to cart`)
+    } finally {
+      setIsAdding(false)
+    }
   }
 
   return (
-    <div 
-      className="group bg-card rounded-xl border border-border overflow-hidden transition-all duration-300 hover:shadow-lg relative"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      <Link href={`/product/${product.slug}`} className="block">
-        {/* Image */}
-        <div className="relative aspect-square p-6 overflow-hidden bg-secondary/30 flex items-center justify-center">
+    <article className="group min-w-0 transition-transform duration-[220ms] ease-out hover:-translate-y-[3px]">
+      <div className="relative aspect-square overflow-hidden rounded-2xl bg-[#F5F6F8] transition-shadow duration-[220ms] ease-out group-hover:shadow-[0_12px_30px_rgba(17,24,39,0.07)]">
+        <Link href={href} aria-label={`View ${product.name}`} className="absolute inset-0 block">
           <Image
             src={resolveImageUrl(product.imageUrls?.[0])}
             alt={product.imageAlts?.[0] || product.name}
             fill
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
             priority={priority}
             placeholder="blur"
             blurDataURL={BLUR_DATA_URL}
-            className="object-contain p-8 group-hover:scale-105 transition-transform duration-500"
+            className="object-contain p-[9%] transition-transform duration-[220ms] ease-out group-hover:scale-[1.025]"
           />
-          
-          {/* Action buttons */}
-          <div className={cn(
-            'absolute top-4 right-4 flex flex-col gap-3 transition-all duration-500 ease-out z-10',
-            isHovered ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4'
-          )}>
-            <button
-              onClick={(e) => toggleWishlist(e, product.id)}
-              disabled={isWishlistLoading}
-              className={cn(
-                'w-10 h-10 rounded-full bg-background flex items-center justify-center border border-border shadow-sm transition-colors duration-300 hover:bg-secondary',
-                isLiked && 'bg-destructive/10 border-destructive/20 text-destructive'
-              )}
-            >
-              {isWishlistLoading ? (
-                <Loader2 className="h-5 w-5 animate-spin text-foreground" />
-              ) : (
-                <Heart className={cn(
-                  'h-5 w-5 transition-colors duration-300',
-                  isLiked ? 'fill-destructive text-destructive' : 'text-foreground'
-                )} />
-              )}
-            </button>
-            <div 
-              className="w-10 h-10 rounded-full bg-background flex items-center justify-center border border-border shadow-sm transition-colors duration-300 hover:bg-secondary cursor-pointer"
-            >
-              <Eye className="h-5 w-5 text-foreground" />
-            </div>
-          </div>
-
-          {/* Quick add button */}
-          <div className={cn(
-            'absolute bottom-4 left-4 right-4 transition-all duration-500 ease-out z-10',
-            isHovered ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-          )}>
-            <Button 
-              onClick={handleAddToCart}
-              disabled={product.stockQuantity === 0 || isAdding}
-              className="w-full rounded-xl shadow-lg transition-transform duration-300 hover:scale-[1.02]" 
-              size="default"
-            >
-              {isAdding ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <ShoppingCart className="h-4 w-4 mr-2" />
-              )}
-              {isAdding ? 'Adding...' : 'Add to Cart'}
-            </Button>
-          </div>
-        </div>
-
-        {/* Content */}
-        <div className="p-6 relative z-20 bg-card">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{product.brand}</p>
-          <h3 className="font-bold text-foreground mt-2 text-base transition-colors duration-300 group-hover:text-primary line-clamp-2">
-            {product.name}
-          </h3>
-          
-          {/* Rating */}
-          {(product.numReviews > 0) && (
-            <div className="flex items-center gap-1.5 mt-2">
-              <div className="flex items-center">
-                {[...Array(5)].map((_, i) => (
-                  <Star 
-                    key={i} 
-                    className={cn(
-                      'h-4 w-4 transition-colors duration-300',
-                      i < Math.floor(product.rating || 0) 
-                        ? 'fill-amber-400 text-amber-400' 
-                        : 'fill-muted text-muted'
-                    )} 
-                  />
-                ))}
-              </div>
-              <span className="text-sm font-bold text-foreground ml-1">{product.rating || 0}</span>
-              <span className="text-sm text-muted-foreground">({product.numReviews || 0})</span>
-            </div>
+        </Link>
+        {product.badge ? (
+          <span className="absolute left-3 top-3 rounded-md bg-white/95 px-2.5 py-1 text-[11px] font-semibold text-[#111214]">{product.badge}</span>
+        ) : salePrice !== null && product.price > 0 ? (
+          <span className="absolute left-3 top-3 rounded-md bg-white/95 px-2.5 py-1 text-[11px] font-semibold text-[#111214]">{Math.round((1 - salePrice / product.price) * 100)}% off</span>
+        ) : null}
+        <button
+          type="button"
+          onClick={(event) => toggleWishlist(event, product.id)}
+          disabled={loadingItems[product.id]}
+          aria-label={isLiked ? `Remove ${product.name} from wishlist` : `Add ${product.name} to wishlist`}
+          aria-pressed={isLiked}
+          className={cn(
+            'absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-[10px] bg-white/95 text-[#656A73] transition-[opacity,color] duration-[220ms] hover:text-primary focus-visible:outline-2 focus-visible:outline-primary lg:opacity-0 lg:group-hover:opacity-100 lg:focus-visible:opacity-100',
+            isLiked && 'text-primary lg:opacity-100',
           )}
-
-          {/* Price */}
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 mt-4">
-            <span className="text-lg font-bold text-foreground">
-              ${(product.discountPrice || product.price).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-            </span>
-            {product.discountPrice && (
-              <span className="text-sm font-medium text-muted-foreground line-through decoration-muted-foreground/50">
-                ${product.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-              </span>
-            )}
-            {product.discountPrice && (
-              <Badge variant="secondary" className="ml-auto text-xs font-bold bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
-                Save ${(product.price - product.discountPrice).toLocaleString()}
-              </Badge>
-            )}
+        >
+          {loadingItems[product.id] ? <Loader2 className="h-[18px] w-[18px] animate-spin" /> : <Heart className={cn('h-[18px] w-[18px]', isLiked && 'fill-current')} />}
+        </button>
+        <button
+          type="button"
+          onClick={handleAddToCart}
+          disabled={product.stockQuantity <= 0 || isAdding}
+          aria-label={product.stockQuantity <= 0 ? `${product.name} is out of stock` : `Add ${product.name} to cart`}
+          className="absolute bottom-3 right-3 flex h-10 w-10 items-center justify-center rounded-[10px] bg-primary text-white transition-[opacity,transform,background-color] duration-[220ms] ease-out hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50 lg:bottom-4 lg:left-4 lg:right-4 lg:h-11 lg:w-auto lg:translate-y-2 lg:opacity-0 lg:group-hover:translate-y-0 lg:group-hover:opacity-100 lg:focus-visible:translate-y-0 lg:focus-visible:opacity-100"
+        >
+          {isAdding ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShoppingCart className="h-4 w-4" />}
+          <span className="ml-2 hidden text-sm font-semibold lg:inline">{product.stockQuantity <= 0 ? 'Out of stock' : 'Add to cart'}</span>
+        </button>
+      </div>
+      <div className="pt-4">
+        <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-[#656A73]">{product.brand}</p>
+        <Link href={href} className="mt-1.5 block min-h-11 text-[16px] font-semibold leading-snug text-[#111214] line-clamp-2 hover:text-primary">{product.name}</Link>
+        {product.numReviews > 0 && (
+          <div className="mt-2 flex items-center gap-1.5 text-xs text-[#656A73]" aria-label={`${product.rating} out of 5 stars from ${product.numReviews} reviews`}>
+            <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+            <span className="font-medium text-[#35383D]">{product.rating}</span>
+            <span>({product.numReviews})</span>
           </div>
+        )}
+        <div className="mt-3 flex flex-wrap items-baseline gap-2">
+          <span className="text-lg font-semibold tracking-tight text-[#111214]">${(salePrice ?? product.price).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+          {salePrice !== null && <span className="text-sm text-[#8A8F98] line-through">${product.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>}
         </div>
-      </Link>
-    </div>
+      </div>
+    </article>
   )
 }

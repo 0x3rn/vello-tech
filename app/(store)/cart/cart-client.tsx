@@ -15,7 +15,6 @@ import {
   ArrowRight,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { useCartStore } from "@/lib/store/cart"
 import { useAuth } from "@/lib/contexts/auth-context"
@@ -26,8 +25,6 @@ export function CartClient({ initialFreeShippingThreshold }: { initialFreeShippi
   const { items, updateQuantity, removeItem, totalPrice } = useCartStore()
   const { user } = useAuth()
   const router = useRouter()
-  const [promoCode, setPromoCode] = useState("")
-  
   const [taxRate, setTaxRate] = useState<{ percentage: number | null, amount: number | null } | null>(null)
   const [shippingRate, setShippingRate] = useState<number | null>(null)
   const [freeShippingThreshold] = useState<number | null>(initialFreeShippingThreshold)
@@ -86,8 +83,6 @@ export function CartClient({ initialFreeShippingThreshold }: { initialFreeShippi
   }, [user])
 
   const subtotal = totalPrice()
-  const discount = promoCode === "TECH20" ? subtotal * 0.2 : 0
-  
   let shipping = 0
   let tax = 0
   const isShippingBlocked = shippingRate === null
@@ -109,7 +104,7 @@ export function CartClient({ initialFreeShippingThreshold }: { initialFreeShippi
     }
   }
 
-  const total = subtotal + shipping - discount + tax
+  const total = subtotal + shipping + tax
 
   if (!mounted) {
     return (
@@ -126,7 +121,7 @@ export function CartClient({ initialFreeShippingThreshold }: { initialFreeShippi
             <div className="lg:grid lg:grid-cols-12 lg:gap-x-12 lg:items-start">
               <div className="lg:col-span-7 space-y-6">
                 {[1, 2].map((i) => (
-                  <div key={i} className="flex flex-col sm:flex-row gap-4 p-4 rounded-2xl bg-card border border-border animate-pulse">
+                  <div key={i} className="flex flex-col gap-4 border-b border-[#E7E9ED] py-5 sm:flex-row animate-pulse">
                     <div className="w-full sm:w-32 h-32 bg-secondary rounded-xl"></div>
                     <div className="flex-1 space-y-4">
                       <div className="h-5 w-3/4 bg-secondary rounded"></div>
@@ -140,7 +135,7 @@ export function CartClient({ initialFreeShippingThreshold }: { initialFreeShippi
                 ))}
               </div>
               <div className="mt-10 lg:mt-0 lg:col-span-5">
-                <div className="rounded-3xl border border-border bg-card p-6 shadow-sm animate-pulse">
+                <div className="rounded-2xl border border-border bg-card p-6 animate-pulse">
                   <div className="h-6 w-1/2 bg-secondary rounded mb-6"></div>
                   <div className="space-y-4 mb-6">
                     <div className="flex justify-between"><div className="h-4 w-16 bg-secondary rounded"></div><div className="h-4 w-12 bg-secondary rounded"></div></div>
@@ -149,7 +144,7 @@ export function CartClient({ initialFreeShippingThreshold }: { initialFreeShippi
                   </div>
                   <div className="h-px bg-border my-6"></div>
                   <div className="flex justify-between mb-6"><div className="h-6 w-16 bg-secondary rounded"></div><div className="h-6 w-20 bg-secondary rounded"></div></div>
-                  <div className="h-12 w-full bg-secondary rounded-full"></div>
+                  <div className="h-12 w-full bg-secondary rounded-[11px]"></div>
                 </div>
               </div>
             </div>
@@ -162,7 +157,7 @@ export function CartClient({ initialFreeShippingThreshold }: { initialFreeShippi
   return (
     <div className="min-h-screen bg-background">
       <div className="pt-10 lg:pt-16 pb-20">
-        <div className="mx-auto max-w-7xl px-4 lg:px-8">
+        <div className="mx-auto max-w-[1440px] px-4 lg:px-8">
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
             <div>
@@ -173,7 +168,7 @@ export function CartClient({ initialFreeShippingThreshold }: { initialFreeShippi
                 <ArrowLeft className="h-4 w-4" />
                 Continue Shopping
               </button>
-              <h1 className="text-2xl lg:text-3xl font-bold text-foreground tracking-tight">
+              <h1 className="text-4xl lg:text-5xl font-semibold text-foreground tracking-tight">
                 Shopping Cart
               </h1>
               <p className="mt-2 text-muted-foreground">
@@ -184,9 +179,9 @@ export function CartClient({ initialFreeShippingThreshold }: { initialFreeShippi
 
           {items.length === 0 ? (
             /* Empty State */
-            <div className="text-center py-20 bg-secondary/10 rounded-2xl border border-border">
-              <div className="w-24 h-24 bg-secondary rounded-full flex items-center justify-center mx-auto mb-6">
-                <ShoppingCart className="h-12 w-12 text-muted-foreground" />
+            <div className="py-20 text-center">
+              <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-secondary">
+                <ShoppingCart className="h-7 w-7 text-muted-foreground" />
               </div>
               <h2 className="text-2xl font-bold text-foreground mb-2">
                 Your cart is empty
@@ -202,14 +197,14 @@ export function CartClient({ initialFreeShippingThreshold }: { initialFreeShippi
           ) : (
             <div className="grid lg:grid-cols-3 gap-8">
               {/* Cart Items */}
-              <div className="lg:col-span-2 space-y-4">
+              <div className="lg:col-span-2 divide-y divide-[#E7E9ED] border-t border-[#E7E9ED]">
                 {items.map((item) => (
                   <div
                     key={item.cartItemId || item.id}
-                    className="bg-card border border-border rounded-xl p-4 sm:p-5 flex gap-4 transition-all duration-200 hover:shadow-md"
+                    className="flex gap-4 py-6 sm:gap-6"
                   >
                     {/* Product Image */}
-                    <Link href={`/product/${item.slug}`} className="block relative w-20 h-20 sm:w-24 sm:h-24 lg:w-24 lg:h-24 rounded-lg flex-shrink-0 flex items-center justify-center bg-secondary/30 border border-border overflow-hidden group">
+                    <Link href={`/product/${item.slug}`} className="group relative flex h-24 w-24 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[#F5F6F8] sm:h-28 sm:w-28">
                       <Image
                         src={resolveImageUrl(item.selectedColor?.imageUrls?.[0] || item.image)}
                         alt={item.name}
@@ -286,20 +281,6 @@ export function CartClient({ initialFreeShippingThreshold }: { initialFreeShippi
                     Order Summary
                   </h2>
 
-                  {/* Promo Code */}
-                  <div className="flex gap-2 mb-6">
-                    <Input
-                      type="text"
-                      placeholder="Promo code"
-                      value={promoCode}
-                      onChange={(e) => setPromoCode(e.target.value)}
-                      className="flex-1"
-                    />
-                    <Button variant="outline" className="shrink-0">
-                      Apply
-                    </Button>
-                  </div>
-
                   <div className="space-y-3">
                     <div className="flex justify-between text-muted-foreground">
                       <span>Subtotal</span>
@@ -338,12 +319,6 @@ export function CartClient({ initialFreeShippingThreshold }: { initialFreeShippi
                       </span>
                     </div>
                     
-                    {discount > 0 && (
-                      <div className="flex justify-between text-accent">
-                        <span>Discount (20%)</span>
-                        <span>-${discount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
-                      </div>
-                    )}
                   </div>
 
                   <Separator className="my-4" />
@@ -364,8 +339,8 @@ export function CartClient({ initialFreeShippingThreshold }: { initialFreeShippi
                       }
                     }}
                   >
-                    <Button className="w-full h-12 text-base transition-all duration-200 hover:scale-[1.02]">
-                      Proceed to Checkout
+                    <Button className="h-12 w-full rounded-[11px] text-base transition-colors duration-200">
+                      Checkout — ${total.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                   </Link>

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="500" height="500" viewBox="0 0 500 500" role="img" aria-labelledby="title desc">
+  <title id="title">Product image unavailable</title>
+  <desc id="desc">A neutral illustration indicating that this product does not yet have a photo.</desc>
+  <rect width="500" height="500" fill="#F5F6F8"/>
+  <rect x="138" y="113" width="224" height="188" rx="20" fill="none" stroke="#B8BEC8" stroke-width="8"/>
+  <circle cx="204" cy="180" r="20" fill="#D4D9E0"/>
+  <path d="M158 275l62-67 47 48 33-33 42 52" fill="none" stroke="#B8BEC8" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="250" y="355" fill="#656A73" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" font-weight="600">Image coming soon</text>
+</svg>

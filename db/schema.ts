@@ -246,6 +246,11 @@ export const appSettings = pgTable("app_settings", {
   value: jsonb("value").notNull(),
 });
 
+export const newsletterSubscriptions = pgTable("newsletter_subscriptions", {
+  email: text("email").primaryKey(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const webhookEvents = pgTable("webhook_events", {
   id: text("id").primaryKey(),
   source: text("source").notNull(),

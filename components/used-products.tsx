@@ -1,99 +1,35 @@
 'use client'
 
-import { useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
-import { motion } from 'framer-motion'
+import { ArrowRight, BadgeCheck, ShieldCheck, Wrench } from 'lucide-react'
 import Link from 'next/link'
-import { ProductCard, ProductData } from '@/components/product-card'
+import { ProductCard, type ProductData } from '@/components/product-card'
 
-export function UsedProducts({ 
-  initialProducts = [], 
-  categories = [] 
-}: { 
-  initialProducts?: ProductData[],
-  categories?: { id: string, name: string }[] 
+export function UsedProducts({ initialProducts = [] }: {
+  initialProducts?: ProductData[]
+  categories?: { id: string; name: string }[]
 }) {
-  const [activeFilter, setActiveFilter] = useState('All')
-
-  // Derive filters from available products and categories
-  const availableCategoryIds = Array.from(new Set(initialProducts.map(p => p.categoryId)))
-  const dynamicFilters = ['All', ...categories.filter(c => availableCategoryIds.includes(c.id)).map(c => c.name)]
-  const filters = dynamicFilters.length > 1 ? dynamicFilters : ['All']
-
-  const filteredProducts = activeFilter === 'All' 
-    ? initialProducts 
-    : initialProducts.filter(p => {
-        const cat = categories.find(c => c.id === p.categoryId)
-        return cat?.name === activeFilter
-      })
+  if (!initialProducts.length) return null
 
   return (
-    <section id="products" className="py-16 lg:py-20 bg-background relative">
-      <div className="mx-auto max-w-7xl px-4 lg:px-8 relative z-10">
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12"
-        >
-          <div>
-            <h2 className="text-2xl lg:text-3xl font-extrabold text-foreground tracking-tight">
-              Shop <span className="text-primary">Pre-Owned</span> & Refurbished Deals
-            </h2>
-            <p className="mt-4 text-muted-foreground max-w-2xl text-base">
-              Get the tech you love for less. Certified pre-owned and fully refurbished devices.
-            </p>
+    <section className="bg-[#F5F6F8] py-20 lg:py-28">
+      <div className="mx-auto max-w-[1440px] px-4 lg:px-8">
+        <div className="flex flex-wrap items-end justify-between gap-5">
+          <div className="max-w-2xl">
+            <h2 className="text-3xl font-semibold tracking-tight text-[#111214] md:text-4xl">Pre-owned tech</h2>
+            <p className="mt-3 text-sm leading-relaxed text-[#656A73] md:text-base">Certified and inspected. Every refurbished device is quality checked before sale.</p>
           </div>
-          <Link href="/used">
-            <Button variant="outline" className="rounded-full px-8 transition-transform duration-300 hover:scale-105 border-primary/20 hover:bg-primary/5 hover:text-primary">
-              View All Products
-            </Button>
+          <Link href="/used" className="inline-flex items-center gap-2 text-sm font-semibold text-[#111214] hover:text-primary">
+            Explore pre-owned <ArrowRight className="h-4 w-4" />
           </Link>
-        </motion.div>
-
-        {/* Filters */}
-        <motion.div 
-          initial={{ opacity: 0, y: 10 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="flex items-center justify-start md:justify-center gap-2 sm:gap-3 mb-8 sm:mb-10 overflow-x-auto pb-4 scrollbar-hide px-4 md:px-0 -mx-4 md:mx-0"
-        >
-          {filters.map((filter) => (
-            <button
-              key={filter}
-              onClick={() => setActiveFilter(filter)}
-              className={cn(
-                'relative px-3 py-1.5 sm:px-4 sm:py-2 rounded-md text-xs sm:text-sm font-medium whitespace-nowrap transition-colors border outline-none',
-                activeFilter === filter
-                  ? 'text-primary-foreground border-transparent'
-                  : 'bg-background text-muted-foreground border-border hover:bg-secondary hover:text-foreground'
-              )}
-            >
-              {activeFilter === filter && (
-                <motion.div
-                  layoutId="activeTabUsed"
-                  className="absolute inset-0 bg-primary rounded-md z-0"
-                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                />
-              )}
-              <span className="relative z-10">{filter}</span>
-            </button>
-          ))}
-        </motion.div>
-
-        <motion.div 
-          key={activeFilter}
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.2, ease: "easeOut" }}
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8"
-        >
-          {filteredProducts.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </motion.div>
+        </div>
+        <div className="mt-7 flex flex-wrap gap-x-7 gap-y-3 border-t border-[#E1E4E8] pt-5 text-xs font-medium text-[#656A73] sm:text-sm">
+          <span className="inline-flex items-center gap-2"><Wrench className="h-4 w-4 text-primary" /> Tested hardware</span>
+          <span className="inline-flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-primary" /> Warranty included</span>
+          <span className="inline-flex items-center gap-2"><BadgeCheck className="h-4 w-4 text-primary" /> Verified condition</span>
+        </div>
+        <div className="mt-9 grid grid-cols-2 gap-x-4 gap-y-10 md:gap-x-6 lg:grid-cols-4">
+          {initialProducts.slice(0, 4).map((product) => <ProductCard key={product.id} product={product} />)}
+        </div>
       </div>
     </section>
   )

@@ -6,10 +6,10 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function resolveImageUrl(url: string | undefined): string {
-  if (!url) return 'https://via.placeholder.com/500x500.png?text=No+Image';
+  if (!url || url.startsWith('https://via.placeholder.com/') || url.startsWith('http://via.placeholder.com/')) return '/product-image-unavailable.svg';
   // Basic validation to prevent next/image crash from bad data (e.g. "..")
   if (!url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('/')) {
-    return 'https://via.placeholder.com/500x500.png?text=Invalid+Image';
+    return '/product-image-unavailable.svg';
   }
   
   return url;

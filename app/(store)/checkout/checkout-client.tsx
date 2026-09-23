@@ -493,20 +493,20 @@ export function CheckoutClient({ initialFreeShippingThreshold }: { initialFreeSh
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="pt-16 pb-20">
-        <div className="mx-auto max-w-7xl px-4 lg:px-8">
+      <div className="pb-20 pt-8 lg:pt-10">
+        <div className="mx-auto max-w-[1440px] px-4 lg:px-8">
           <Link
             href="/cart"
             className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors duration-200 mb-6"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to Cart
+            Return to cart
           </Link>
 
-          <h1 className="text-2xl lg:text-3xl font-bold text-foreground tracking-tight mb-8">Checkout</h1>
+          <h1 className="mb-8 text-4xl font-semibold tracking-tight text-foreground lg:text-5xl">Checkout</h1>
 
           {/* Steps Progress */}
-          <div className="flex items-center gap-2 sm:gap-4 mb-8 overflow-x-auto pb-4 scrollbar-hide">
+          <div className="mb-9 flex items-center gap-2 overflow-x-auto border-b border-[#E7E9ED] pb-5 sm:gap-4 scrollbar-hide">
             {steps.map((s, i) => (
               <div key={s.id} className="flex items-center gap-2 sm:gap-4 shrink-0">
                 <button
@@ -516,17 +516,17 @@ export function CheckoutClient({ initialFreeShippingThreshold }: { initialFreeSh
                   }}
                   disabled={steps.findIndex(x => x.id === s.id) > steps.findIndex(x => x.id === step)}
                   className={cn(
-                    "flex items-center gap-3 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed",
+                    "flex items-center gap-2 text-sm font-medium transition-colors duration-200 disabled:cursor-not-allowed",
                     step === s.id
-                      ? "bg-primary text-primary-foreground"
+                      ? "text-primary"
                       : steps.findIndex(x => x.id === s.id) < steps.findIndex(x => x.id === step)
-                      ? "bg-accent/10 text-accent"
-                      : "bg-secondary text-muted-foreground"
+                      ? "text-foreground"
+                      : "text-muted-foreground"
                   )}
                 >
                   <span className={cn(
-                    "w-6 h-6 shrink-0 rounded-full flex items-center justify-center text-xs font-bold",
-                    step === s.id ? "bg-primary-foreground text-primary" : steps.findIndex(x => x.id === s.id) < steps.findIndex(x => x.id === step) ? "bg-accent text-accent-foreground" : "bg-muted text-muted-foreground"
+                    "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-semibold",
+                    step === s.id ? "border-primary bg-primary text-white" : steps.findIndex(x => x.id === s.id) < steps.findIndex(x => x.id === step) ? "border-foreground text-foreground" : "border-[#E7E9ED] text-muted-foreground"
                   )}>
                     {steps.findIndex(x => x.id === s.id) < steps.findIndex(x => x.id === step) ? <CheckCircle className="h-4 w-4" /> : i + 1}
                   </span>
@@ -539,7 +539,7 @@ export function CheckoutClient({ initialFreeShippingThreshold }: { initialFreeSh
 
           <div className="grid lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2">
-              <div className="bg-card rounded-2xl p-6 lg:p-8 border border-border/50 shadow-sm">
+              <div className="rounded-2xl border border-[#E7E9ED] bg-white p-6 lg:p-8">
                 {currentStepContent()}
               </div>
               <div className="flex flex-col-reverse sm:flex-row items-center justify-between gap-4 mt-6">
@@ -559,7 +559,7 @@ export function CheckoutClient({ initialFreeShippingThreshold }: { initialFreeSh
                     size="lg"
                     onClick={handlePlaceOrder}
                     disabled={processing}
-                    className="w-full sm:w-auto transition-all duration-200 hover:scale-105"
+                    className="w-full rounded-[11px] sm:w-auto"
                   >
                     {processing ? (
                       <>Processing...</>
@@ -574,7 +574,7 @@ export function CheckoutClient({ initialFreeShippingThreshold }: { initialFreeSh
                   <Button
                     size="lg"
                     onClick={handleContinue}
-                    className="w-full sm:w-auto transition-all duration-200 hover:scale-105"
+                    className="w-full rounded-[11px] sm:w-auto"
                   >
                     Continue to {step === "shipping" ? "Payment" : "Review"}
                     {fetchingRates && step === "shipping" && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
@@ -586,7 +586,7 @@ export function CheckoutClient({ initialFreeShippingThreshold }: { initialFreeSh
 
             {/* Order Summary Sidebar */}
             <div className="lg:col-span-1">
-              <div className="bg-card rounded-2xl p-6 border border-border/50 shadow-sm sticky top-24">
+              <div className="sticky top-24 rounded-2xl border border-[#E7E9ED] bg-white p-6">
                 <h2 className="text-lg font-bold text-foreground mb-4">Order Summary</h2>
                 <div className="space-y-3">
                   {cartItems.map((item) => (

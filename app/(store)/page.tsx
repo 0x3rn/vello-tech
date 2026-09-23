@@ -3,6 +3,7 @@ import { Categories } from "@/components/categories";
 import { FeaturedProducts } from "@/components/featured-products";
 import { PromoSection } from "@/components/promo-section";
 import { UsedProducts } from "@/components/used-products";
+import { NewArrivals } from "@/components/new-arrivals";
 import { Features } from "@/components/features";
 import { Testimonials } from "@/components/testimonials";
 import { Newsletter } from "@/components/newsletter";
@@ -47,8 +48,9 @@ export default async function Home() {
     <Features />
     <Categories initialCategories={categoryRows} initialProducts={allProducts} />
     <FeaturedProducts initialProducts={allProducts.filter((product) => product.isFeatured).slice(0, 8)} categories={categoryList} />
-    <PromoSection />
-    <UsedProducts initialProducts={allProducts.filter((product) => product.condition === "used" || product.condition === "refurbished").slice(0, 8)} categories={categoryList} />
+    <PromoSection product={allProducts.find((product) => product.discountPrice !== null && product.discountPrice < product.price && product.imageUrls.length > 0 && !product.imageUrls[0].includes('via.placeholder.com'))} />
+    <UsedProducts initialProducts={allProducts.filter((product) => product.condition === "used" || product.condition === "refurbished").slice(0, 4)} categories={categoryList} />
+    <NewArrivals products={allProducts.filter((product) => product.isNewArrival)} />
     <Testimonials initialTestimonials={testimonials} />
     <Newsletter />
   </div>;

@@ -59,7 +59,7 @@ export function OrdersClient({ initialOrders }: { initialOrders: OrderData[] }) 
   return (
     <div className="min-h-screen bg-background">
       <div className="pt-16 pb-20">
-        <div className="mx-auto max-w-7xl px-4 lg:px-8">
+        <div className="mx-auto max-w-[1440px] px-4 lg:px-8">
           {/* Header */}
           <Link
             href="/account"
@@ -71,8 +71,8 @@ export function OrdersClient({ initialOrders }: { initialOrders: OrderData[] }) 
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
             <div>
-              <h1 className="text-2xl lg:text-3xl font-bold text-foreground tracking-tight">
-                Order History
+              <h1 className="text-4xl lg:text-5xl font-semibold text-foreground tracking-tight">
+                Your orders
               </h1>
               <p className="mt-2 text-muted-foreground">
                 Track and manage your orders
@@ -99,10 +99,10 @@ export function OrdersClient({ initialOrders }: { initialOrders: OrderData[] }) 
                     key={status}
                     onClick={() => setStatusFilter(status)}
                     className={cn(
-                      "px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all duration-200",
+                      "whitespace-nowrap border-b-2 px-2 py-2 text-sm font-medium transition-colors duration-200",
                       statusFilter === status
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-secondary text-muted-foreground hover:bg-secondary/80 hover:text-foreground"
+                        ? "border-primary text-foreground"
+                        : "border-transparent text-muted-foreground hover:text-foreground"
                     )}
                   >
                     {status}
@@ -115,14 +115,15 @@ export function OrdersClient({ initialOrders }: { initialOrders: OrderData[] }) 
           {/* Orders List */}
           <div className="space-y-4">
             {filteredOrders.length === 0 ? (
-              <div className="text-center py-20 bg-card border border-border rounded-2xl">
-                <Package className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+              <div className="py-16 text-center">
+                <Package className="mx-auto mb-4 h-10 w-10 text-muted-foreground" />
                 <h3 className="text-xl font-semibold text-foreground mb-2">
-                  No orders found
+                  {initialOrders.length === 0 ? 'No orders yet' : 'No orders found'}
                 </h3>
                 <p className="text-muted-foreground mb-6">
-                  Try adjusting your search or filter criteria
+                  {initialOrders.length === 0 ? 'When you place an order, you’ll be able to track it here.' : 'Try adjusting your search or filter criteria.'}
                 </p>
+                {initialOrders.length === 0 && <Link href="/shop" className="inline-flex rounded-[10px] bg-primary px-5 py-2.5 text-sm font-semibold text-white">Start shopping</Link>}
               </div>
             ) : (
               filteredOrders.map((order) => {

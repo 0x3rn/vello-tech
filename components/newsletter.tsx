@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { ArrowRight, Mail, CheckCircle } from 'lucide-react'
+import { ArrowRight, CheckCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { motion } from 'framer-motion'
@@ -9,64 +9,62 @@ import { motion } from 'framer-motion'
 export function Newsletter() {
   const [email, setEmail] = useState('')
   const [isSubmitted, setIsSubmitted] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState('')
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsSubmitted(true)
-    setTimeout(() => {
-      setIsSubmitted(false)
+    setIsSubmitting(true)
+    setError('')
+    try {
+      const response = await fetch('/api/email', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) })
+      const result = await response.json() as { message?: string }
+      if (!response.ok) throw new Error(result.message || 'Could not subscribe right now.')
+      setIsSubmitted(true)
       setEmail('')
-    }, 3000)
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not subscribe right now.')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
-    <section className="py-16 lg:py-20 relative overflow-hidden bg-background">
-      <div className="absolute inset-0 bg-primary/5" />
-      <div className="mx-auto max-w-7xl px-4 lg:px-8 relative z-10">
+    <section className="border-t border-[#E7E9ED] bg-white py-20 lg:py-28">
+      <div className="mx-auto max-w-[1440px] px-4 lg:px-8">
         <motion.div 
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 12 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.7 }}
-          className="bg-card/40 backdrop-blur-xl border border-border shadow-md rounded-2xl p-8 lg:p-16 text-center relative overflow-hidden"
+          transition={{ duration: 0.22 }}
+          className="mx-auto max-w-3xl text-center"
         >
-          {/* Decorative elements */}
-
-
-          <div className="relative z-10">
-            <motion.div 
-              initial={{ scale: 0 }}
-              whileInView={{ scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, type: 'spring', bounce: 0.5 }}
-              className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 mb-8 border border-primary/20 shadow-inner"
-            >
-              <Mail className="h-10 w-10 text-primary drop-shadow-md" />
-            </motion.div>
-            
-            <h2 className="text-2xl lg:text-3xl font-extrabold text-foreground tracking-tight">
-              Stay <span className="text-primary">Updated</span>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">Newsletter</p>
+            <h2 className="mt-4 text-3xl font-semibold tracking-tight text-[#111214] md:text-4xl">
+              New arrivals and offers by email
             </h2>
-            <p className="mt-6 text-muted-foreground max-w-xl mx-auto text-lg">
-              Subscribe to our newsletter for exclusive deals, new arrivals, and tech tips delivered straight to your inbox.
+            <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-[#656A73]">
+              Get updates on new products and price drops from VelloTech.
             </p>
 
-            <form onSubmit={handleSubmit} className="mt-10 flex flex-col sm:flex-row gap-4 max-w-lg mx-auto">
+            <form onSubmit={handleSubmit} className="mx-auto mt-9 flex max-w-xl flex-col gap-3 sm:flex-row">
               <div className="relative flex-1">
                 <Input
                   type="email"
-                  placeholder="Enter your email"
+                  aria-label="Email address"
+                  placeholder="Email address"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full h-14 rounded-2xl bg-background/50 backdrop-blur-sm border-white/10 transition-all duration-300 focus:scale-[1.02] focus:border-primary focus:ring-primary/20 px-6 text-lg placeholder:text-muted-foreground/70"
+                  className="h-12 w-full rounded-[11px] border-[#E7E9ED] bg-[#F5F6F8] px-4 text-sm placeholder:text-[#8A8F98] focus-visible:ring-primary/20"
                   required
-                  disabled={isSubmitted}
+                  disabled={isSubmitting}
                 />
               </div>
               <Button 
                 type="submit" 
-                className="h-14 px-8 rounded-2xl group transition-all duration-300 shadow-sm hover:opacity-90"
-                disabled={isSubmitted}
+                className="h-12 rounded-[11px] px-6 transition-colors duration-[220ms] hover:bg-primary/90"
+                disabled={isSubmitting || isSubmitted}
               >
                 {isSubmitted ? (
                   <motion.div 
@@ -79,15 +77,16 @@ export function Newsletter() {
                   </motion.div>
                 ) : (
                   <>
-                    <span className="font-bold text-base">Subscribe</span>
-                    <ArrowRight className="ml-2 h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" />
+                    <span className="text-sm font-semibold">{isSubmitting ? 'Subscribing…' : 'Subscribe'}</span>
+                    <ArrowRight className="ml-2 h-4 w-4" />
                   </>
                 )}
               </Button>
             </form>
+            {error && <p role="alert" className="mt-3 text-sm text-destructive">{error}</p>}
 
-            <p className="mt-6 text-sm font-medium text-muted-foreground/80">
-              No spam, unsubscribe at any time.
+            <p className="mt-4 text-xs text-[#8A8F98]">
+              Only occasional updates about new arrivals and offers.
             </p>
           </div>
         </motion.div>

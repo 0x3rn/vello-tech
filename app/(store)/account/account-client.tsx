@@ -19,7 +19,6 @@ import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import { auth } from "@/lib/firebase"
 import { signOut, sendEmailVerification } from "firebase/auth"
-import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { AuthGuard } from "@/components/auth-guard"
 import { useAuth } from "@/lib/contexts/auth-context"
@@ -99,7 +98,7 @@ export function AccountClient({ initialRecentOrders, initialUserData }: { initia
   return (
     <div className="min-h-screen bg-background">
         <div className="pt-10 lg:pt-16 pb-20">
-        <div className="mx-auto max-w-7xl px-4 lg:px-8">
+        <div className="mx-auto max-w-[1440px] px-4 lg:px-8">
           {/* Breadcrumb */}
           <Link
             href="/"
@@ -135,7 +134,7 @@ export function AccountClient({ initialRecentOrders, initialUserData }: { initia
           )}
 
           {/* Profile Header */}
-          <div className="bg-card border border-border rounded-xl p-5 sm:p-6 mb-6">
+          <div className="mb-10">
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
               <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
                 <span className="text-primary-foreground font-bold text-2xl">
@@ -143,15 +142,16 @@ export function AccountClient({ initialRecentOrders, initialUserData }: { initia
                 </span>
               </div>
               <div className="flex-1">
-                <h1 className="text-2xl font-bold text-foreground">
-                  {userData?.name || "User"}
+                <h1 className="text-4xl font-semibold tracking-tight text-foreground lg:text-5xl">
+                  Hello, {userData?.name?.split(" ")[0] || "there"}
                 </h1>
-                <p className="text-muted-foreground">{userData?.email || user?.email}</p>
+                <p className="mt-2 text-muted-foreground">Manage your orders, account and preferences.</p>
+                <p className="mt-1 text-sm text-muted-foreground">{userData?.email || user?.email}</p>
               </div>
               <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                 {userData?.role === 'admin' && (
                   <Link href="/admin">
-                    <Button size="sm" className="bg-amber-500 hover:bg-amber-600 text-white font-bold transition-all duration-200 shadow-md hover:shadow-lg shadow-amber-500/20">
+                    <Button size="sm" className="bg-amber-500 text-white hover:bg-amber-600">
                       Admin Dashboard
                     </Button>
                   </Link>
@@ -171,50 +171,36 @@ export function AccountClient({ initialRecentOrders, initialUserData }: { initia
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div className="mb-12 grid grid-cols-2 border-y border-[#E7E9ED] py-6 lg:grid-cols-4">
             {userStats.map((stat) => (
-              <Card key={stat.label} className="bg-card border-border transition-all duration-200 hover:shadow-md">
-                <CardContent className="p-4 sm:p-5">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <stat.icon className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold text-foreground">{stat.value}</p>
-                      <p className="text-sm text-muted-foreground">{stat.label}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              <div key={stat.label} className="px-4 py-2 first:pl-0 lg:border-r lg:border-[#E7E9ED] lg:last:border-r-0 lg:last:pr-0">
+                <p className="text-3xl font-semibold tracking-tight text-foreground">{stat.value}</p>
+                <p className="mt-1 text-sm text-muted-foreground">{stat.label}</p>
+              </div>
             ))}
           </div>
 
           <div className="grid lg:grid-cols-3 gap-8">
             {/* Quick Links */}
             <div className="lg:col-span-2">
-              <h2 className="text-xl font-bold text-foreground mb-4">
-                Account Overview
+              <h2 className="mb-4 text-xl font-semibold text-foreground">
+                Account
               </h2>
-              <div className="grid sm:grid-cols-2 gap-4">
+              <div className="divide-y divide-[#E7E9ED] overflow-hidden rounded-2xl border border-[#E7E9ED] bg-white">
                 {accountLinks.map((link) => (
                   <Link
                     key={link.label}
                     href={link.href}
-                    className="group bg-card border border-border rounded-xl p-4 sm:p-5 transition-all duration-200 hover:shadow-md hover:-translate-y-1"
+                    className="group block px-5 py-4 transition-colors duration-200 hover:bg-[#F5F6F8]"
                   >
                     <div className="flex items-center gap-4">
-                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${link.color}`}>
-                        <link.icon className="h-6 w-6" />
-                      </div>
+                      <link.icon className="h-5 w-5 text-[#656A73]" />
                       <div className="flex-1">
-                        <h3 className="font-semibold text-foreground transition-colors duration-200 group-hover:text-primary">
+                        <h3 className="font-medium text-foreground transition-colors duration-200 group-hover:text-primary">
                           {link.label}
                         </h3>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Manage your {link.label.toLowerCase()}
-                        </p>
                       </div>
-                      <ChevronRight className="h-5 w-5 text-muted-foreground opacity-0 -translate-x-2 transition-all duration-200 group-hover:opacity-100 group-hover:translate-x-0 group-hover:text-primary" />
+                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
                     </div>
                   </Link>
                 ))}
@@ -240,7 +226,7 @@ export function AccountClient({ initialRecentOrders, initialUserData }: { initia
                     <Link
                       key={order.id}
                       href={`/account/orders/${order.id}`}
-                      className="block bg-card border border-border rounded-lg p-3 sm:p-4 transition-all duration-200 hover:shadow-md hover:-translate-y-1"
+                      className="block border-b border-[#E7E9ED] py-4 transition-colors duration-200 hover:text-primary"
                     >
                       <div className="flex items-center justify-between mb-2">
                         <span className="font-medium text-foreground text-sm">
@@ -270,7 +256,7 @@ export function AccountClient({ initialRecentOrders, initialUserData }: { initia
                     </Link>
                   ))
                 ) : (
-                  <div className="p-6 bg-secondary/50 rounded-xl text-center">
+                  <div className="py-10 text-center">
                     <Package className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
                     <p className="text-muted-foreground font-medium">No recent orders found</p>
                   </div>

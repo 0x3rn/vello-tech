@@ -12,7 +12,6 @@ import {
   ShoppingCart,
   Trash2,
   Star,
-  Eye,
   Loader2,
 } from "lucide-react"
 import { ProductGridSkeleton } from "@/components/ui/product-grid-skeleton"
@@ -160,7 +159,7 @@ export default function WishlistPage() {
     <AuthGuard>
       <div className="min-h-screen bg-background">
       <div className="pt-10 lg:pt-16 pb-20">
-        <div className="mx-auto max-w-7xl px-4 lg:px-8">
+        <div className="mx-auto max-w-[1440px] px-4 lg:px-8">
           {/* Header */}
           <Link
             href="/account"
@@ -172,8 +171,8 @@ export default function WishlistPage() {
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
             <div>
-              <h1 className="text-2xl lg:text-3xl font-bold text-foreground tracking-tight">
-                My Wishlist
+              <h1 className="text-4xl lg:text-5xl font-semibold text-foreground tracking-tight">
+                Wishlist
               </h1>
               <p className="mt-2 text-muted-foreground">
                 {items.length} {items.length === 1 ? "item" : "items"} saved
@@ -186,8 +185,8 @@ export default function WishlistPage() {
           ) : items.length === 0 ? (
             /* Empty State */
             <div className="text-center py-20">
-              <div className="w-24 h-24 bg-secondary rounded-full flex items-center justify-center mx-auto mb-6">
-                <Heart className="h-12 w-12 text-muted-foreground" />
+              <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-secondary">
+                <Heart className="h-7 w-7 text-muted-foreground" />
               </div>
               <h2 className="text-2xl font-bold text-foreground mb-2">
                 Your wishlist is empty
@@ -201,18 +200,18 @@ export default function WishlistPage() {
               </Button>
             </div>
           ) : (
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            <div className="grid grid-cols-2 gap-x-4 gap-y-10 md:gap-x-6 lg:grid-cols-4">
               {items.map((item) => (
                 <div
                   key={item.id}
-                  className="group bg-card rounded-xl border border-border overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
+                  className="group min-w-0 transition-transform duration-[220ms] hover:-translate-y-[3px]"
                 >
                   {/* Image */}
-                  <div className="relative aspect-square bg-secondary p-4 sm:p-6 overflow-hidden flex items-center justify-center">
+                  <div className="relative flex aspect-square items-center justify-center overflow-hidden rounded-2xl bg-[#F5F6F8] p-4 transition-shadow duration-[220ms] group-hover:shadow-[0_12px_30px_rgba(17,24,39,0.07)] sm:p-6">
                     <Link href={`/product/${item.slug}`}>
-                      <div className="w-full h-full relative flex items-center justify-center transition-transform duration-500 group-hover:scale-110">
+                      <div className="relative flex h-full w-full items-center justify-center transition-transform duration-[220ms] group-hover:scale-[1.025]">
                         {item.image ? (
-                          <Image src={item.image} alt={item.imageAlt} fill sizes="(min-width: 1024px) 25vw, 50vw" className="object-contain mix-blend-multiply" />
+                          <Image src={item.image} alt={item.imageAlt} fill sizes="(min-width: 1024px) 25vw, 50vw" className="object-contain" />
                         ) : (
                           <div className="w-20 h-20 sm:w-24 sm:h-24 bg-foreground/5 rounded-2xl transition-transform duration-300 group-hover:rotate-3" />
                         )}
@@ -238,7 +237,8 @@ export default function WishlistPage() {
                     <button
                       onClick={() => removeItem(item.id)}
                       disabled={removingProduct === item.id}
-                      className="absolute top-4 right-4 w-10 h-10 rounded-full bg-card/90 backdrop-blur-sm flex items-center justify-center border border-border text-muted-foreground hover:text-destructive hover:border-destructive/50 transition-all duration-200 hover:scale-110 opacity-0 group-hover:opacity-100 disabled:opacity-50"
+                      className="absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-[10px] bg-white/95 text-muted-foreground transition-colors duration-200 hover:text-destructive disabled:opacity-50"
+                      aria-label={`Remove ${item.name} from wishlist`}
                     >
                       {removingProduct === item.id ? (
                         <Loader2 className="h-5 w-5 animate-spin" />
@@ -260,39 +260,22 @@ export default function WishlistPage() {
                   </div>
 
                   {/* Content */}
-                  <div className="p-4">
-                    <p className="text-sm text-muted-foreground">
+                  <div className="pt-4">
+                    <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
                       {item.category}
                     </p>
                     <Link href={`/product/${item.slug}`}>
-                      <h3 className="font-semibold text-foreground mt-1 transition-colors duration-200 group-hover:text-primary line-clamp-1">
+                      <h3 className="mt-1.5 min-h-11 text-[16px] font-semibold leading-snug text-foreground transition-colors duration-200 group-hover:text-primary line-clamp-2">
                         {item.name}
                       </h3>
                     </Link>
 
                     {/* Rating */}
-                    <div className="flex items-center gap-1 mt-2">
-                      <div className="flex items-center">
-                        {[...Array(5)].map((_, i) => (
-                          <Star
-                            key={i}
-                            className={cn(
-                              "h-3.5 w-3.5",
-                              i < Math.floor(item.rating)
-                                ? "fill-amber-400 text-amber-400"
-                                : "fill-muted text-muted"
-                            )}
-                          />
-                        ))}
-                      </div>
-                      <span className="text-sm text-muted-foreground">
-                        ({item.reviews})
-                      </span>
-                    </div>
+                    {item.reviews > 0 && <div className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground"><Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />{item.rating} ({item.reviews})</div>}
 
                     {/* Price */}
                     <div className="flex items-center gap-2 mt-3">
-                      <span className="text-lg font-bold text-foreground">
+                      <span className="text-lg font-semibold text-foreground">
                         ${item.price.toLocaleString()}
                       </span>
                       {item.originalPrice && (
@@ -305,7 +288,7 @@ export default function WishlistPage() {
                     {/* Add to Cart */}
                     <Button
                       onClick={() => handleAddToCart(item)}
-                      className="w-full mt-4 transition-all duration-200 hover:scale-[1.02]"
+                      className="mt-4 w-full rounded-[10px] transition-colors duration-200"
                       size="sm"
                       disabled={!item.inStock || addingProduct === item.id}
                     >

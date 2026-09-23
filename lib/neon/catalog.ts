@@ -155,7 +155,8 @@ async function queryStoreProducts() {
         name: color.name,
         hex: color.hex,
         ...(color.priceModifier === null ? {} : { priceModifier: numeric(color.priceModifier) }),
-        stockQuantity: color.stockQuantity ?? 0,
+        // A null color stock means inventory is tracked at product level.
+        stockQuantity: color.stockQuantity ?? product.stockQuantity,
         imageUrls: (imagesByColor.get(color.id) ?? []).map((image) => image.url),
       })),
       variantGroups: (groupsByProduct.get(product.id) ?? []).map((group) => ({

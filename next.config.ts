@@ -9,6 +9,7 @@ const neonStoragePattern = neonStorageUrl
   : null;
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: process.env.VELLOTECH_DEV_HOST ? [process.env.VELLOTECH_DEV_HOST] : [],
   images: {
     // Neon Object Storage is already the image CDN. Bypassing the Next image
     // proxy avoids failed optimizer requests across local, Vercel, and Workers.

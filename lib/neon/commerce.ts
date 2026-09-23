@@ -1,7 +1,7 @@
 import "server-only";
 
 import crypto from "node:crypto";
-import { and, eq, gte, inArray, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, isNull, or, sql } from "drizzle-orm";
 import { createDatabase } from "@/db/client";
 import {
   addresses,
@@ -195,8 +195,8 @@ export async function fulfillPendingOrder(input: {
       const configuration = line.configuration as { selectedColor?: string | null; selectedVariants?: Array<{ groupName: string; choiceName: string }> };
       if (configuration.selectedColor) {
         const colorUpdated = await tx.update(productColors)
-          .set({ stockQuantity: sql`${productColors.stockQuantity} - ${line.quantity}` })
-          .where(and(eq(productColors.productId, line.productId), eq(productColors.name, configuration.selectedColor), gte(productColors.stockQuantity, line.quantity)))
+          .set({ stockQuantity: sql`case when ${productColors.stockQuantity} is null then null else ${productColors.stockQuantity} - ${line.quantity} end` })
+          .where(and(eq(productColors.productId, line.productId), eq(productColors.name, configuration.selectedColor), or(isNull(productColors.stockQuantity), gte(productColors.stockQuantity, line.quantity))))
           .returning({ id: productColors.id });
         if (!colorUpdated.length) throw new Error(`Insufficient option stock for ${line.name}`);
       }

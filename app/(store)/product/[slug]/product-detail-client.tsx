@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useCartStore, generateCartItemId } from '@/lib/store/cart'
@@ -64,13 +64,6 @@ export function ProductDetailClient({
   const { items, addItem, updateQuantity, removeItem } = useCartStore()
   const { toggleWishlist, wishlist, loadingItems } = useWishlist()
   
-  const allImages = useMemo(() => {
-    const urls = new Set<string>();
-    product?.imageUrls?.forEach(u => urls.add(u));
-    product?.colors?.forEach(c => c.imageUrls?.forEach(u => urls.add(u)));
-    return Array.from(urls);
-  }, [product]);
-  
   const isWishlisted = product 
     ? wishlist.some(id => id === product.id || id.startsWith(`${product.id}::`)) 
     : false
@@ -102,6 +95,11 @@ export function ProductDetailClient({
       return
     }
 
+    if (getActiveStock() < quantity) {
+      toast.error("This option is out of stock")
+      return
+    }
+
     setIsAdding(true)
     
     // Simulate short network delay for satisfying visual feedback
@@ -129,7 +127,7 @@ export function ProductDetailClient({
       cartItemId: currentCartItemId || undefined,
       name: product.name,
       price: finalPriceToUse,
-      image: resolveImageUrl(product.imageUrls?.[0]),
+      image: resolveImageUrl(displayImages[0]),
       quantity,
       stockQuantity: activeStock,
       slug: product.slug,
@@ -156,6 +154,11 @@ export function ProductDetailClient({
       toast.error("Please select a color first")
       return
     }
+
+    if (getActiveStock() < quantity) {
+      toast.error("This option is out of stock")
+      return
+    }
     
     const basePriceToUse = (product.discountPrice || product.price);
     const colorModifier = selectedColor?.priceModifier || 0;
@@ -177,7 +180,7 @@ export function ProductDetailClient({
       id: product.id,
       name: product.name,
       price: finalPriceToUse,
-      image: resolveImageUrl(product.imageUrls?.[0]),
+      image: resolveImageUrl(displayImages[0]),
       quantity,
       slug: product.slug,
       ...(selectedColor && { selectedColor }),
@@ -256,7 +259,7 @@ export function ProductDetailClient({
 
   return (
     <div className="min-h-screen bg-background pb-20 pt-8 lg:pt-12">
-      <div className="mx-auto max-w-7xl px-4 lg:px-8">
+      <div className="mx-auto max-w-[1440px] px-4 lg:px-8">
         
         <nav className="flex items-center text-sm text-muted-foreground mb-8">
           <Link href="/" className="hover:text-primary transition-colors">Home</Link>
@@ -270,25 +273,24 @@ export function ProductDetailClient({
           ))}
         </nav>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16">
+        <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 lg:gap-20">
           {/* Images Gallery */}
           <div className="flex flex-col gap-4">
-            <div className="relative aspect-square w-full rounded-2xl bg-secondary/30 overflow-hidden border border-border">
-              {allImages.map((url) => {
-                const isActive = resolveImageUrl(displayImages[activeImage]) === resolveImageUrl(url);
-                const isFirstImage = product.imageUrls?.[0] === url || product.colors?.some(c => c.imageUrls?.[0] === url);
+            <div className="relative aspect-square w-full overflow-hidden rounded-[22px] bg-[#F5F6F8]">
+              {displayImages.map((url, index) => {
+                const isActive = index === activeImage;
                 
                 return (
                   <Image
-                    key={url}
+                    key={`${selectedColor?.name ?? 'default'}-${url}-${index}`}
                     src={resolveImageUrl(url)}
                     alt={product.name}
                     fill
                     sizes="(max-width: 1024px) 100vw, 50vw"
-                    className={`object-contain p-8 transition-opacity duration-200 absolute inset-0 ${
+                    className={`absolute inset-0 object-contain p-[11%] transition-[opacity,transform] duration-[220ms] hover:scale-[1.04] ${
                       isActive ? 'opacity-100 z-20' : 'opacity-0 pointer-events-none z-0'
                     }`}
-                    priority={isFirstImage || isActive}
+                    priority={isActive}
                   />
                 )
               })}
@@ -313,24 +315,24 @@ export function ProductDetailClient({
           {/* Product Info */}
           <div className="flex flex-col">
             <div className="mb-2 flex items-center gap-2">
-              <span className="text-sm font-medium text-primary px-3 py-1 bg-primary/10 rounded-full">
+              <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[#656A73]">
                 {product.brand}
               </span>
-              {product.numReviews > 0 && (
-                <div className="flex items-center gap-1 text-sm text-muted-foreground ml-auto">
-                  <Star className="h-4 w-4 fill-primary text-primary" />
-                  <span className="font-medium text-foreground">{product.rating}</span>
-                  <span>({product.numReviews} reviews)</span>
-                </div>
-              )}
             </div>
 
-            <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-foreground mb-4">
+            <h1 className="mb-3 text-4xl font-semibold leading-tight tracking-tight text-foreground lg:text-[42px]">
               {product.name}
             </h1>
+            {product.numReviews > 0 && (
+              <div className="mb-5 flex items-center gap-1.5 text-sm text-muted-foreground">
+                <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
+                <span className="font-medium text-foreground">{product.rating}</span>
+                <span>· {product.numReviews} reviews</span>
+              </div>
+            )}
             
             <div className="flex items-center gap-3 mb-6">
-              <p className="text-xl font-bold text-foreground">
+              <p className="text-3xl font-semibold tracking-tight text-foreground">
                 ${displayPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}
               </p>
               {hasDiscount && (
@@ -343,9 +345,9 @@ export function ProductDetailClient({
             <p className="text-muted-foreground text-base mb-4 leading-relaxed">
               {product.description}
             </p>
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-secondary/50 border border-border mb-8 w-fit">
+            <div className="mb-8 inline-flex w-fit items-center gap-2">
               <span className="text-sm text-muted-foreground">Condition:</span>
-              <span className="text-sm font-semibold text-foreground capitalize">{product.condition || 'New'}</span>
+              <span className="text-sm font-medium capitalize text-foreground">{product.condition || 'New'}</span>
             </div>
 
             {/* Variant Groups */}
@@ -365,7 +367,7 @@ export function ProductDetailClient({
                             onClick={() => {
                               setSelectedChoices(prev => ({ ...prev, [group.groupName]: choice.choiceName }));
                             }}
-                            className={`px-4 py-2 rounded-full border text-sm font-medium transition-all ${
+                            className={`rounded-[10px] border px-4 py-2 text-sm font-medium transition-colors duration-200 ${
                               isSelected
                                 ? 'border-primary bg-primary text-primary-foreground'
                                 : 'border-border bg-background text-foreground hover:border-primary/50'
@@ -391,9 +393,14 @@ export function ProductDetailClient({
                   {product.colors.map((color, idx) => (
                      <button
                       key={idx}
-                      onClick={() => { setSelectedColor(color); setActiveImage(0); }}
-                      className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all ${
-                        selectedColor?.name === color.name ? 'border-primary ring-2 ring-primary ring-offset-2' : 'border-border hover:scale-110 shadow-sm'
+                      onClick={() => {
+                        setSelectedColor(color);
+                        setActiveImage(0);
+                        setQuantity((current) => Math.max(1, Math.min(current, color.stockQuantity ?? product.stockQuantity)));
+                      }}
+                      aria-pressed={selectedColor?.name === color.name}
+                      className={`h-11 w-11 rounded-full border-2 border-white transition-all ${
+                        selectedColor?.name === color.name ? 'ring-2 ring-primary ring-offset-2' : 'hover:ring-2 hover:ring-[#E7E9ED] hover:ring-offset-2'
                       }`}
                       style={{ backgroundColor: color.hex }}
                       title={color.name}
@@ -406,7 +413,7 @@ export function ProductDetailClient({
             )}
 
             {/* Cart Actions */}
-            <div className="p-6 bg-secondary/20 border border-border rounded-2xl mb-10">
+            <div className="mb-10 border-t border-[#E7E9ED] pt-7">
               <div className="flex items-center gap-6 mb-6">
                 <div className="flex items-center justify-between border border-border rounded-lg bg-background p-1 w-32">
                   <button 
@@ -434,18 +441,9 @@ export function ProductDetailClient({
               </div>
               <div className="flex flex-col gap-3">
                 <Button 
-                  onClick={handleBuyItNow}
-                  disabled={product.stockQuantity === 0}
-                  className="w-full h-14 text-lg font-medium bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-600/20"
-                >
-                  <CreditCard className="mr-2 h-5 w-5" />
-                  Buy It Now
-                </Button>
-                <Button 
                   onClick={handleAddToCart}
-                  disabled={product.stockQuantity === 0 || isAdding}
-                  variant="outline"
-                  className="w-full h-14 text-lg font-medium border-primary/20 hover:bg-primary/5 text-primary"
+                  disabled={displayStock < quantity || isAdding}
+                  className="h-14 w-full rounded-[11px] text-base font-semibold"
                 >
                   {isAdding ? (
                     <Loader2 className="mr-2 h-5 w-5 animate-spin" />
@@ -453,6 +451,15 @@ export function ProductDetailClient({
                     <ShoppingCart className="mr-2 h-5 w-5" />
                   )}
                   {isAdding ? 'Adding...' : 'Add to Cart'}
+                </Button>
+                <Button
+                  onClick={handleBuyItNow}
+                  disabled={displayStock < quantity}
+                  variant="outline"
+                  className="h-12 w-full rounded-[11px] text-sm font-medium"
+                >
+                  <CreditCard className="mr-2 h-4 w-4" />
+                  Buy Now
                 </Button>
                 {cartItem && (
                   <Link href="/cart" className="w-full">
@@ -476,30 +483,22 @@ export function ProductDetailClient({
               </div>
             </div>
 
-            {/* Specifications Table */}
-            {product.specifications && Object.keys(product.specifications).length > 0 && (
-              <div>
-                <h3 className="text-xl font-semibold mb-4">Specifications</h3>
-                <div className="flex flex-col">
-                  {Object.entries(product.specifications).map(([key, value], index) => (
-                    <div 
-                      key={key} 
-                      className={`flex flex-col sm:flex-row py-4 ${index !== Object.keys(product.specifications).length - 1 ? 'border-b border-border' : ''}`}
-                    >
-                      <span className="sm:w-1/3 text-muted-foreground font-medium mb-1 sm:mb-0">
-                        {key}
-                      </span>
-                      <span className="sm:w-2/3 text-foreground">
-                        {value}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            
           </div>
         </div>
+
+        {product.specifications && Object.keys(product.specifications).length > 0 && (
+          <section className="mt-20 border-t border-[#E7E9ED] pt-10">
+            <h2 className="text-2xl font-semibold tracking-tight text-foreground">Specifications</h2>
+            <div className="mt-6 grid gap-x-16 md:grid-cols-2">
+              {Object.entries(product.specifications).map(([key, value]) => (
+                <div key={key} className="flex justify-between gap-5 border-b border-[#E7E9ED] py-4 text-sm">
+                  <span className="text-muted-foreground">{key}</span>
+                  <span className="text-right font-medium text-foreground">{value}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Reviews Section */}
         <div className="mt-20 pt-10 border-t border-border">

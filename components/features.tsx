@@ -1,96 +1,25 @@
-'use client'
-
-import { useState, useEffect } from 'react'
-import { Truck, Shield, Headphones, RefreshCw } from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { BadgeCheck, LockKeyhole, RotateCcw, Truck } from 'lucide-react'
 
 const features = [
-  {
-    icon: Truck,
-    title: 'Free Shipping',
-    description: 'On orders over $99.',
-  },
-  {
-    icon: Shield,
-    title: 'Secure Payment',
-    description: '100% secure transactions.',
-  },
-  {
-    icon: Headphones,
-    title: '24/7 Support',
-    description: 'Expert assistance anytime.',
-  },
-  {
-    icon: RefreshCw,
-    title: 'Easy Returns',
-    description: '30-day return policy.',
-  },
+  { icon: Truck, title: 'Free shipping', detail: 'On qualifying orders' },
+  { icon: RotateCcw, title: '30-day returns', detail: 'Simple, hassle-free returns' },
+  { icon: LockKeyhole, title: 'Secure checkout', detail: 'Protected payments' },
+  { icon: BadgeCheck, title: 'Genuine products', detail: 'Quality checked' },
 ]
 
 export function Features() {
-  const [page, setPage] = useState(0)
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      if (window.innerWidth < 640) {
-        setPage((p) => (p === 0 ? 1 : 0))
-      }
-    }, 4000)
-
-    const handleResize = () => {
-      if (window.innerWidth >= 640) setPage(0)
-    }
-
-    window.addEventListener('resize', handleResize)
-    return () => {
-      clearInterval(timer)
-      window.removeEventListener('resize', handleResize)
-    }
-  }, [])
-
   return (
-    <section className="py-8 md:py-12 border-y border-border bg-background overflow-hidden">
-      <div className="mx-auto max-w-7xl px-4 lg:px-8">
-        {/* Desktop View */}
-        <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
-          {features.map((feature) => (
-            <div key={feature.title} className="flex items-center gap-4">
-              <div className="w-10 h-10 flex items-center justify-center flex-shrink-0 text-primary">
-                <feature.icon className="h-6 w-6" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-foreground text-base">{feature.title}</h3>
-                <p className="text-sm text-muted-foreground">{feature.description}</p>
-              </div>
+    <section aria-label="Shopping benefits" className="border-b border-[#E7E9ED] bg-white">
+      <div className="mx-auto grid max-w-[1440px] grid-cols-2 px-4 py-5 md:grid-cols-4 lg:px-8 lg:py-7">
+        {features.map(({ icon: Icon, title, detail }, index) => (
+          <div key={title} className={`flex items-start gap-3 px-3 py-3 md:px-6 ${index > 0 ? 'md:border-l md:border-[#E7E9ED]' : ''}`}>
+            <Icon className="mt-0.5 h-5 w-5 shrink-0 text-primary" strokeWidth={1.7} />
+            <div>
+              <p className="text-sm font-semibold text-[#111214]">{title}</p>
+              <p className="mt-0.5 text-xs leading-relaxed text-[#656A73]">{detail}</p>
             </div>
-          ))}
-        </div>
-
-        {/* Mobile View with Transition */}
-        <div className="sm:hidden relative h-20 w-full flex justify-center">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={page}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.3 }}
-              className="absolute inset-0 flex items-center justify-between gap-2"
-            >
-              {features.slice(page * 2, page * 2 + 2).map((feature) => (
-                <div key={feature.title} className="flex items-center gap-3 w-1/2">
-                  <div className="w-8 h-8 flex items-center justify-center flex-shrink-0 text-primary bg-primary/5 rounded-full">
-                    <feature.icon className="h-4 w-4" />
-                  </div>
-                  <div className="min-w-0 flex-1 pr-1">
-                    <h3 className="font-semibold text-foreground text-sm leading-tight mb-0.5">{feature.title}</h3>
-                    <p className="text-[11px] text-muted-foreground leading-tight">{feature.description}</p>
-                  </div>
-                </div>
-              ))}
-            </motion.div>
-          </AnimatePresence>
-        </div>
+          </div>
+        ))}
       </div>
     </section>
   )

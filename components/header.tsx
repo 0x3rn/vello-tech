@@ -2,13 +2,16 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { Menu, X, ShoppingCart, Search, User, Heart, ChevronDown, Phone, Mail, Package } from 'lucide-react'
+import { usePathname, useRouter } from 'next/navigation'
+import Image from 'next/image'
+import { Menu, X, ShoppingCart, Search, User, Heart, ChevronDown, Mail, Package } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { useCartStore } from '@/lib/store/cart'
 import { useAuth } from '@/lib/contexts/auth-context'
 import { useUserStore } from '@/lib/store/user'
+import { resolveImageUrl } from '@/lib/utils'
+import type { ProductData } from '@/components/product-card'
 
 const navigation = [
   { name: 'Home', href: '/' },
@@ -40,11 +43,12 @@ const navigation = [
   },
   { name: 'Deals', href: '/shop?sale=true' },
   { name: 'New Arrivals', href: '/new-arrivals' },
-  { name: 'Support', href: '#support' },
+  { name: 'Support', href: 'mailto:support@vellotech.store' },
 ]
 
 export function Header() {
   const router = useRouter()
+  const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const cartCount = useCartStore((state) => state.totalItems())
   const wishlistCount = useUserStore((state) => state.userData?.wishlist?.length || 0)
@@ -53,11 +57,14 @@ export function Header() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [searchFocused, setSearchFocused] = useState(false)
+  const [suggestions, setSuggestions] = useState<ProductData[]>([])
   const [isMounted, setIsMounted] = useState(false)
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     if (searchQuery.trim()) {
+      setSearchFocused(false)
       router.push(`/search?q=${encodeURIComponent(searchQuery)}`)
     }
   }
@@ -71,26 +78,48 @@ export function Header() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
+  useEffect(() => {
+    const query = searchQuery.trim()
+    if (!searchFocused || query.length < 2) return
+    const controller = new AbortController()
+    const timer = window.setTimeout(async () => {
+      try {
+        const response = await fetch(`/api/catalog?resource=products&q=${encodeURIComponent(query)}`, { signal: controller.signal })
+        if (response.ok) setSuggestions((await response.json() as ProductData[]).slice(0, 3))
+      } catch (error) {
+        if (!(error instanceof DOMException && error.name === 'AbortError')) setSuggestions([])
+      }
+    }, 180)
+    return () => { window.clearTimeout(timer); controller.abort() }
+  }, [searchFocused, searchQuery])
+
+  if (pathname.startsWith('/checkout')) {
+    return (
+      <header className="border-b border-[#E7E9ED] bg-white">
+        <div className="mx-auto flex h-[76px] max-w-[1440px] items-center justify-between px-4 lg:px-8">
+          <Link href="/" className="text-xl font-bold tracking-tight text-[#111214]">Vello<span className="text-primary">Tech</span></Link>
+          <span className="inline-flex items-center gap-2 text-sm font-medium text-[#656A73]">Secure checkout <span aria-hidden>🔒</span></span>
+        </div>
+      </header>
+    )
+  }
+
   return (
     <>
       {/* Top Bar */}
-      <div className="relative z-50 bg-foreground text-background text-sm hidden lg:block">
-        <div className="mx-auto max-w-7xl px-4 lg:px-8 py-2">
-          <div className="flex items-center justify-between">
+      <div className="relative z-50 hidden h-[34px] bg-[#111214] text-white/75 lg:block">
+        <div className="mx-auto flex h-full max-w-[1440px] items-center px-4 text-xs lg:px-8">
+          <div className="flex w-full items-center justify-between">
             <div className="flex items-center gap-6">
-              <a href="tel:+1234567890" className="flex items-center gap-2 transition-opacity duration-200 hover:opacity-80">
-                <Phone className="h-3.5 w-3.5" />
-                <span>(555)-555-5555</span>
-              </a>
-              <a href="mailto:support@vellotech.com" className="flex items-center gap-2 transition-opacity duration-200 hover:opacity-80">
+              <a href="mailto:support@vellotech.store" className="flex items-center gap-2 transition-opacity duration-200 hover:opacity-80">
                 <Mail className="h-3.5 w-3.5" />
-                <span>support@vellotech.store</span>
+                <span>Support: support@vellotech.store</span>
               </a>
             </div>
             <div className="flex items-center gap-6">
               <span>Free shipping on orders over $100</span>
-              <span className="w-px h-4 bg-background/30" />
-              <button onClick={() => { import('sonner').then(m => m.toast.info('Coming soon!')) }} className="transition-opacity duration-200 hover:opacity-80">Track Order</button>
+              <span className="h-3 w-px bg-white/25" />
+              <Link href="/account/orders" className="transition-opacity duration-200 hover:opacity-80">Track order</Link>
             </div>
           </div>
         </div>
@@ -99,13 +128,13 @@ export function Header() {
       {/* Main Header */}
       <header 
         className={cn(
-          'sticky top-0 z-40 w-full transition-all duration-300 py-3',
+          'sticky top-0 z-40 w-full border-b border-[#E7E9ED] transition-colors duration-200',
           isScrolled 
-            ? 'bg-background/95 backdrop-blur-md shadow-sm' 
-            : 'bg-background/80 backdrop-blur-md',
+            ? 'bg-white/95 backdrop-blur-md'
+            : 'bg-white',
         )}
       >
-        <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 lg:px-8">
+        <nav className="mx-auto flex h-[72px] max-w-[1440px] items-center justify-between px-4 lg:h-[76px] lg:px-8">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3 group">
             <div className="flex items-center justify-center w-10 h-10 bg-primary rounded-xl transition-transform duration-300 group-hover:scale-105">
@@ -166,16 +195,43 @@ export function Header() {
 
           {/* Search Bar - Desktop */}
           <div className="hidden lg:flex items-center flex-1 max-w-md mx-8">
-            <form onSubmit={handleSearch} className="relative w-full group">
+            <form onSubmit={handleSearch} onFocus={() => setSearchFocused(true)} onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setSearchFocused(false) }} onKeyDown={(event) => { if (event.key === 'Escape') setSearchFocused(false) }} className="group relative w-full">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground transition-colors duration-200 group-focus-within:text-primary" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search products..."
-                className="w-full h-10 pl-11 pr-4 rounded-full bg-secondary border border-transparent text-sm placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                className="h-10 w-full rounded-[10px] border border-transparent bg-[#F4F5F7] pl-11 pr-4 text-sm placeholder:text-muted-foreground transition-[background-color,border-color] duration-200 focus:border-primary/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/10"
                 suppressHydrationWarning
               />
+              {searchFocused && (
+                <div className="absolute inset-x-0 top-full z-50 mt-2 overflow-hidden rounded-2xl border border-[#E7E9ED] bg-white p-4 shadow-[0_16px_40px_rgba(17,24,39,0.10)]">
+                  {searchQuery.trim().length < 2 ? (
+                    <>
+                      <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.15em] text-[#8A8F98]">Popular searches</p>
+                      {['iPhone 17 Pro Max', 'MacBook Pro', 'PlayStation 5'].map((term) => (
+                        <button key={term} type="button" onClick={() => { setSearchQuery(term); router.push(`/search?q=${encodeURIComponent(term)}`); setSearchFocused(false) }} className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-sm text-[#35383D] hover:bg-[#F5F6F8]">
+                          <Search className="h-3.5 w-3.5 text-[#8A8F98]" />{term}
+                        </button>
+                      ))}
+                    </>
+                  ) : (
+                    <>
+                      <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.15em] text-[#8A8F98]">Products</p>
+                      {suggestions.map((product) => (
+                        <Link key={product.id} href={`/product/${product.slug}`} onClick={() => setSearchFocused(false)} className="flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-[#F5F6F8]">
+                          <span className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-[#F5F6F8]"><Image src={resolveImageUrl(product.imageUrls?.[0])} alt="" fill sizes="48px" className="object-contain p-1" /></span>
+                          <span className="min-w-0 flex-1 truncate text-sm font-medium text-[#111214]">{product.name}</span>
+                          <span className="text-xs font-semibold text-[#111214]">${(product.discountPrice ?? product.price).toLocaleString()}</span>
+                        </Link>
+                      ))}
+                      {suggestions.length === 0 && <p className="px-2 py-3 text-sm text-[#656A73]">No matching products yet.</p>}
+                      <button type="submit" className="mt-2 flex w-full items-center justify-between border-t border-[#E7E9ED] px-2 pt-3 text-sm font-semibold text-primary">View all results for “{searchQuery.trim()}” <span aria-hidden>→</span></button>
+                    </>
+                  )}
+                </div>
+              )}
             </form>
           </div>
 
