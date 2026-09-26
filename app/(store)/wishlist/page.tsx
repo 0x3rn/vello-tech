@@ -211,7 +211,7 @@ export default function WishlistPage() {
                     <Link href={`/product/${item.slug}`}>
                       <div className="relative flex h-full w-full items-center justify-center transition-transform duration-[220ms] group-hover:scale-[1.025]">
                         {item.image ? (
-                          <Image src={item.image} alt={item.imageAlt} fill sizes="(min-width: 1024px) 25vw, 50vw" className="object-contain" />
+                          <Image src={item.image} alt={item.imageAlt} fill style={{ objectFit: 'contain' }} sizes="(min-width: 1024px) 25vw, 50vw" className="object-contain" />
                         ) : (
                           <div className="w-20 h-20 sm:w-24 sm:h-24 bg-foreground/5 rounded-2xl transition-transform duration-300 group-hover:rotate-3" />
                         )}

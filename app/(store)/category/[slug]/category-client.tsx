@@ -330,6 +330,7 @@ export function CategoryClient({
                           src={resolveImageUrl(product.imageUrls?.[0])}
                           alt={product.imageAlts?.[0] || product.name}
                           fill
+                          style={{ objectFit: 'contain' }}
                           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
                           className="object-contain p-6 group-hover:scale-105 transition-transform duration-500"
                         />

@@ -137,6 +137,7 @@ export default function AdminProductsPage() {
                               src={resolveImageUrl(product.imageUrls[0])}
                               alt={product.name}
                               fill
+                              style={{ objectFit: 'contain' }}
                               sizes="48px"
                               className="object-contain p-1"
                             />
