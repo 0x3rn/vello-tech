@@ -286,6 +286,7 @@ export function ProductDetailClient({
                     src={resolveImageUrl(url)}
                     alt={product.name}
                     fill
+                    style={{ objectFit: 'contain' }}
                     sizes="(max-width: 1024px) 100vw, 50vw"
                     className={`absolute inset-0 object-contain p-[11%] transition-[opacity,transform] duration-[220ms] hover:scale-[1.04] ${
                       isActive ? 'opacity-100 z-20' : 'opacity-0 pointer-events-none z-0'
@@ -305,7 +306,7 @@ export function ProductDetailClient({
                       activeImage === idx ? 'border-primary' : 'border-transparent hover:border-border'
                     }`}
                   >
-                    <Image src={resolveImageUrl(url)} alt={displayAlts[idx] || `${product.name} ${idx + 1}`} fill sizes="100px" className="object-contain p-2" />
+                    <Image src={resolveImageUrl(url)} alt={displayAlts[idx] || `${product.name} ${idx + 1}`} fill style={{ objectFit: 'contain' }} sizes="100px" className="object-contain p-2" />
                   </button>
                 ))}
               </div>

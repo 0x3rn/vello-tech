@@ -101,6 +101,7 @@ export function Hero({ initialSlides = [] }: { initialSlides?: SlideData[] }) {
                     src={resolveImageUrl(current.image)} 
                     alt={current.title} 
                     fill 
+                    style={{ objectFit: 'contain' }}
                     sizes="(max-width: 768px) 100vw, 50vw"
                     className="object-contain p-4"
                     priority={currentSlide === 0}
@@ -168,6 +169,7 @@ export function Hero({ initialSlides = [] }: { initialSlides?: SlideData[] }) {
                     src={resolveImageUrl(current.image)} 
                     alt={current.title} 
                     fill 
+                    style={{ objectFit: 'contain' }}
                     sizes="(max-width: 768px) 100vw, 50vw"
                     className="object-contain p-[5%]"
                     priority={currentSlide === 0}

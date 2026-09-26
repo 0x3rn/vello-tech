@@ -209,6 +209,7 @@ export function CartClient({ initialFreeShippingThreshold }: { initialFreeShippi
                         src={resolveImageUrl(item.selectedColor?.imageUrls?.[0] || item.image)}
                         alt={item.name}
                         fill
+                        style={{ objectFit: 'contain' }}
                         sizes="96px"
                         className="object-contain p-2 group-hover:scale-105 transition-transform"
                       />

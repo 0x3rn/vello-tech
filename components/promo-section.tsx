@@ -21,7 +21,7 @@ export function PromoSection({ product }: { product?: ProductData }) {
         </div>
         {product && (
           <Link href={`/product/${product.slug}`} className="relative block aspect-[4/3] min-h-[260px] lg:h-full" aria-label={`View ${product.name}`}>
-            <Image src={resolveImageUrl(product.imageUrls[0])} alt={product.name} fill sizes="(max-width: 1024px) 100vw, 50vw" className="object-contain p-[4%]" />
+            <Image src={resolveImageUrl(product.imageUrls[0])} alt={product.name} fill style={{ objectFit: 'contain' }} sizes="(max-width: 1024px) 100vw, 50vw" className="object-contain p-[4%]" />
             <span className="absolute bottom-0 right-0 text-xs font-medium text-white/60">{product.name}</span>
           </Link>
         )}

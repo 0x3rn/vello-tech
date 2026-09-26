@@ -77,6 +77,7 @@ export function ProductCard({ product, priority = false }: { product: ProductDat
             src={resolveImageUrl(product.imageUrls?.[0])}
             alt={product.imageAlts?.[0] || product.name}
             fill
+            style={{ objectFit: 'contain' }}
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
             priority={priority}
             placeholder="blur"

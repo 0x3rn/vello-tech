@@ -113,7 +113,7 @@ export function Categories({
                 </div>
                 <div className={`absolute inset-x-[16%] bottom-[-9%] top-[40%] transition-transform duration-[220ms] ease-out group-hover:scale-[1.025] lg:top-[34%] ${index === 0 ? 'lg:top-[25%]' : ''}`}>
                   {product ? (
-                    <Image src={resolveImageUrl(product.imageUrls[0])} alt="" fill sizes={index === 0 ? "(max-width: 1024px) 100vw, 50vw" : "(max-width: 1024px) 50vw, 25vw"} className="object-contain" />
+                    <Image src={resolveImageUrl(product.imageUrls[0])} alt="" fill style={{ objectFit: 'contain' }} sizes={index === 0 ? "(max-width: 1024px) 100vw, 50vw" : "(max-width: 1024px) 50vw, 25vw"} className="object-contain" />
                   ) : (
                     <Icon className="mx-auto h-full w-1/3 text-[#C1C7D0]" strokeWidth={1} />
                   )}

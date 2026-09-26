@@ -182,7 +182,7 @@ export default function OrderDetailsPage() {
                   <div key={i} className="flex items-center p-6 gap-4">
                     <div className="relative w-16 h-16 bg-secondary/30 rounded-md border border-border flex items-center justify-center shrink-0">
                       {item.image ? (
-                        <Image src={resolveImageUrl(item.image)} alt={item.name} fill className="object-contain p-2" />
+                        <Image src={resolveImageUrl(item.image)} alt={item.name} fill style={{ objectFit: 'contain' }} className="object-contain p-2" />
                       ) : (
                         <Package className="h-6 w-6 text-muted-foreground" />
                       )}
