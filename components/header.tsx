@@ -12,6 +12,7 @@ import { useAuth } from '@/lib/contexts/auth-context'
 import { useUserStore } from '@/lib/store/user'
 import { resolveImageUrl } from '@/lib/utils'
 import type { ProductData } from '@/components/product-card'
+import { BrandLogo } from '@/components/brand-logo'
 
 const navigation = [
   { name: 'Home', href: '/' },
@@ -97,7 +98,9 @@ export function Header() {
     return (
       <header className="border-b border-[#E7E9ED] bg-white">
         <div className="mx-auto flex h-[76px] max-w-[1440px] items-center justify-between px-4 lg:px-8">
-          <Link href="/" className="text-xl font-bold tracking-tight text-[#111214]">Vello<span className="text-primary">Tech</span></Link>
+          <Link href="/" aria-label="VelloTech home">
+            <BrandLogo size="sm" />
+          </Link>
           <span className="inline-flex items-center gap-2 text-sm font-medium text-[#656A73]">Secure checkout <span aria-hidden>🔒</span></span>
         </div>
       </header>
@@ -136,16 +139,8 @@ export function Header() {
       >
         <nav className="mx-auto flex h-[72px] max-w-[1440px] items-center justify-between px-4 lg:h-[76px] lg:px-8">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-3 group">
-            <div className="flex items-center justify-center w-10 h-10 bg-primary rounded-xl transition-transform duration-300 group-hover:scale-105">
-              <span className="text-primary-foreground font-bold text-xl">V</span>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-xl font-bold tracking-tight text-foreground leading-none">
-                Vello<span className="text-primary">Tech</span>
-              </span>
-              <span className="text-xs text-muted-foreground leading-none hidden sm:block">Premium Gadgets</span>
-            </div>
+          <Link href="/" aria-label="VelloTech home" className="group">
+            <BrandLogo markClassName="transition-transform duration-200 group-hover:scale-[1.04]" />
           </Link>
 
           {/* Desktop Navigation */}

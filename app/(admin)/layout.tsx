@@ -9,6 +9,7 @@ import { Loader2, Menu } from 'lucide-react'
 import { toast } from 'sonner'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
+import { BrandLogo } from '@/components/brand-logo'
 
 export default function AdminLayout({
   children,
@@ -54,10 +55,7 @@ export default function AdminLayout({
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Mobile Header */}
         <header className="lg:hidden flex items-center justify-between px-4 py-3 bg-card border-b border-border">
-          <div className="flex items-center gap-2 text-xl font-black tracking-tighter">
-            <span className="text-primary">VELLO</span>
-            <span className="text-foreground">ADMIN</span>
-          </div>
+          <BrandLogo size="sm" admin />
           <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon">

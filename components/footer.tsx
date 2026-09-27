@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Mail } from 'lucide-react'
 import { toast } from 'sonner'
+import { BrandLogo } from '@/components/brand-logo'
 
 const footerLinks = {
   shop: [
@@ -43,13 +44,8 @@ export function Footer() {
         <div className="grid grid-cols-2 gap-x-6 gap-y-9 md:grid-cols-4 lg:grid-cols-6 lg:gap-10">
           {/* Brand */}
           <div className="col-span-2">
-            <Link href="/" className="flex items-center gap-2 group">
-              <div className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-primary">
-                <span className="text-primary-foreground font-bold text-xl">V</span>
-              </div>
-              <span className="text-xl font-bold tracking-tight text-foreground">
-                Vello<span className="text-primary">Tech</span>
-              </span>
+            <Link href="/" aria-label="VelloTech home" className="group inline-flex">
+              <BrandLogo size="sm" markClassName="transition-transform duration-200 group-hover:scale-[1.04]" />
             </Link>
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted-foreground">
               Considered technology for everyday life.
@@ -152,7 +148,7 @@ export function Footer() {
         {/* Bottom */}
         <div className="mt-10 flex flex-col items-center justify-between gap-3 border-t border-[#E0E3E8] pt-6 md:flex-row">
           <p className="text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} Vello Tech. All rights reserved.
+            &copy; {new Date().getFullYear()} VelloTech. All rights reserved.
           </p>
           <p className="text-xs text-muted-foreground">Secure payments · Quality checked products</p>
         </div>

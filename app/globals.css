@@ -76,6 +76,7 @@
 
 @theme inline {
   --font-sans: 'Inter', 'Geist', sans-serif;
+  --font-brand: var(--font-sora), 'Inter', sans-serif;
   --font-mono: 'Geist Mono', monospace;
   --color-background: var(--background);
   --color-foreground: var(--foreground);

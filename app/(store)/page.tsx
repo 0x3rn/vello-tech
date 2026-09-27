@@ -31,7 +31,7 @@ export default async function Home() {
   }));
   if (!slides.length) slides.push({
     id: "fallback-1",
-    title: "Welcome to Vello Tech",
+    title: "Welcome to VelloTech",
     subtitle: "Premium Electronics",
     description: "Discover the latest in premium tech gadgets, laptops, and accessories built for the modern professional.",
     price: 0,

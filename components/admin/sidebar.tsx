@@ -16,6 +16,7 @@ import {
   Star
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { BrandLogo } from '@/components/brand-logo'
 
 const navItems = [
   { name: 'Overview', href: '/admin', icon: LayoutDashboard },
@@ -35,10 +36,7 @@ export function AdminSidebar() {
     <div className="flex h-full w-64 flex-col bg-card border-r border-border">
       {/* Brand & Back to Store */}
       <div className="flex flex-col p-6 space-y-4">
-        <div className="flex items-center gap-2 text-2xl font-black tracking-tighter">
-          <span className="text-primary">VELLO</span>
-          <span className="text-foreground">ADMIN</span>
-        </div>
+        <BrandLogo size="sm" admin />
         <Link href="/">
           <Button variant="outline" className="w-full justify-start text-xs rounded-full h-8 px-3 text-muted-foreground border-border/50">
             <ChevronLeft className="mr-2 h-3 w-3" />
