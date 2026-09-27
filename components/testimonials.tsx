@@ -48,7 +48,7 @@ export function Testimonials({ initialTestimonials }: { initialTestimonials: Tes
             What Our <span className="text-primary">Customers Say</span>
           </h2>
           <p className="mt-4 text-muted-foreground max-w-2xl mx-auto text-sm">
-            Join thousands of satisfied customers who trust Vello Tech for their tech needs.
+            Join thousands of satisfied customers who trust VelloTech for their tech needs.
           </p>
         </motion.div>
 

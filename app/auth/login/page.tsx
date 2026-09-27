@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Eye, EyeOff, Mail, Lock, ArrowLeft, Loader2 } from "lucide-react"
+import { BrandLogo, BrandMark } from "@/components/brand-logo"
 
 const getAuthErrorMessage = (err: any) => {
   const code = err.code || ""
@@ -102,13 +103,8 @@ export default function LoginPage() {
           </Link>
 
           <div className="mb-8">
-            <Link href="/" className="flex items-center gap-2 mb-6">
-              <div className="flex items-center justify-center w-10 h-10 bg-primary rounded-lg">
-                <span className="text-primary-foreground font-bold text-xl">V</span>
-              </div>
-              <span className="text-xl font-bold tracking-tight">
-                Vello<span className="text-primary">Tech</span>
-              </span>
+            <Link href="/" aria-label="VelloTech home" className="mb-6 inline-flex">
+              <BrandLogo />
             </Link>
             <h1 className="text-3xl font-bold text-foreground">Welcome back</h1>
             <p className="text-muted-foreground mt-2">
@@ -235,10 +231,8 @@ export default function LoginPage() {
       {/* Right Side - Decorative */}
       <div className="hidden lg:flex flex-1 bg-secondary items-center justify-center p-12">
         <div className="max-w-md text-center">
-          <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-8">
-            <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-3xl">V</span>
-            </div>
+          <div className="mx-auto mb-8 flex h-24 w-24 items-center justify-center rounded-[28px] border border-border bg-background">
+            <BrandMark className="h-16 w-16" />
           </div>
           <h2 className="text-2xl font-bold text-foreground mb-4">
             Shop the latest tech
