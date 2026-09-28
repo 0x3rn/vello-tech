@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { Menu, X, ShoppingCart, Search, User, Heart, ChevronDown, Mail, Package } from 'lucide-react'
+import { Menu, X, ShoppingCart, Search, User, Heart, ChevronDown, Mail, Package, LockKeyhole } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { useCartStore } from '@/lib/store/cart'
@@ -101,7 +101,10 @@ export function Header() {
           <Link href="/" aria-label="VelloTech home">
             <BrandLogo size="sm" />
           </Link>
-          <span className="inline-flex items-center gap-2 text-sm font-medium text-[#656A73]">Secure checkout <span aria-hidden>🔒</span></span>
+          <span className="inline-flex items-center gap-2 text-sm font-medium text-[#656A73]">
+            Secure checkout
+            <LockKeyhole className="h-4 w-4" aria-hidden="true" />
+          </span>
         </div>
       </header>
     )

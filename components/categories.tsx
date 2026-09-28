@@ -9,6 +9,7 @@ import {
   HardDrive,
   Headphones,
   Laptop,
+  LayoutGrid,
   Smartphone,
   Watch,
   Wifi,
@@ -93,7 +94,7 @@ export function Categories({
           <div>
             <h2 className="text-3xl font-semibold tracking-tight text-foreground md:text-4xl">Shop by category</h2>
           </div>
-          <Link href="/categories" className="hidden items-center gap-2 text-sm font-medium text-foreground hover:text-primary sm:flex">
+          <Link href="/categories" className="hidden items-center gap-2 text-sm font-medium text-foreground hover:text-primary lg:flex">
             All categories <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
@@ -122,8 +123,18 @@ export function Categories({
               </Link>
             )
           })}
+          <Link
+            href="/categories"
+            className="group relative flex min-h-[210px] flex-col justify-between overflow-hidden rounded-[20px] bg-[#111214] p-5 text-white lg:hidden"
+          >
+            <div>
+              <h3 className="text-xl font-semibold tracking-tight">All categories</h3>
+              <p className="mt-1 text-xs text-white/60">Explore the full collection</p>
+            </div>
+            <LayoutGrid className="absolute bottom-4 left-5 h-16 w-16 text-white/15" strokeWidth={1.25} />
+            <ArrowRight className="absolute bottom-5 right-5 h-5 w-5 transition-transform duration-[220ms] group-hover:translate-x-1" />
+          </Link>
         </div>
-        <Link href="/categories" className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-foreground hover:text-primary sm:hidden">All categories <ArrowRight className="h-4 w-4" /></Link>
       </div>
     </section>
   )
