@@ -97,18 +97,18 @@ export function ProductCard({ product, priority = false }: { product: ProductDat
           aria-label={isLiked ? `Remove ${product.name} from wishlist` : `Add ${product.name} to wishlist`}
           aria-pressed={isLiked}
           className={cn(
-            'absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-[10px] bg-white/95 text-[#656A73] transition-[opacity,color] duration-[220ms] hover:text-primary focus-visible:outline-2 focus-visible:outline-primary lg:opacity-0 lg:group-hover:opacity-100 lg:focus-visible:opacity-100',
+            'absolute right-2 top-2 flex h-9 w-9 items-center justify-center rounded-[9px] bg-white/95 text-[#656A73] transition-[opacity,color] duration-[220ms] hover:text-primary focus-visible:outline-2 focus-visible:outline-primary sm:right-3 sm:top-3 sm:h-10 sm:w-10 sm:rounded-[10px] lg:opacity-0 lg:group-hover:opacity-100 lg:focus-visible:opacity-100',
             isLiked && 'text-primary lg:opacity-100',
           )}
         >
-          {loadingItems[product.id] ? <Loader2 className="h-[18px] w-[18px] animate-spin" /> : <Heart className={cn('h-[18px] w-[18px]', isLiked && 'fill-current')} />}
+          {loadingItems[product.id] ? <Loader2 className="h-4 w-4 animate-spin sm:h-[18px] sm:w-[18px]" /> : <Heart className={cn('h-4 w-4 sm:h-[18px] sm:w-[18px]', isLiked && 'fill-current')} />}
         </button>
         <button
           type="button"
           onClick={handleAddToCart}
           disabled={product.stockQuantity <= 0 || isAdding}
           aria-label={product.stockQuantity <= 0 ? `${product.name} is out of stock` : `Add ${product.name} to cart`}
-          className="absolute bottom-3 right-3 flex h-10 w-10 items-center justify-center rounded-[10px] bg-primary text-white transition-[opacity,transform,background-color] duration-[220ms] ease-out hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50 lg:bottom-4 lg:left-4 lg:right-4 lg:h-11 lg:w-auto lg:translate-y-2 lg:opacity-0 lg:group-hover:translate-y-0 lg:group-hover:opacity-100 lg:focus-visible:translate-y-0 lg:focus-visible:opacity-100"
+          className="absolute bottom-2 right-2 flex h-10 w-10 items-center justify-center rounded-[10px] bg-primary text-white transition-[opacity,transform,background-color] duration-[220ms] ease-out hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50 sm:bottom-3 sm:right-3 lg:bottom-4 lg:left-4 lg:right-4 lg:h-11 lg:w-auto lg:translate-y-2 lg:opacity-0 lg:group-hover:translate-y-0 lg:group-hover:opacity-100 lg:focus-visible:translate-y-0 lg:focus-visible:opacity-100"
         >
           {isAdding ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShoppingCart className="h-4 w-4" />}
           <span className="ml-2 hidden text-sm font-semibold lg:inline">{product.stockQuantity <= 0 ? 'Out of stock' : 'Add to cart'}</span>
